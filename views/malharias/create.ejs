@@ -1,0 +1,55 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Nova Malharia</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/malharias" class="btn btn-sm btn-secondary">Voltar</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <% if (typeof error !== 'undefined') { %>
+                    <div class="alert alert-danger"><%= error %></div>
+                <% } %>
+
+                <form action="/malharias" method="POST">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome da Seção/Malharia</label>
+                        <input type="text" class="form-control" id="nome" name="nome" placeholder="Ex: Tecelagem A" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo de Processo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="Tecelagem">Tecelagem</option>
+                                <option value="Fiação">Fiação</option>
+                                <option value="Tinturaria">Tinturaria</option>
+                                <option value="Acabamento">Acabamento</option>
+                                <option value="Estoque">Estoque</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="unidade_id" class="form-label">Unidade Física</label>
+                            <select class="form-select" id="unidade_id" name="unidade_id" required>
+                                <option value="" disabled selected>Selecione uma unidade...</option>
+                                <% unidades.forEach(function(unidade) { %>
+                                    <option value="<%= unidade.id %>"><%= unidade.nome %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="capacidade_mensal" class="form-label">Capacidade Mensal (Estimada)</label>
+                        <input type="text" class="form-control" id="capacidade_mensal" name="capacidade_mensal" placeholder="Ex: 5000 Peças">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Salvar Malharia</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

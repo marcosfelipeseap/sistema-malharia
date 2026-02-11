@@ -1,0 +1,52 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Editar Malharia</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/malharias" class="btn btn-sm btn-secondary">Voltar</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <form action="/malharias/<%= malharia.id %>/update" method="POST">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome da Seção/Malharia</label>
+                        <input type="text" class="form-control" id="nome" name="nome" value="<%= malharia.nome %>" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo de Processo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="Tecelagem" <%= malharia.tipo === 'Tecelagem' ? 'selected' : '' %>>Tecelagem</option>
+                                <option value="Fiação" <%= malharia.tipo === 'Fiação' ? 'selected' : '' %>>Fiação</option>
+                                <option value="Tinturaria" <%= malharia.tipo === 'Tinturaria' ? 'selected' : '' %>>Tinturaria</option>
+                                <option value="Acabamento" <%= malharia.tipo === 'Acabamento' ? 'selected' : '' %>>Acabamento</option>
+                                <option value="Estoque" <%= malharia.tipo === 'Estoque' ? 'selected' : '' %>>Estoque</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="unidade_id" class="form-label">Unidade Física</label>
+                            <select class="form-select" id="unidade_id" name="unidade_id" required>
+                                <% unidades.forEach(function(unidade) { %>
+                                    <option value="<%= unidade.id %>" <%= malharia.unidade_id === unidade.id ? 'selected' : '' %>>
+                                        <%= unidade.nome %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="capacidade_mensal" class="form-label">Capacidade Mensal</label>
+                        <input type="text" class="form-control" id="capacidade_mensal" name="capacidade_mensal" value="<%= malharia.capacidade_mensal %>">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Atualizar Malharia</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

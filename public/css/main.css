@@ -1,0 +1,63 @@
+/* Estilos Gerais */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+main {
+    flex: 1;
+}
+
+/* Cards */
+.card {
+    border: none;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+}
+
+/* Bordas laterais coloridas para cards de Itens */
+.border-start-primary {
+    border-left: 4px solid #0d6efd;
+}
+
+/* Tabelas */
+.table th {
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Navbar */
+.navbar-brand {
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* Badges */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+/* Ajustes de formulário */
+.form-label {
+    font-weight: 500;
+    color: #343a40;
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+    .btn-toolbar {
+        margin-top: 10px;
+        width: 100%;
+    }
+    .btn-toolbar a {
+        width: 100%;
+    }
+}

@@ -1,0 +1,52 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Novo Apontamento</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/registros" class="btn btn-sm btn-secondary">Voltar</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <form action="/registros" method="POST">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="data_registro" class="form-label">Data do Apontamento</label>
+                            <input type="date" class="form-control" id="data_registro" name="data_registro" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="processo_id" class="form-label">Processo / Lote</label>
+                            <select class="form-select" id="processo_id" name="processo_id" required>
+                                <option value="" disabled selected>Selecione o processo...</option>
+                                <% processos.forEach(function(proc) { %>
+                                    <option value="<%= proc.id %>"><%= proc.nome %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="malharia_id" class="form-label">Malharia / Setor</label>
+                            <select class="form-select" id="malharia_id" name="malharia_id" required>
+                                <option value="" disabled selected>Selecione a malharia...</option>
+                                <% malharias.forEach(function(mal) { %>
+                                    <option value="<%= mal.id %>"><%= mal.nome %> (<%= mal.tipo %>)</option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observações / Ocorrências</label>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="3" placeholder="Detalhes da produção, paradas, etc."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Salvar Apontamento</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

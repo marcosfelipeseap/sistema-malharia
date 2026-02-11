@@ -1,0 +1,50 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Catálogo de Itens</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/itens/create" class="btn btn-sm btn-primary">
+            <i class="bi bi-box-seam"></i> Novo Item
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <% if (itens.length === 0) { %>
+        <div class="col-12">
+            <div class="alert alert-info">Nenhum item cadastrado no estoque.</div>
+        </div>
+    <% } else { %>
+        <% itens.forEach(function(item) { %>
+            <div class="col-md-3 mb-4">
+                <div class="card shadow-sm h-100 border-start-primary">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="card-title text-truncate mb-0" title="<%= item.nome %>"><%= item.nome %></h5>
+                            <span class="badge bg-secondary"><%= item.tipo %></span>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <h2 class="display-6 fs-4"><%= item.estoque_atual %> <small class="text-muted fs-6"><%= item.unidade_medida %></small></h2>
+                            <p class="text-muted small mb-0">Estoque Atual</p>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-success fw-bold">R$ <%= parseFloat(item.custo_unitario).toFixed(2) %></small>
+                            <div class="btn-group">
+                                <a href="/itens/<%= item.id %>/edit" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="/itens/<%= item.id %>/delete" method="POST" style="display:inline;" onsubmit="return confirm('Excluir este item?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    <% } %>
+</div>

@@ -1,0 +1,38 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard de Processos</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/processos/create" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg"></i> Novo Processo
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <% if (processos.length === 0) { %>
+        <div class="col-12">
+            <div class="alert alert-info">Nenhum processo registrado. Comece criando um!</div>
+        </div>
+    <% } else { %>
+        <% processos.forEach(function(processo) { %>
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title"><%= processo.nome %></h5>
+                        <h6 class="card-subtitle mb-2 text-muted">Status: <%= processo.status %></h6>
+                        <p class="card-text text-truncate"><%= processo.descricao %></p>
+                        <small class="text-muted">
+                            Início: <%= new Date(processo.data_inicio).toLocaleDateString('pt-BR') %>
+                        </small>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between">
+                        <a href="/processos/<%= processo.id %>/edit" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        
+                        <form action="/processos/<%= processo.id %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        <% }); %>
+    <% } %>
+</div>

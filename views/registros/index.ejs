@@ -1,0 +1,49 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Registro Diário de Produção</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/registros/create" class="btn btn-sm btn-primary">
+            <i class="bi bi-clipboard-plus"></i> Novo Apontamento
+        </a>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-sm table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Processo</th>
+                <th>Malharia/Setor</th>
+                <th>Observação</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (registros.length === 0) { %>
+                <tr>
+                    <td colspan="5" class="text-center">Nenhum registro encontrado.</td>
+                </tr>
+            <% } else { %>
+                <% registros.forEach(function(reg) { %>
+                    <tr>
+                        <td><%= new Date(reg.data_registro).toLocaleDateString('pt-BR') %></td>
+                        <td>
+                            <span class="badge bg-info text-dark">
+                                <%= reg.processo ? reg.processo.nome : 'N/A' %>
+                            </span>
+                        </td>
+                        <td><%= reg.malharia ? reg.malharia.nome : 'N/A' %></td>
+                        <td class="text-truncate" style="max-width: 300px;"><%= reg.observacao %></td>
+                        <td class="text-end">
+                            <form action="/registros/<%= reg.id %>/delete" method="POST" style="display:inline;" onsubmit="return confirm('Deseja excluir este apontamento?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                <% }); %>
+            <% } %>
+        </tbody>
+    </table>
+</div>

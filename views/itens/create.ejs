@@ -1,0 +1,59 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Novo Item</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/itens" class="btn btn-sm btn-secondary">Voltar</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-body">
+                <% if (typeof error !== 'undefined') { %>
+                    <div class="alert alert-danger"><%= error %></div>
+                <% } %>
+
+                <form action="/itens" method="POST">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome do Item/Insumo</label>
+                        <input type="text" class="form-control" id="nome" name="nome" placeholder="Ex: Fio Algodão 30/1" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="tipo" name="tipo">
+                                <option value="Matéria Prima">Matéria Prima</option>
+                                <option value="Produto Intermediário">Produto Intermediário</option>
+                                <option value="Produto Final">Produto Final</option>
+                                <option value="Consumível">Consumível</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="unidade_medida" class="form-label">Unidade de Medida</label>
+                            <select class="form-select" id="unidade_medida" name="unidade_medida">
+                                <option value="KG">Quilograma (KG)</option>
+                                <option value="UN">Unidade (UN)</option>
+                                <option value="MT">Metro (MT)</option>
+                                <option value="RL">Rolo (RL)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="estoque_atual" class="form-label">Estoque Inicial</label>
+                            <input type="number" step="0.01" class="form-control" id="estoque_atual" name="estoque_atual" value="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="custo_unitario" class="form-label">Custo Unitário (R$)</label>
+                            <input type="number" step="0.01" class="form-control" id="custo_unitario" name="custo_unitario" value="0.00">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Salvar Item</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
