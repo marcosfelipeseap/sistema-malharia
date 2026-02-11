@@ -1,0 +1,76 @@
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2">Processo: <%= processo.numero_processo %></h1>
+        <span class="text-muted"><%= processo.orgao %></span>
+    </div>
+    <div>
+        <a href="/processos/<%= processo.id %>/edit" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        <a href="/processos" class="btn btn-secondary">Voltar</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title text-secondary mb-3">Detalhes</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Data Entrada:</dt>
+                    <dd class="col-sm-8"><%= processo.data_entrada ? new Date(processo.data_entrada).toLocaleDateString('pt-BR') : '-' %></dd>
+
+                    <dt class="col-sm-4">Tipo Demanda:</dt>
+                    <dd class="col-sm-8"><%= processo.tipo_demanda %></dd>
+
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8"><span class="badge bg-secondary"><%= processo.status %></span></dd>
+
+                    <dt class="col-sm-4">Situação:</dt>
+                    <dd class="col-sm-8"><%= processo.situacao || '-' %></dd>
+
+                    <dt class="col-sm-4">Observações:</dt>
+                    <dd class="col-sm-8"><%= processo.observacao || '-' %></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h4 class="mb-3">Produtos do Processo</h4>
+<div class="table-responsive">
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Item</th>
+                <th class="text-center">Solicitada</th>
+                <th class="text-center">Autorizada</th>
+                <th class="text-center">Entregue</th>
+                <th class="text-center">Faltante</th>
+                <th class="text-center">Prazo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (processo.itens.length === 0) { %>
+                <tr><td colspan="6" class="text-center">Nenhum item registrado.</td></tr>
+            <% } else { %>
+                <% processo.itens.forEach(item => { %>
+                    <tr>
+                        <td><%= item.item ? item.item.nome : 'Item removido' %></td>
+                        <td class="text-center"><%= item.qtd_solicitada %></td>
+                        <td class="text-center"><%= item.qtd_autorizada %></td>
+                        <td class="text-center"><%= item.qtd_entregue %></td>
+                        <td class="text-center fw-bold text-danger"><%= item.qtd_faltante %></td>
+                        <td class="text-center"><%= item.data_prazo ? new Date(item.data_prazo).toLocaleDateString('pt-BR') : '-' %></td>
+                    </tr>
+                <% }) %>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4 text-end">
+    <form action="/processos/<%= processo.id %>/delete" method="POST" onsubmit="return confirm('ATENÇÃO: Isso apagará o processo e todos os registros de itens associados a ele. Continuar?');">
+        <button type="submit" class="btn btn-outline-danger btn-sm">Excluir Processo Permanentemente</button>
+    </form>
+</div>

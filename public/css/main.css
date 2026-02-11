@@ -1,63 +1,92 @@
-/* Estilos Gerais */
+:root {
+    --header-height: 60px; /* Altura fixa para o topo */
+}
+
+/* 1. Ajuste do Corpo */
 body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
+    padding-top: var(--header-height); /* Empurra o conteúdo para baixo do header */
 }
 
-main {
-    flex: 1;
+/* 2. Cabeçalho (Sistema Malharia) */
+header.navbar {
+    height: var(--header-height);
+    background-color: #212529; /* Cor escura */
+    z-index: 1030; /* Garante que fica ACIMA de tudo */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0; /* Reset de padding */
 }
 
-/* Cards */
-.card {
-    border: none;
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+.navbar-brand {
+    height: 100%; /* Ocupa toda a altura do header */
+    display: flex;
+    align-items: center;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    background-color: rgba(0, 0, 0, 0.25); /* Fundo levemente diferente */
+    font-size: 1.1rem;
+    white-space: nowrap;
 }
 
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+/* 3. Barra Lateral (Sidebar) */
+.sidebar {
+    position: fixed;
+    top: var(--header-height); /* Começa EXATAMENTE abaixo do header */
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    background-color: #212529;
+    padding-top: 20px; /* Espaço interno no topo da lista */
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    overflow-y: auto; /* Permite rolar se o menu for muito longo */
 }
 
-/* Bordas laterais coloridas para cards de Itens */
-.border-start-primary {
+/* Links da Sidebar */
+.sidebar .nav-link {
+    font-weight: 500;
+    color: rgba(255, 255, 255, .70);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    color: #fff;
+    background-color: rgba(255, 255, 255, .1);
     border-left: 4px solid #0d6efd;
 }
 
-/* Tabelas */
-.table th {
-    font-weight: 600;
-    color: #495057;
+.sidebar .nav-link i {
+    font-size: 1.2rem;
 }
 
-/* Navbar */
-.navbar-brand {
-    font-weight: bold;
-    letter-spacing: 0.5px;
-}
-
-/* Badges */
-.badge {
-    font-weight: 500;
-    letter-spacing: 0.5px;
-}
-
-/* Ajustes de formulário */
-.form-label {
-    font-weight: 500;
-    color: #343a40;
-}
-
-/* Responsividade para mobile */
-@media (max-width: 768px) {
-    .btn-toolbar {
-        margin-top: 10px;
-        width: 100%;
+/* 4. Ajustes Responsivos (Mobile) */
+@media (max-width: 767.98px) {
+    .sidebar {
+        top: var(--header-height);
+        height: auto; /* Altura automática */
+        position: static; /* Deixa de ser fixa */
+        width: 100%; /* Ocupa largura total */
     }
-    .btn-toolbar a {
-        width: 100%;
+    
+    body {
+        padding-top: var(--header-height); /* Mantém o padding */
+    }
+
+    .navbar-brand {
+        width: auto; /* No mobile, o brand não precisa ter largura fixa de coluna */
+        background-color: transparent;
+        box-shadow: none;
     }
 }
+
+/* Badges de Status */
+.status-concluido { background-color: #198754; color: white; }
+.status-parcial { background-color: #ffc107; color: black; }
+.status-nao-iniciado { background-color: #dc3545; color: white; }

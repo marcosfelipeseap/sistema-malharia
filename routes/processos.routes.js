@@ -2,22 +2,20 @@ const express = require('express');
 const router = express.Router();
 const processosController = require('../controllers/processos.controller');
 
-// Listagem (Dashboard)
+// 1. Rotas de API (JSON) - Devem vir primeiro!
+router.get('/api/itens', processosController.getItensApi);
+
+// 2. Rota Principal (Dashboard)
 router.get('/', processosController.index);
 
-// Formulário de Criação
+// 3. Rotas Específicas (Criação) - ATENÇÃO: Create ANTES do :id
 router.get('/create', processosController.create);
-
-// Ação de Salvar (Create)
 router.post('/', processosController.store);
 
-// Formulário de Edição
-router.get('/:id/edit', processosController.edit);
-
-// Ação de Atualizar (Update)
+// 4. Rotas Parametrizadas (:id) - Devem vir por último
+router.get('/:id', processosController.show); // Visualizar
+router.get('/:id/edit', processosController.edit); // Editar
 router.post('/:id/update', processosController.update);
-
-// Ação de Excluir (Delete)
 router.post('/:id/delete', processosController.destroy);
 
 module.exports = router;

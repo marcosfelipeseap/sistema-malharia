@@ -1,5 +1,4 @@
 const supabase = require('../config/supabaseClient');
-
 const TABLE = 'item';
 
 exports.getAllItens = async () => {
@@ -8,7 +7,6 @@ exports.getAllItens = async () => {
         .from(TABLE)
         .select('*')
         .order('nome', { ascending: true });
-
     if (error) throw error;
     return data;
 };
@@ -20,7 +18,6 @@ exports.getItemById = async (id) => {
         .select('*')
         .eq('id', id)
         .single();
-
     if (error) throw error;
     return data;
 };
@@ -31,7 +28,6 @@ exports.createItem = async (itemData) => {
         .from(TABLE)
         .insert([itemData])
         .select();
-
     if (error) throw error;
     return data;
 };
@@ -43,7 +39,6 @@ exports.updateItem = async (id, itemData) => {
         .update(itemData)
         .eq('id', id)
         .select();
-
     if (error) throw error;
     return data;
 };
@@ -54,7 +49,6 @@ exports.deleteItem = async (id) => {
         .from(TABLE)
         .delete()
         .eq('id', id);
-
     if (error) throw error;
     return true;
 };

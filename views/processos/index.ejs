@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard de Processos</h1>
+    <h1 class="h2">Processos</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <a href="/processos/create" class="btn btn-sm btn-primary">
             <i class="bi bi-plus-lg"></i> Novo Processo
@@ -7,32 +7,77 @@
     </div>
 </div>
 
-<div class="row">
-    <% if (processos.length === 0) { %>
-        <div class="col-12">
-            <div class="alert alert-info">Nenhum processo registrado. Comece criando um!</div>
-        </div>
-    <% } else { %>
-        <% processos.forEach(function(processo) { %>
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title"><%= processo.nome %></h5>
-                        <h6 class="card-subtitle mb-2 text-muted">Status: <%= processo.status %></h6>
-                        <p class="card-text text-truncate"><%= processo.descricao %></p>
-                        <small class="text-muted">
-                            Início: <%= new Date(processo.data_inicio).toLocaleDateString('pt-BR') %>
-                        </small>
-                    </div>
-                    <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between">
-                        <a href="/processos/<%= processo.id %>/edit" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        
-                        <form action="/processos/<%= processo.id %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir?');">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
-                        </form>
-                    </div>
+<div class="card mb-4 shadow-sm">
+    <div class="card-body py-3">
+        <form action="/processos" method="GET" class="row g-2 align-items-center">
+            <div class="col-md-10">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" class="form-control border-start-0 ps-0" name="busca" 
+                           placeholder="Pesquisar por Número do Processo ou Órgão..." 
+                           value="<%= typeof busca !== 'undefined' ? busca : '' %>">
                 </div>
             </div>
-        <% }); %>
-    <% } %>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-dark">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle shadow-sm bg-white rounded">
+        <thead class="table-light">
+            <tr>
+                <th>Nº Processo</th>
+                <th>Data Entrada</th>
+                <th>Órgão</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (processos.length === 0) { %>
+                <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                        <% if (typeof busca !== 'undefined' && busca) { %>
+                            Nenhum processo encontrado para "<strong><%= busca %></strong>".
+                            <br><a href="/processos" class="btn btn-link">Limpar pesquisa</a>
+                        <% } else { %>
+                            Nenhum processo cadastrado ainda.
+                        <% } %>
+                    </td>
+                </tr>
+            <% } else { %>
+                <% processos.forEach(function(p) { 
+                    let badgeClass = 'bg-secondary';
+                    if (p.status === 'DEMANDA CONCLUÍDA') badgeClass = 'status-concluido';
+                    else if (p.status === 'PARCIAMENTE ENTREGUE') badgeClass = 'status-parcial';
+                    else if (p.status === 'ENTREGA NÃO INICIADA') badgeClass = 'status-nao-iniciado';
+                %>
+                <tr>
+                    <td>
+                        <a href="/processos/<%= p.id %>" class="fw-bold text-decoration-none text-dark">
+                            <%= p.numero_processo %>
+                        </a>
+                    </td>
+                    <td><%= p.data_entrada ? new Date(p.data_entrada).toLocaleDateString('pt-BR') : '-' %></td>
+                    <td><%= p.orgao %></td>
+                    <td><span class="badge <%= badgeClass %> rounded-pill"><%= p.status %></span></td>
+                    <td class="text-end">
+                        <a href="/processos/<%= p.id %>" class="btn btn-sm btn-outline-primary" title="Ver Detalhes">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="/processos/<%= p.id %>/edit" class="btn btn-sm btn-outline-secondary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </td>
+                </tr>
+                <% }); %>
+            <% } %>
+        </tbody>
+    </table>
 </div>
