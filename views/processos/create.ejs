@@ -3,7 +3,6 @@
     .ts-control { border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.375rem 0.75rem; box-shadow: none !important; }
     .ts-wrapper.single .ts-control { background-color: #fff; }
     table .ts-control { border: none; background: transparent; }
-    /* Estilo para link no dropdown */
     .no-results-link { cursor: pointer; color: #0d6efd; text-decoration: underline; }
     .no-results-link:hover { color: #0a58ca; }
 </style>
@@ -74,7 +73,7 @@
                     <thead class="table-light small text-center text-uppercase">
                         <tr>
                             <th style="min-width: 250px;">Produto</th>
-                            <th style="width: 100px;">Solic.</th>
+                            <th style="width: 80px;">Tam.</th> <th style="width: 100px;">Solic.</th>
                             <th style="width: 100px;">Aut.</th>
                             <th style="width: 100px;">Entr.</th>
                             <th style="width: 80px;">Falt.</th>
@@ -177,12 +176,10 @@
         new bootstrap.Modal(document.getElementById('modalAviso')).show();
     }
 
-    // Função para abrir modal preenchendo o nome (usada pelo TomSelect)
     window.abrirModalCriacao = function(nomeSugerido) {
         const input = document.getElementById('nomeNovoProduto');
         input.value = nomeSugerido || '';
         new bootstrap.Modal(document.getElementById('modalNovoProduto')).show();
-        // Foca no input após o modal abrir
         setTimeout(() => input.focus(), 500);
     };
 
@@ -206,6 +203,10 @@
                     ${criarHTMLOptions(preSelecionadoId)}
                 </select>
             </td>
+            <td>
+                <input type="text" class="form-control form-control-sm text-center border-0" 
+                       name="tamanho" placeholder="-" autocomplete="off">
+            </td>
             <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_solicitada" value="0" min="0" oninput="validarAutorizada(this)"></td>
             <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_autorizada" value="0" min="0" oninput="validarAutorizada(this)"></td>
             <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_entregue" value="0" min="0" oninput="validarEntregue(this)"></td>
@@ -219,14 +220,12 @@
         `;
         tbody.appendChild(tr);
 
-        // Inicializa TomSelect com template de "Sem resultados"
         new TomSelect(tr.querySelector('.tom-select-init'), {
             create: false,
             sortField: { field: "text", direction: "asc" },
             placeholder: "Digite para buscar...",
             dropdownParent: 'body',
             render: {
-                // Personaliza a mensagem quando não encontra nada
                 no_results: function(data, escape) {
                     return '<div class="no-results p-2 text-muted text-center">' +
                            '<i class="bi bi-exclamation-circle"></i> Não encontrado.<br>' +
@@ -289,23 +288,16 @@
                 produtosCache.push(novo);
                 produtosCache.sort((a, b) => a.nome.localeCompare(b.nome));
                 
-                // Adiciona o novo item em TODOS os selects já abertos na tela
                 document.querySelectorAll('select[name="item_id"]').forEach(s => {
                     if (s.tomselect) {
                         s.tomselect.addOption({value: novo.id, text: novo.nome});
                         s.tomselect.refreshOptions(false);
                     }
                 });
-
-                // Fecha modal e limpa
                 const modalEl = document.getElementById('modalNovoProduto');
                 bootstrap.Modal.getInstance(modalEl).hide();
                 input.value = '';
-
-                // Procura o select que estava vazio (último adicionado) ou cria nova linha com ele selecionado
-                // Aqui opto por criar uma nova linha já com ele, para facilitar
                 adicionarLinha(novo.id);
-
             } else {
                 exibirAviso('Erro ao salvar produto.');
             }

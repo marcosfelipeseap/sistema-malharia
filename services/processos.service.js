@@ -1,5 +1,7 @@
 const supabase = require('../config/supabaseClient');
 const TABLE = 'processo';
+const TABLE_TERMOS = 'termo_entrega';
+const BUCKET = 'termos';
 
 exports.getAllItensDisponiveis = async () => {
     const { data } = await supabase.schema('malharia').from('item').select('*').order('nome');
@@ -7,7 +9,6 @@ exports.getAllItensDisponiveis = async () => {
 };
 
 exports.getAllProcessos = async (busca = '') => {
-    // Agora buscamos também os itens relacionados renomeando para 'itens'
     let query = supabase
         .schema('malharia')
         .from(TABLE)
@@ -15,14 +16,12 @@ exports.getAllProcessos = async (busca = '') => {
         .order('data_entrada', { ascending: false });
 
     if (busca) {
-        // Ajuste para filtrar corretamente mesmo trazendo itens
         query = query.or(`numero_processo.ilike.%${busca}%,orgao.ilike.%${busca}%,situacao.ilike.%${busca}%`);
     }
 
     const { data, error } = await query;
     if (error) throw error;
 
-    // Processa os dados para adicionar o objeto 'totais' em cada processo
     const processosComTotais = data.map(p => {
         const totais = (p.itens || []).reduce((acc, item) => {
             return {
@@ -40,7 +39,7 @@ exports.getAllProcessos = async (busca = '') => {
 };
 
 exports.getProcessoById = async (id) => {
-    // Busca dados do processo
+    // 1. Busca dados do processo
     const { data: processo, error } = await supabase
         .schema('malharia')
         .from(TABLE)
@@ -50,17 +49,31 @@ exports.getProcessoById = async (id) => {
     
     if (error) throw error;
 
-    // Busca itens detalhados com o nome do produto
+    // 2. Busca itens
     const { data: itens } = await supabase
         .schema('malharia')
         .from('processo_item')
         .select('*, item:item_id(nome)')
         .eq('processo_id', id);
 
-    return { ...processo, itens: itens || [] };
+    // 3. Busca Termos de Entrega (NOVO)
+    const { data: termos } = await supabase
+        .schema('malharia')
+        .from(TABLE_TERMOS)
+        .select('*')
+        .eq('processo_id', id)
+        .order('numero_termo', { ascending: true });
+
+    // Gera URL pública para visualização dos termos
+    const termosComUrl = (termos || []).map(t => {
+        const { data } = supabase.storage.from(BUCKET).getPublicUrl(t.caminho_arquivo);
+        return { ...t, url_publica: data.publicUrl };
+    });
+
+    return { ...processo, itens: itens || [], termos: termosComUrl };
 };
 
-// Verifica se já existe um processo com esse número
+// ... (verificarNumeroExistente mantido igual)
 async function verificarNumeroExistente(numero, ignorarId = null) {
     let query = supabase
         .schema('malharia')
@@ -77,11 +90,10 @@ async function verificarNumeroExistente(numero, ignorarId = null) {
     return data.length > 0;
 }
 
+// ... (createProcessoComItens mantido igual)
 exports.createProcessoComItens = async (processoData, itensData) => {
     const existe = await verificarNumeroExistente(processoData.numero_processo);
-    if (existe) {
-        throw new Error(`O número de processo "${processoData.numero_processo}" já está cadastrado!`);
-    }
+    if (existe) throw new Error(`O número de processo "${processoData.numero_processo}" já está cadastrado!`);
 
     const { data: processo, error: errProc } = await supabase
         .schema('malharia')
@@ -93,55 +105,102 @@ exports.createProcessoComItens = async (processoData, itensData) => {
     if (errProc) throw errProc;
 
     if (itensData && itensData.length > 0) {
-        const itensFormatados = itensData.map(item => ({
-            ...item,
-            processo_id: processo.id
-        }));
-
-        const { error: errItens } = await supabase
-            .schema('malharia')
-            .from('processo_item')
-            .insert(itensFormatados);
-            
+        const itensFormatados = itensData.map(item => ({ ...item, processo_id: processo.id }));
+        const { error: errItens } = await supabase.schema('malharia').from('processo_item').insert(itensFormatados);
         if (errItens) throw new Error("Erro ao salvar itens: " + errItens.message);
     }
     return processo;
 };
 
+// ... (updateProcessoComItens mantido igual)
 exports.updateProcessoComItens = async (id, processoData, itensData) => {
     const existe = await verificarNumeroExistente(processoData.numero_processo, id);
-    if (existe) {
-        throw new Error(`O número de processo "${processoData.numero_processo}" já pertence a outro registro!`);
-    }
+    if (existe) throw new Error(`O número de processo "${processoData.numero_processo}" já pertence a outro registro!`);
 
-    const { error: errProc } = await supabase
-        .schema('malharia')
-        .from(TABLE)
-        .update(processoData)
-        .eq('id', id);
-    
+    const { error: errProc } = await supabase.schema('malharia').from(TABLE).update(processoData).eq('id', id);
     if (errProc) throw errProc;
 
-    // Remove itens antigos e insere os novos (atualização completa)
     await supabase.schema('malharia').from('processo_item').delete().eq('processo_id', id);
 
     if (itensData && itensData.length > 0) {
-        const itensFormatados = itensData.map(item => ({
-            ...item,
-            processo_id: id
-        }));
-        const { error: errItens } = await supabase
-            .schema('malharia')
-            .from('processo_item')
-            .insert(itensFormatados);
-            
+        const itensFormatados = itensData.map(item => ({ ...item, processo_id: id }));
+        const { error: errItens } = await supabase.schema('malharia').from('processo_item').insert(itensFormatados);
         if (errItens) throw errItens;
     }
     return true;
 };
 
 exports.deleteProcesso = async (id) => {
+    // Nota: É recomendável deletar os arquivos do Storage antes, 
+    // mas o CASCADE do banco cuidará dos registros na tabela.
     const { error } = await supabase.schema('malharia').from(TABLE).delete().eq('id', id);
     if (error) throw error;
+    return true;
+};
+
+// --- NOVAS FUNÇÕES PARA TERMOS ---
+
+exports.createTermo = async (processoId, numeroTermo, fileBuffer, fileName, mimeType) => {
+    // 1. Upload para o Supabase Storage
+    const path = `processos/${processoId}/${Date.now()}_${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, fileBuffer, {
+            contentType: mimeType,
+            upsert: false
+        });
+
+    if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`);
+
+    // 2. Salvar metadados no Banco
+    const { data, error: dbError } = await supabase
+        .schema('malharia')
+        .from(TABLE_TERMOS)
+        .insert([{
+            processo_id: processoId,
+            numero_termo: numeroTermo,
+            nome_arquivo: fileName,
+            caminho_arquivo: path,
+            tipo_arquivo: mimeType
+        }])
+        .select()
+        .single();
+
+    if (dbError) {
+        // Se falhar no banco, tenta limpar o arquivo enviado para não deixar lixo
+        await supabase.storage.from(BUCKET).remove([path]);
+        throw dbError;
+    }
+
+    return data;
+};
+
+exports.deleteTermo = async (termoId) => {
+    // 1. Busca o termo para pegar o caminho do arquivo
+    const { data: termo, error: findError } = await supabase
+        .schema('malharia')
+        .from(TABLE_TERMOS)
+        .select('*')
+        .eq('id', termoId)
+        .single();
+    
+    if (findError || !termo) throw new Error("Termo não encontrado");
+
+    // 2. Remove do Storage
+    const { error: storageError } = await supabase.storage
+        .from(BUCKET)
+        .remove([termo.caminho_arquivo]);
+    
+    if (storageError) console.error("Aviso: Falha ao deletar arquivo do storage", storageError);
+
+    // 3. Remove do Banco
+    const { error: dbError } = await supabase
+        .schema('malharia')
+        .from(TABLE_TERMOS)
+        .delete()
+        .eq('id', termoId);
+
+    if (dbError) throw dbError;
     return true;
 };

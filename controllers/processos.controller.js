@@ -1,4 +1,11 @@
 const processosService = require('../services/processos.service');
+const multer = require('multer');
+
+// Configuração do Multer (Armazenamento em memória para envio ao Supabase)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+exports.upload = upload; // Exporta para usar nas rotas se necessário
 
 // API para buscar itens (usada pelo botão de recarregar)
 exports.getItensApi = async (req, res) => {
@@ -24,14 +31,11 @@ exports.index = async (req, res) => {
 exports.create = async (req, res) => {
     let itens = [];
     try {
-        // Tenta buscar itens, mas se falhar, inicia com array vazio para não travar a tela
         itens = await processosService.getAllItensDisponiveis();
     } catch (error) {
         console.error("Erro ao carregar itens para o formulário:", error);
     }
     
-    // Renderiza a tela
-    // CORREÇÃO: Renomeado 'body' para 'formData' para não quebrar o layout
     res.render('processos/create', { 
         title: 'Novo Processo', 
         itens: itens || [], 
@@ -45,6 +49,7 @@ const parseItensFromBody = (body) => {
     const toArray = (val) => (val === undefined || val === null) ? [] : (Array.isArray(val) ? val : [val]);
 
     const ids = toArray(body.item_id);
+    const tamanhos = toArray(body.tamanho); // <--- CAPTURA OS TAMANHOS
     const qSols = toArray(body.qtd_solicitada);
     const qAuts = toArray(body.qtd_autorizada);
     const qEnts = toArray(body.qtd_entregue);
@@ -53,6 +58,7 @@ const parseItensFromBody = (body) => {
 
     return ids.map((id, i) => ({
         item_id: parseInt(id),
+        tamanho: tamanhos[i] || null, // <--- SALVA O TAMANHO
         qtd_solicitada: parseInt(qSols[i]) || 0,
         qtd_autorizada: parseInt(qAuts[i]) || 0,
         qtd_entregue: parseInt(qEnts[i]) || 0,
@@ -78,8 +84,6 @@ exports.store = async (req, res) => {
     } catch (error) {
         console.error("Erro ao criar:", error.message);
         const itens = await processosService.getAllItensDisponiveis();
-        // Recarrega a página mantendo o que o usuário digitou
-        // CORREÇÃO: Renomeado 'body' para 'formData'
         res.render('processos/create', { 
             title: 'Novo Processo', 
             itens, 
@@ -100,6 +104,37 @@ exports.show = async (req, res) => {
         res.redirect('/processos');
     }
 };
+
+// --- NOVOS MÉTODOS DE TERMOS ---
+exports.storeTermo = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { numero_termo } = req.body;
+        const file = req.file;
+
+        if (!file) throw new Error("Selecione um arquivo PDF.");
+        if (file.mimetype !== 'application/pdf') throw new Error("Apenas arquivos PDF são permitidos.");
+
+        await processosService.createTermo(id, numero_termo, file.buffer, file.originalname, file.mimetype);
+        
+        res.redirect(`/processos/${id}`);
+    } catch (error) {
+        console.error("Erro ao adicionar termo:", error);
+        res.redirect(`/processos/${id}`);
+    }
+};
+
+exports.destroyTermo = async (req, res) => {
+    const { id, termo_id } = req.params;
+    try {
+        await processosService.deleteTermo(termo_id);
+        res.redirect(`/processos/${id}`);
+    } catch (error) {
+        console.error("Erro ao deletar termo:", error);
+        res.redirect(`/processos/${id}`);
+    }
+};
+// -------------------------------
 
 exports.edit = async (req, res) => {
     try {
