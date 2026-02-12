@@ -28,15 +28,15 @@ exports.create = async (req, res) => {
         itens = await processosService.getAllItensDisponiveis();
     } catch (error) {
         console.error("Erro ao carregar itens para o formulário:", error);
-        // Opcional: Adicionar um aviso na tela
     }
     
-    // Renderiza a tela de qualquer jeito
+    // Renderiza a tela
+    // CORREÇÃO: Renomeado 'body' para 'formData' para não quebrar o layout
     res.render('processos/create', { 
         title: 'Novo Processo', 
-        itens: itens || [], // Garante que nunca seja undefined
+        itens: itens || [], 
         error: null, 
-        body: {} 
+        formData: {} 
     });
 };
 
@@ -79,11 +79,12 @@ exports.store = async (req, res) => {
         console.error("Erro ao criar:", error.message);
         const itens = await processosService.getAllItensDisponiveis();
         // Recarrega a página mantendo o que o usuário digitou
+        // CORREÇÃO: Renomeado 'body' para 'formData'
         res.render('processos/create', { 
             title: 'Novo Processo', 
             itens, 
             error: error.message, 
-            body: req.body 
+            formData: req.body 
         });
     }
 };
@@ -134,7 +135,6 @@ exports.update = async (req, res) => {
         console.error("Erro ao atualizar:", error.message);
         const itensDisponiveis = await processosService.getAllItensDisponiveis();
         
-        // Reconstrói o objeto processo para a tela de edição não quebrar
         const processoRecuperado = {
             id: req.params.id,
             ...req.body,

@@ -3,6 +3,9 @@
     .ts-control { border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 0.375rem 0.75rem; box-shadow: none !important; }
     .ts-wrapper.single .ts-control { background-color: #fff; }
     table .ts-control { border: none; background: transparent; }
+    /* Estilo para link no dropdown */
+    .no-results-link { cursor: pointer; color: #0d6efd; text-decoration: underline; }
+    .no-results-link:hover { color: #0a58ca; }
 </style>
 
 <div class="d-flex justify-content-between pt-3 pb-2 mb-3 border-bottom">
@@ -16,15 +19,16 @@
     <script>document.addEventListener('DOMContentLoaded', () => exibirAviso("<%= error %>"));</script>
 <% } %>
 
-<% if (typeof body !== 'undefined' && body.numero_processo) { %>
+<% if (typeof formData !== 'undefined' && formData.numero_processo) { %>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            document.querySelector('[name="numero_processo"]').value = "<%= body.numero_processo %>";
-            document.querySelector('[name="orgao"]').value = "<%= body.orgao %>";
-            document.querySelector('[name="data_entrada"]').value = "<%= body.data_entrada %>";
-            document.querySelector('[name="tipo_demanda"]').value = "<%= body.tipo_demanda %>";
-            document.querySelector('[name="situacao"]').value = "<%= body.situacao %>";
-            document.querySelector('[name="observacao"]').value = "<%= body.observacao %>";
+            const setVal = (name, val) => { if(document.querySelector(`[name="${name}"]`)) document.querySelector(`[name="${name}"]`).value = val; };
+            setVal('numero_processo', "<%= formData.numero_processo %>");
+            setVal('orgao', "<%= formData.orgao %>");
+            setVal('data_entrada', "<%= formData.data_entrada %>");
+            setVal('tipo_demanda', "<%= formData.tipo_demanda %>");
+            setVal('situacao', "<%= formData.situacao %>");
+            if(document.querySelector('[name="observacao"]')) document.querySelector('[name="observacao"]').value = "<%= formData.observacao %>";
         });
     </script>
 <% } %>
@@ -87,10 +91,10 @@
             <button type="button" class="btn btn-success btn-sm" onclick="adicionarLinha()">
                 <i class="bi bi-plus-lg"></i> Adicionar Item
             </button>
-            <button type="button" class="btn btn-outline-primary btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalNovoProduto">
+            <button type="button" class="btn btn-outline-primary btn-sm ms-2" onclick="abrirModalCriacao('')">
                 <i class="bi bi-magic"></i> Novo Produto (Rápido)
             </button>
-            <button type="button" class="btn btn-outline-secondary btn-sm ms-1" onclick="atualizarListaProdutos()" title="Recarregar">
+            <button type="button" class="btn btn-outline-secondary btn-sm ms-1" onclick="atualizarListaProdutos()" title="Recarregar lista">
                 <i class="bi bi-arrow-clockwise"></i>
             </button>
         </div>
@@ -150,8 +154,9 @@
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Nome</label>
-                    <input type="text" class="form-control" id="nomeNovoProduto">
+                    <label class="form-label">Nome do Produto</label>
+                    <input type="text" class="form-control" id="nomeNovoProduto" autocomplete="off">
+                    <div class="form-text">Será adicionado e selecionado automaticamente.</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -169,8 +174,17 @@
 
     function exibirAviso(msg) { 
         document.getElementById('textoAviso').innerText = msg; 
-        new bootstrap.Modal(document.getElementById('modalAviso')).show(); 
+        new bootstrap.Modal(document.getElementById('modalAviso')).show();
     }
+
+    // Função para abrir modal preenchendo o nome (usada pelo TomSelect)
+    window.abrirModalCriacao = function(nomeSugerido) {
+        const input = document.getElementById('nomeNovoProduto');
+        input.value = nomeSugerido || '';
+        new bootstrap.Modal(document.getElementById('modalNovoProduto')).show();
+        // Foca no input após o modal abrir
+        setTimeout(() => input.focus(), 500);
+    };
 
     function criarHTMLOptions(selId = null) {
         let opts = '<option value="">Buscar...</option>';
@@ -205,12 +219,22 @@
         `;
         tbody.appendChild(tr);
 
+        // Inicializa TomSelect com template de "Sem resultados"
         new TomSelect(tr.querySelector('.tom-select-init'), {
             create: false,
             sortField: { field: "text", direction: "asc" },
-            placeholder: "Buscar...",
+            placeholder: "Digite para buscar...",
             dropdownParent: 'body',
-            controlInput: null
+            render: {
+                // Personaliza a mensagem quando não encontra nada
+                no_results: function(data, escape) {
+                    return '<div class="no-results p-2 text-muted text-center">' +
+                           '<i class="bi bi-exclamation-circle"></i> Não encontrado.<br>' +
+                           '<a href="#" class="no-results-link fw-bold" onclick="abrirModalCriacao(\'' + escape(data.input) + '\'); return false;">' +
+                           'Criar "' + escape(data.input) + '"?</a>' +
+                           '</div>';
+                }
+            }
         });
     }
 
@@ -225,7 +249,6 @@
         let sol = parseInt(row.querySelector('[name="qtd_solicitada"]').value) || 0;
         let inAut = row.querySelector('[name="qtd_autorizada"]');
         let aut = parseInt(inAut.value) || 0;
-
         if (aut > sol) {
             exibirAviso('Autorizada não pode ser maior que Solicitada.');
             inAut.value = sol; aut = sol;
@@ -238,7 +261,6 @@
         let aut = parseInt(row.querySelector('[name="qtd_autorizada"]').value) || 0;
         let inEnt = row.querySelector('[name="qtd_entregue"]');
         let ent = parseInt(inEnt.value) || 0;
-
         if (ent > aut) {
             exibirAviso('Entregue não pode ser maior que Autorizada.');
             inEnt.value = aut; ent = aut;
@@ -262,12 +284,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ nome: input.value })
             });
-
             if (res.ok) {
                 const novo = await res.json();
                 produtosCache.push(novo);
                 produtosCache.sort((a, b) => a.nome.localeCompare(b.nome));
                 
+                // Adiciona o novo item em TODOS os selects já abertos na tela
                 document.querySelectorAll('select[name="item_id"]').forEach(s => {
                     if (s.tomselect) {
                         s.tomselect.addOption({value: novo.id, text: novo.nome});
@@ -275,9 +297,15 @@
                     }
                 });
 
-                bootstrap.Modal.getInstance(document.getElementById('modalNovoProduto')).hide();
+                // Fecha modal e limpa
+                const modalEl = document.getElementById('modalNovoProduto');
+                bootstrap.Modal.getInstance(modalEl).hide();
                 input.value = '';
+
+                // Procura o select que estava vazio (último adicionado) ou cria nova linha com ele selecionado
+                // Aqui opto por criar uma nova linha já com ele, para facilitar
                 adicionarLinha(novo.id);
+
             } else {
                 exibirAviso('Erro ao salvar produto.');
             }
@@ -288,11 +316,11 @@
         const res = await fetch('/processos/api/itens');
         if (res.ok) {
             produtosCache = await res.json();
-            location.reload(); 
+            location.reload();
         }
     }
 
-    <% if (typeof body === 'undefined' || !body.item_id) { %>
+    <% if (typeof formData === 'undefined' || !formData.item_id) { %>
         document.addEventListener('DOMContentLoaded', () => adicionarLinha());
     <% } %>
 </script>

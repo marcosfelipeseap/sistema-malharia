@@ -7,22 +7,40 @@ exports.getAllItensDisponiveis = async () => {
 };
 
 exports.getAllProcessos = async (busca = '') => {
+    // Agora buscamos também os itens relacionados renomeando para 'itens'
     let query = supabase
         .schema('malharia')
         .from(TABLE)
-        .select('*')
+        .select('*, itens:processo_item(*)') 
         .order('data_entrada', { ascending: false });
 
     if (busca) {
-        query = query.or(`numero_processo.ilike.%${busca}%,orgao.ilike.%${busca}%`);
+        // Ajuste para filtrar corretamente mesmo trazendo itens
+        query = query.or(`numero_processo.ilike.%${busca}%,orgao.ilike.%${busca}%,situacao.ilike.%${busca}%`);
     }
 
     const { data, error } = await query;
     if (error) throw error;
-    return data;
+
+    // Processa os dados para adicionar o objeto 'totais' em cada processo
+    const processosComTotais = data.map(p => {
+        const totais = (p.itens || []).reduce((acc, item) => {
+            return {
+                solicitado: acc.solicitado + (item.qtd_solicitada || 0),
+                autorizado: acc.autorizado + (item.qtd_autorizada || 0),
+                entregue: acc.entregue + (item.qtd_entregue || 0),
+                faltante: acc.faltante + (item.qtd_faltante || 0)
+            };
+        }, { solicitado: 0, autorizado: 0, entregue: 0, faltante: 0 });
+
+        return { ...p, totais };
+    });
+
+    return processosComTotais;
 };
 
 exports.getProcessoById = async (id) => {
+    // Busca dados do processo
     const { data: processo, error } = await supabase
         .schema('malharia')
         .from(TABLE)
@@ -32,6 +50,7 @@ exports.getProcessoById = async (id) => {
     
     if (error) throw error;
 
+    // Busca itens detalhados com o nome do produto
     const { data: itens } = await supabase
         .schema('malharia')
         .from('processo_item')
