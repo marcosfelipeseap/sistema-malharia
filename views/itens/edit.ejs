@@ -1,55 +1,69 @@
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+<div class="d-flex justify-content-between pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Editar Item</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/itens" class="btn btn-sm btn-secondary">Voltar</a>
-    </div>
+    <a href="/itens" class="btn btn-secondary btn-sm">Cancelar</a>
 </div>
 
-<div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card">
-            <div class="card-body">
-                <form action="/itens/<%= item.id %>/update" method="POST">
-                    <div class="mb-3">
-                        <label for="nome" class="form-label">Nome do Item/Insumo</label>
-                        <input type="text" class="form-control" id="nome" name="nome" value="<%= item.nome %>" required>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="tipo" class="form-label">Tipo</label>
-                            <select class="form-select" id="tipo" name="tipo">
-                                <option value="Matéria Prima" <%= item.tipo === 'Matéria Prima' ? 'selected' : '' %>>Matéria Prima</option>
-                                <option value="Produto Intermediário" <%= item.tipo === 'Produto Intermediário' ? 'selected' : '' %>>Produto Intermediário</option>
-                                <option value="Produto Final" <%= item.tipo === 'Produto Final' ? 'selected' : '' %>>Produto Final</option>
-                                <option value="Consumível" <%= item.tipo === 'Consumível' ? 'selected' : '' %>>Consumível</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="unidade_medida" class="form-label">Unidade de Medida</label>
-                            <select class="form-select" id="unidade_medida" name="unidade_medida">
-                                <option value="KG" <%= item.unidade_medida === 'KG' ? 'selected' : '' %>>Quilograma (KG)</option>
-                                <option value="UN" <%= item.unidade_medida === 'UN' ? 'selected' : '' %>>Unidade (UN)</option>
-                                <option value="MT" <%= item.unidade_medida === 'MT' ? 'selected' : '' %>>Metro (MT)</option>
-                                <option value="RL" <%= item.unidade_medida === 'RL' ? 'selected' : '' %>>Rolo (RL)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="estoque_atual" class="form-label">Estoque Atual</label>
-                            <input type="number" step="0.01" class="form-control" id="estoque_atual" name="estoque_atual" value="<%= item.estoque_atual %>">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="custo_unitario" class="form-label">Custo Unitário (R$)</label>
-                            <input type="number" step="0.01" class="form-control" id="custo_unitario" name="custo_unitario" value="<%= item.custo_unitario %>">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Atualizar Item</button>
-                </form>
+<form action="/itens/<%= item.id %>/update" method="POST">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="card-title text-secondary mb-3"><i class="bi bi-box-seam"></i> Informações Básicas</h6>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Nome do Produto</label>
+                    <input type="text" class="form-control" name="nome" required value="<%= item.nome %>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Meta por Máquina (Dia)</label>
+                    <input type="number" class="form-control" name="meta_diaria" min="0" required
+                           value="<%= item.meta_diaria || 0 %>">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label fw-bold">Descrição</label>
+                    <input type="text" class="form-control" name="descricao" value="<%= item.descricao %>">
+                </div>
             </div>
         </div>
     </div>
-</div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 text-secondary"><i class="bi bi-gear-wide-connected"></i> Máquinas Compatíveis</h6>
+        </div>
+        <div class="card-body">
+            <% if (maquinas.length === 0) { %>
+                <div class="alert alert-warning small">Nenhuma máquina cadastrada.</div>
+            <% } else { %>
+                <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-3">
+                    <% 
+                        // Cria um Set com os IDs das máquinas já vinculadas para busca rápida
+                        const vinculadas = new Set(item.maquinas.map(v => v.maquinario_id));
+                    %>
+                    <% maquinas.forEach(m => { %>
+                        <div class="col">
+                            <div class="form-check p-2 border rounded hover-bg-light 
+                                        <%= vinculadas.has(m.id) ? 'border-primary bg-light' : '' %>">
+                                <input class="form-check-input ms-1" type="checkbox" 
+                                       name="maquina_id[]" value="<%= m.id %>" id="maq_<%= m.id %>"
+                                       <%= vinculadas.has(m.id) ? 'checked' : '' %>>
+                                <label class="form-check-label fw-bold ms-2 w-75" for="maq_<%= m.id %>" style="cursor: pointer;">
+                                    <%= m.nome %>
+                                    <% if(m.tipo) { %>
+                                        <div class="small text-muted fw-normal"><%= m.tipo.nome %></div>
+                                    <% } %>
+                                </label>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="text-end">
+        <button type="submit" class="btn btn-primary px-4 fw-bold">Salvar Alterações</button>
+    </div>
+</form>
+
+<style>
+    .hover-bg-light:hover { background-color: #f8f9fa; }
+</style>

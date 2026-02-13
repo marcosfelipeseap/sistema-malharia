@@ -1,16 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const itensController = require('../controllers/itens.controller');
+const controller = require('../controllers/itens.controller');
 
-// Rota API para criação via Modal (AJAX) - ADICIONE ESTA LINHA
-router.post('/api', itensController.apiStore);
+// 1. Rota de API (Para criação rápida via modal em outras telas)
+// Deve vir antes das rotas com :id para não confundir
+router.post('/api', controller.apiStore);
 
-// Rotas Padrão
-router.get('/', itensController.index);
-router.get('/create', itensController.create);
-router.post('/', itensController.store);
-router.get('/:id/edit', itensController.edit);
-router.post('/:id', itensController.update);
-router.post('/:id/delete', itensController.destroy);
+// 2. Rotas Principais (CRUD)
+router.get('/', controller.index);           // Lista itens
+router.get('/create', controller.create);    // Formulário de criação
+router.post('/', controller.store);          // Salva novo item
+
+// 3. Rotas com ID (Edição e Exclusão)
+router.get('/:id/edit', controller.edit);    // Formulário de edição
+router.post('/:id/update', controller.update); // Salva alterações
+router.post('/:id/delete', controller.destroy); // Exclui item
 
 module.exports = router;
