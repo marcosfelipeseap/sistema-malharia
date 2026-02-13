@@ -1,19 +1,18 @@
 const supabase = require('../config/supabaseClient');
 
 const TABLE = 'malharia';
+const TABLE_ITEMS = 'malharia_item';
 
-// Busca todas as malharias, idealmente trazendo dados da unidade relacionada (join simples via query se necessário, ou ID)
 exports.getAllMalharias = async () => {
-    // Nota: O Supabase permite joins com select('*, unidade(nome)'). 
-    // Assumindo relacionamento FK configurado no banco: malharia.unidade_id -> unidade.id
+    // ALTERAÇÃO AQUI: Mudamos unidade:unidade_id ( nome, cidade ) para ( * )
+    // Assim temos acesso ao endereço, telefone, lat, lon da unidade na tela de malharias
     const { data, error } = await supabase
         .schema('malharia')
         .from(TABLE)
         .select(`
             *,
-            unidade:unidade_id (
-                nome
-            )
+            unidade:unidade_id ( * ),
+            itens:malharia_item ( id ) 
         `)
         .order('nome', { ascending: true });
 
@@ -21,11 +20,21 @@ exports.getAllMalharias = async () => {
     return data;
 };
 
+// ... O resto do arquivo continua igual ...
 exports.getMalhariaById = async (id) => {
     const { data, error } = await supabase
         .schema('malharia')
         .from(TABLE)
-        .select('*')
+        .select(`
+            *,
+            itens:malharia_item (
+                *,
+                maquinario:maquinario_id ( 
+                    nome,
+                    tipo:tipo_id ( nome ) 
+                )
+            )
+        `)
         .eq('id', id)
         .single();
 
@@ -33,27 +42,62 @@ exports.getMalhariaById = async (id) => {
     return data;
 };
 
-exports.createMalharia = async (malhariaData) => {
-    const { data, error } = await supabase
+exports.createMalharia = async (dadosMalharia, listaItens) => {
+    const { data: malharia, error: errMalharia } = await supabase
         .schema('malharia')
         .from(TABLE)
-        .insert([malhariaData])
-        .select();
+        .insert([dadosMalharia])
+        .select()
+        .single();
 
-    if (error) throw error;
-    return data;
+    if (errMalharia) throw errMalharia;
+
+    if (listaItens && listaItens.length > 0) {
+        const itensParaSalvar = listaItens.map(item => ({
+            malharia_id: malharia.id,
+            maquinario_id: item.maquinario_id,
+            modelo: item.modelo,
+            numero_serie: item.numero_serie,
+            status: item.status || 'disponivel'
+        }));
+
+        const { error: errItens } = await supabase
+            .schema('malharia')
+            .from(TABLE_ITEMS)
+            .insert(itensParaSalvar);
+            
+        if (errItens) throw errItens;
+    }
+    return malharia;
 };
 
-exports.updateMalharia = async (id, malhariaData) => {
-    const { data, error } = await supabase
+exports.updateMalharia = async (id, dadosMalharia, listaItens) => {
+    const { error: errUpdate } = await supabase
         .schema('malharia')
         .from(TABLE)
-        .update(malhariaData)
-        .eq('id', id)
-        .select();
+        .update(dadosMalharia)
+        .eq('id', id);
 
-    if (error) throw error;
-    return data;
+    if (errUpdate) throw errUpdate;
+
+    await supabase.schema('malharia').from(TABLE_ITEMS).delete().eq('malharia_id', id);
+
+    if (listaItens && listaItens.length > 0) {
+        const itensParaSalvar = listaItens.map(item => ({
+            malharia_id: id,
+            maquinario_id: item.maquinario_id,
+            modelo: item.modelo,
+            numero_serie: item.numero_serie,
+            status: item.status
+        }));
+        const { error: errItens } = await supabase
+            .schema('malharia')
+            .from(TABLE_ITEMS)
+            .insert(itensParaSalvar);
+
+        if (errItens) throw errItens;
+    }
+    return true;
 };
 
 exports.deleteMalharia = async (id) => {
@@ -62,7 +106,6 @@ exports.deleteMalharia = async (id) => {
         .from(TABLE)
         .delete()
         .eq('id', id);
-
     if (error) throw error;
     return true;
 };

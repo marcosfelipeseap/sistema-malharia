@@ -1,82 +1,103 @@
 const malhariasService = require('../services/malharias.service');
 const unidadesService = require('../services/unidades.service');
+const maquinariosService = require('../services/maquinarios.service');
 
 exports.index = async (req, res) => {
     try {
         const malharias = await malhariasService.getAllMalharias();
-        res.render('malharias/index', { 
-            title: 'Gestão de Malharias', 
-            malharias 
-        });
+        res.render('malharias/index', { title: 'Gerenciar Malharias', malharias });
     } catch (error) {
         console.error(error);
-        res.render('partials/alerts', { message: 'Erro ao listar malharias', type: 'danger' });
+        res.render('malharias/index', { title: 'Gerenciar Malharias', malharias: [], error: 'Erro ao listar.' });
     }
 };
 
 exports.create = async (req, res) => {
     try {
-        // Precisamos das unidades para o select box
         const unidades = await unidadesService.getAllUnidades();
+        let maquinarios = [];
+        try {
+            maquinarios = await maquinariosService.getAllMaquinas();
+        } catch (e) {
+            console.error("Aviso: Falha ao carregar maquinários:", e.message);
+        }
+        
         res.render('malharias/create', { 
-            title: 'Nova Malharia', 
-            unidades 
+            title: 'Nova Malharia',
+            unidades: unidades || [],
+            maquinarios: maquinarios || []
         });
     } catch (error) {
-        console.error(error);
-        res.redirect('/malharias');
+        console.error("Erro no Create:", error);
+        res.send(`Erro ao abrir página: ${error.message}`);
     }
 };
 
 exports.store = async (req, res) => {
     try {
-        const { nome, tipo, capacidade_mensal, unidade_id } = req.body;
+        const { nome, unidade_id, responsavel, num_internos, num_internos_remunerados, itensJSON } = req.body;
         
+        // Validação Simples
+        if (parseInt(num_internos_remunerados) > parseInt(num_internos)) {
+            throw new Error("O número de internos remunerados não pode ser maior que o total de internos.");
+        }
+
+        let listaItens = [];
+        if (itensJSON) listaItens = JSON.parse(itensJSON);
+
         await malhariasService.createMalharia({
             nome,
-            tipo, // Ex: Fiação, Tecelagem, Tinturaria
-            capacidade_mensal,
-            unidade_id // FK para tabela unidade
-        });
+            unidade_id,
+            responsavel,
+            num_internos: parseInt(num_internos) || 0,
+            num_internos_remunerados: parseInt(num_internos_remunerados) || 0
+        }, listaItens);
 
         res.redirect('/malharias');
     } catch (error) {
         console.error(error);
-        const unidades = await unidadesService.getAllUnidades(); // Recarrega em caso de erro
-        res.render('malharias/create', { 
-            title: 'Nova Malharia', 
-            unidades,
-            error: 'Erro ao cadastrar malharia' 
-        });
+        // Idealmente renderizaria a view create com o erro, mas para simplificar o redirect:
+        res.redirect('/malharias/create'); 
     }
 };
 
 exports.edit = async (req, res) => {
     try {
         const { id } = req.params;
-        const malharia = await malhariasService.getMalhariaById(id);
-        const unidades = await unidadesService.getAllUnidades();
-        
-        if (!malharia) return res.redirect('/malharias');
+        let malharia = await malhariasService.getMalhariaById(id);
+        if (!malharia) return res.status(404).send('Malharia não encontrada.');
 
-        res.render('malharias/edit', { title: 'Editar Malharia', malharia, unidades });
+        const unidades = await unidadesService.getAllUnidades();
+        let maquinarios = [];
+        try { maquinarios = await maquinariosService.getAllMaquinas(); } catch(e) {}
+
+        res.render('malharias/edit', { title: 'Editar Malharia', malharia, unidades, maquinarios });
+
     } catch (error) {
-        console.error(error);
-        res.redirect('/malharias');
+        console.error('ERRO NO EDIT:', error);
+        res.status(500).send(`Erro: ${error.message} <br><a href="/malharias">Voltar</a>`);
     }
 };
 
 exports.update = async (req, res) => {
     try {
         const { id } = req.params;
-        const { nome, tipo, capacidade_mensal, unidade_id } = req.body;
+        const { nome, unidade_id, responsavel, num_internos, num_internos_remunerados, itensJSON } = req.body;
+
+        if (parseInt(num_internos_remunerados) > parseInt(num_internos)) {
+             // Em um cenário real, você passaria esse erro para a view
+             console.error("Erro de validação: Remunerados > Total");
+        }
+
+        let listaItens = itensJSON ? JSON.parse(itensJSON) : [];
 
         await malhariasService.updateMalharia(id, {
             nome,
-            tipo,
-            capacidade_mensal,
-            unidade_id
-        });
+            unidade_id,
+            responsavel,
+            num_internos: parseInt(num_internos) || 0,
+            num_internos_remunerados: parseInt(num_internos_remunerados) || 0
+        }, listaItens);
 
         res.redirect('/malharias');
     } catch (error) {
@@ -87,11 +108,9 @@ exports.update = async (req, res) => {
 
 exports.destroy = async (req, res) => {
     try {
-        const { id } = req.params;
-        await malhariasService.deleteMalharia(id);
+        await malhariasService.deleteMalharia(req.params.id);
         res.redirect('/malharias');
     } catch (error) {
-        console.error(error);
         res.redirect('/malharias');
     }
 };
