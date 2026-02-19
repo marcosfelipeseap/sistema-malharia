@@ -5,16 +5,9 @@ const itensService = require('../services/itens.service');
 
 exports.index = async (req, res) => {
     try {
-        // Pega a data da URL ou usa a data de hoje como padrão
         const dataBusca = req.query.data || new Date().toISOString().split('T')[0];
-        
-        // Procura registos APENAS da data selecionada
         const registros = await registrosService.getRegistrosByData(dataBusca);
-        
-        // Pega todas as malharias ativas do sistema
         const todasMalharias = await malhariasService.getAllMalharias();
-        
-        // Filtra quais malharias ainda NÃO têm registo nesta data
         const malhariasComRegistroIds = registros.map(r => r.malharia_id);
         const malhariasPendentes = todasMalharias.filter(m => !malhariasComRegistroIds.includes(m.id));
 
@@ -37,7 +30,7 @@ exports.edit = async (req, res) => {
         const processos = await processosService.getAllProcessos();
         const malharias = await malhariasService.getAllMalharias();
         const justificativas = await registrosService.getTiposJustificativa();
-        const todosItens = await require('../services/itens.service').getAllItens(); // Chama o service de itens
+        const todosItens = await require('../services/itens.service').getAllItens(); 
         
         res.render('registros/edit', { 
             title: 'Editar Apontamento',
@@ -78,15 +71,18 @@ exports.update = async (req, res) => {
                 itensProduzidos.push({
                     processo_id: processos_ids[i],
                     item_id: itens_ids[i],
-                    qtd_produzida: parseInt(qtds_produzidas[i])
+                    qtd_produzida: parseInt(qtds_produzidas[i]) || 0
                 });
             }
         } else if (processos_ids) {
-            itensProduzidos.push({ processo_id: processos_ids, item_id: itens_ids, qtd_produzida: parseInt(qtds_produzidas) });
+            itensProduzidos.push({ 
+                processo_id: processos_ids, 
+                item_id: itens_ids, 
+                qtd_produzida: parseInt(qtds_produzidas) || 0
+            });
         }
 
         await registrosService.updateRegistroComItens(id, dadosRegistro, itensProduzidos);
-        // Redireciona de volta para o calendário no mesmo dia que foi editado
         res.redirect(`/registros?data=${data_registro}`);
     } catch (error) {
         console.error(error);
@@ -99,14 +95,14 @@ exports.create = async (req, res) => {
         const processos = await processosService.getAllProcessos();
         const malharias = await malhariasService.getAllMalharias();
         const justificativas = await registrosService.getTiposJustificativa();
-        const todosItens = await itensService.getAllItens(); // Para pegar dados de meta e maquinários
+        const todosItens = await itensService.getAllItens(); 
         
         res.render('registros/create', { 
             title: 'Novo Apontamento',
             processos,
             malharias,
             justificativas,
-            todosItensJSON: JSON.stringify(todosItens) // Passa pro frontend calcular metas
+            todosItensJSON: JSON.stringify(todosItens) 
         });
     } catch (error) {
         console.error(error);
@@ -133,18 +129,21 @@ exports.store = async (req, res) => {
             criado_por: req.user ? req.user.id : null
         };
 
-        // Formata os arrays do form em objetos
         let itensProduzidos = [];
         if (Array.isArray(processos_ids)) {
             for(let i=0; i < processos_ids.length; i++){
                 itensProduzidos.push({
                     processo_id: processos_ids[i],
                     item_id: itens_ids[i],
-                    qtd_produzida: qtds_produzidas[i]
+                    qtd_produzida: parseInt(qtds_produzidas[i]) || 0
                 });
             }
         } else if (processos_ids) {
-            itensProduzidos.push({ processo_id: processos_ids, item_id: itens_ids, qtd_produzida: qtds_produzidas });
+            itensProduzidos.push({ 
+                processo_id: processos_ids, 
+                item_id: itens_ids, 
+                qtd_produzida: parseInt(qtds_produzidas) || 0
+            });
         }
 
         await registrosService.createRegistroComItens(dadosRegistro, itensProduzidos);
@@ -155,7 +154,6 @@ exports.store = async (req, res) => {
     }
 };
 
-// --- APIs para o Frontend ---
 exports.getMalhariaInfo = async (req, res) => {
     try {
         const malharia = await malhariasService.getMalhariaById(req.params.id);
@@ -165,37 +163,8 @@ exports.getMalhariaInfo = async (req, res) => {
     }
 };
 
-exports.getSugestoes = async (req, res) => {
-    // Retorna processos inacabados que tiveram apontamento recente nesta malharia
-    try {
-        const { data, error } = await require('../config/supabaseClient')
-            .schema('malharia')
-            .rpc('get_processos_sugeridos_malharia', { p_malharia_id: req.params.malharia_id }); // RPC ideal, mas faremos via query direta abaixo para facilitar
-        
-        // Forma simples sem RPC:
-        const { data: registrosAntigos } = await require('../config/supabaseClient')
-            .schema('malharia')
-            .from('registro_diario')
-            .select('itens:registro_diario_item(processo:processo_id(id, numero_processo, orgao))')
-            .eq('malharia_id', req.params.malharia_id)
-            .order('data_registro', { ascending: false })
-            .limit(5);
+// getSugestoes removido pois não é mais usado na interface
 
-        // Extrai processos únicos
-        let processos = [];
-        registrosAntigos?.forEach(reg => {
-            reg.itens.forEach(item => {
-                if(!processos.find(p => p.id === item.processo.id)) processos.push(item.processo);
-            });
-        });
-
-        res.json(processos);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Método para excluir um registro
 exports.destroy = async (req, res) => {
     try {
         const { id } = req.params;

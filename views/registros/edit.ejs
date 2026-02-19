@@ -28,9 +28,6 @@
                                     <option value="<%= mal.id %>" data-internos="<%= mal.num_internos || 0 %>"><%= mal.nome %></option>
                                 <% }); %>
                             </select>
-                            <small class="text-muted" id="sugestoesBox" style="display:none;">
-                                Sugestões p/ hoje: <span id="sugestoesTags" class="text-primary"></span>
-                            </small>
                         </div>
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Internos a Trabalhar</label>
@@ -39,56 +36,36 @@
                         </div>
                     </div>
 
-                    <h5 class="card-title text-primary border-bottom pb-2">Produção do Dia</h5>
-                    <div class="row bg-light p-3 rounded mb-3 border">
-                        <div class="col-md-5 mb-2">
-                            <label class="form-label">Processo (Órgão)</label>
-                            <select class="form-select" id="select_processo">
-                                <option value="">Selecione o Processo</option>
-                                <% 
-                                    const processosPendentes = processos.filter(p => {
-                                        const statusConcluido = p.situacao === 'Concluído' || p.situacao === 'Finalizado';
-                                        const semDemanda = p.totais && p.totais.faltante <= 0;
-                                        return !statusConcluido && !semDemanda;
-                                    });
-                                    processosPendentes.forEach(function(proc) { 
-                                %>
-                                    <option value="<%= proc.id %>" data-orgao="<%= proc.orgao %>">
-                                        <%= proc.numero_processo %> - <%= proc.orgao %>
-                                    </option>
-                                <% }); %>
-                            </select>
+                    <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
+                   
+                    <div class="row bg-light p-3 rounded mb-3 border align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
+                            <small class="text-muted">Altere abaixo as quantidades registadas para o que efetivamente foi produzido hoje ou adicione novos produtos.</small>
                         </div>
-                        <div class="col-md-4 mb-2">
-                            <label class="form-label">Produto</label>
-                            <select class="form-select" id="select_produto" disabled>
-                                <option value="">Selecione primeiro o Processo</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 mb-2">
-                            <label class="form-label">Qtd Produzida</label>
-                            <input type="number" class="form-control" id="input_qtd" min="1">
-                        </div>
-                        <div class="col-md-1 mb-2 d-flex align-items-end">
-                            <button type="button" class="btn btn-success w-100" onclick="adicionarProducao()"><i class="bi bi-plus-lg"></i></button>
+                        <div class="col-md-4 text-end">
+                            <button type="button" class="btn btn-success" onclick="abrirModalBusca()">
+                                <i class="bi bi-search"></i> Buscar Produtos
+                            </button>
                         </div>
                     </div>
 
                     <table class="table table-bordered table-sm" id="tabelaProducao">
                         <thead class="table-dark">
                             <tr>
-                                <th>Processo</th>
+                                <th>Órgão</th>
                                 <th>Produto</th>
-                                <th>Qtd Produzida</th>
-                                <th class="text-center">Ações</th>
+                                <th>Descrição</th>
+                                <th style="width: 150px;" class="text-center">Qtd Produzida</th>
+                                <th class="text-center" style="width: 80px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            </tbody>
+                        </tbody>
                         <tfoot class="table-light">
                             <tr>
-                                <td colspan="2" class="text-end fw-bold">Meta Calculada:</td>
-                                <td colspan="2">
+                                <td colspan="3" class="text-end fw-bold align-middle">Meta Calculada:</td>
+                                <td colspan="2" class="align-middle">
                                     <span id="displayMeta" class="badge bg-primary fs-5" style="cursor:help;" onclick="mostrarExplicacaoMeta()">0</span>
                                     <span class="ms-2 text-muted" style="font-size: 0.8em; cursor:help;" onclick="mostrarExplicacaoMeta()">(Clique para entender)</span>
                                     <input type="hidden" name="meta_calculada" id="meta_calculada" value="<%= registro.meta_calculada %>">
@@ -96,15 +73,15 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td colspan="2" class="text-end fw-bold">Total Produzido Hoje:</td>
-                                <td colspan="2"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
+                                <td colspan="3" class="text-end fw-bold align-middle">Total Produzido Hoje:</td>
+                                <td colspan="2" class="align-middle"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
                             </tr>
                         </tfoot>
                     </table>
 
-                    <div id="boxJustificativa" class="mb-3 p-3 bg-warning bg-opacity-10 border border-warning rounded" style="display: none;">
-                        <label class="form-label fw-bold text-warning-emphasis"><i class="bi bi-exclamation-triangle"></i> Meta Não Atingida. Informe o motivo:</label>
-                        <select class="form-select border-warning" name="justificativa_id" id="justificativa_id">
+                    <div id="boxJustificativa" class="mb-3 p-3 border rounded" style="display: none;">
+                        <label id="justificativaLabel" class="form-label fw-bold"></label>
+                        <select class="form-select" name="justificativa_id" id="justificativa_id">
                             <option value="">Selecione a Justificativa...</option>
                             <% justificativas.forEach(function(just) { %>
                                 <option value="<%= just.id %>"><%= just.nome %></option>
@@ -120,7 +97,7 @@
                     <div class="text-end">
                         <button type="submit" class="btn btn-primary btn-lg px-5"><i class="bi bi-save"></i> Atualizar Apontamento</button>
                     </div>
-                </form>
+                 </form>
             </div>
         </div>
     </div>
@@ -140,6 +117,42 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalBuscaProdutos" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-search"></i> Selecionar Produtos para Produção</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="inputBuscaProduto" class="form-control form-control-lg" placeholder="Buscar por órgão, nome ou descrição do produto..." onkeyup="filtrarModalProdutos()">
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm border" id="tabelaModalProdutos">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;" class="text-center">
+                                    <input type="checkbox" class="form-check-input" id="checkAllModal" onclick="toggleAllModal(this)">
+                                </th>
+                                <th>Órgão</th>
+                                <th>Produto</th>
+                                <th>Descrição</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyModalProdutos">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success px-4" onclick="adicionarProdutosSelecionados()"><i class="bi bi-check-lg"></i> Adicionar Selecionados</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -149,48 +162,75 @@
     
     let maquinasDaMalharia = []; 
     let maxInternos = 0;
-    let isCarregamentoInicial = true; // Flag para proteger os dados na primeira vez
+    let isCarregamentoInicial = true;
+    let combinacoesDisponiveis = [];
+
+    // Função para evitar que aspas e caracteres especiais quebrem o HTML
+    function escapeHTML(str) {
+        if (!str || str.trim() === '') return '-';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
     
-    // MÁGICA DA EDIÇÃO: Injetamos os produtos que já estavam guardados na base de dados!
+    // Injetar os itens do banco de dados na lista temporária
     let listaProducao = [
         <% registro.itens.forEach((item) => { %>
             {
                 processo_id: '<%= item.processo_id %>',
-                nomeProcesso: '<%= item.processo.numero_processo %>',
                 item_id: '<%= item.item_id %>',
-                nomeProduto: '<%= item.item.nome %>',
-                qtd: parseInt('<%= item.qtd_produzida %>')
+                qtd: parseInt('<%= item.qtd_produzida %>') || 0
             },
         <% }) %>
-    ]; 
+    ];
+
+    // Enriquecer a lista com dados de Órgão, Nome e Descrição dinamicamente através do ID
+    listaProducao.forEach(prod => {
+        const p = todosProcessos.find(x => String(x.id) === String(prod.processo_id));
+        const i = todosItens.find(x => String(x.id) === String(prod.item_id));
+        
+        // Procurar a descrição específica dentro dos itens do processo
+        let desc = '-';
+        if (p && p.itens) {
+            const itemNoProcesso = p.itens.find(x => String(x.item_id) === String(prod.item_id));
+            if (itemNoProcesso && itemNoProcesso.descricao) {
+                desc = itemNoProcesso.descricao;
+            }
+        }
+        // Se não houver descrição no processo, tenta pegar do cadastro geral do item
+        if (desc === '-' && i && i.descricao) {
+            desc = i.descricao;
+        }
+
+        prod.orgao = p ? p.orgao : 'N/A';
+        prod.nomeProduto = i ? i.nome : 'Sem Nome';
+        prod.descricao = desc;
+    });
 
     $(document).ready(function() {
-        $('#malharia_id, #select_processo, #select_produto, #justificativa_id').select2({ theme: 'bootstrap-5', width: '100%' });
-        $('#select_processo').on('change', function() { carregarProdutosDoProcesso($(this).val()); });
+        $('#malharia_id, #justificativa_id').select2({ theme: 'bootstrap-5', width: '100%' });
         
-        // Dispara o carregamento inicial selecionando a Malharia correta
         $('#malharia_id').val('<%= registro.malharia_id %>').trigger('change');
         
-        // Se havia justificativa, preenche a mesma
         if('<%= registro.justificativa_id %>') {
             $('#justificativa_id').val('<%= registro.justificativa_id %>').trigger('change');
         }
 
-        // Desenha a tabela com os itens injetados
         atualizarTabela();
     });
 
     async function carregarDadosMalharia() {
         const selectMal = document.getElementById('malharia_id');
         const selectedOption = selectMal.options[selectMal.selectedIndex];
-        
         maxInternos = parseInt(selectedOption.getAttribute('data-internos')) || 0;
         
         const inputInternos = document.getElementById('qtd_internos');
         inputInternos.max = maxInternos;
         inputInternos.placeholder = `Máx: ${maxInternos}`;
         
-        // Evita apagar a quantidade de internos que veio da base de dados ao recarregar a página
         if (!isCarregamentoInicial) {
             inputInternos.value = '';
         }
@@ -198,12 +238,11 @@
         try {
             const res = await fetch(`/registros/api/malharia-info/${selectMal.value}`);
             const data = await res.json();
-            maquinasDaMalharia = data.itens || []; 
+            maquinasDaMalharia = data.itens || [];
         } catch (e) {
             console.error("Erro ao procurar máquinas:", e);
         }
 
-        buscarSugestoes(selectMal.value);
         recalcularMeta();
         isCarregamentoInicial = false;
     }
@@ -219,64 +258,109 @@
         }
     }
 
-    async function buscarSugestoes(malharia_id) {
-        try {
-            const res = await fetch(`/registros/api/sugestoes/${malharia_id}`);
-            const data = await res.json();
-            const box = document.getElementById('sugestoesBox');
-            const tags = document.getElementById('sugestoesTags');
-            if(data && data.length > 0) {
-                tags.innerHTML = data.map(p => `<a href="#" onclick="$('#select_processo').val('${p.id}').trigger('change'); return false;">${p.numero_processo}</a>`).join(', ');
-                box.style.display = 'block';
-            } else {
-                box.style.display = 'none';
+    function abrirModalBusca(filtroInicial = '') {
+        combinacoesDisponiveis = [];
+        todosProcessos.forEach(p => {
+            const statusConcluido = p.situacao === 'Concluído' || p.situacao === 'Finalizado';
+            const semDemanda = p.totais && p.totais.faltante <= 0;
+            if(!statusConcluido && !semDemanda && p.itens) {
+                p.itens.forEach(pi => {
+                    const dadosItem = todosItens.find(i => String(i.id) === String(pi.item_id));
+                    if(dadosItem) {
+                        // Tenta pegar a descrição do processo primeiro, senão vai à do item
+                        const descricaoFinal = pi.descricao || dadosItem.descricao || '-';
+
+                        combinacoesDisponiveis.push({
+                            processo_id: p.id,
+                            orgao: p.orgao || 'N/A',
+                            item_id: dadosItem.id,
+                            nome_produto: dadosItem.nome || 'Sem Nome',
+                            descricao: descricaoFinal,
+                            id_unico: `${p.id}_${dadosItem.id}`
+                        });
+                    }
+                });
             }
-        } catch (e) { console.error(e); }
-    }
-
-    function carregarProdutosDoProcesso(procId) {
-        const $selectProd = $('#select_produto');
-        $selectProd.empty().append('<option value="">Selecione o Produto</option>');
-        
-        if(!procId) { $selectProd.prop('disabled', true).trigger('change'); return; }
-
-        const processo = todosProcessos.find(p => p.id == procId);
-        
-        if(processo && processo.itens) {
-            processo.itens.forEach(pi => {
-                const dadosItem = todosItens.find(i => String(i.id) === String(pi.item_id));
-                if(dadosItem) {
-                    $selectProd.append(new Option(dadosItem.nome, dadosItem.id, false, false));
-                }
-            });
-            $selectProd.prop('disabled', false).trigger('change');
-        }
-    }
-
-    function adicionarProducao() {
-        const procId = $('#select_processo').val();
-        const prodId = $('#select_produto').val();
-        const inputQtd = $('#input_qtd').val();
-
-        if(!procId || !prodId || !inputQtd || inputQtd <= 0) {
-            alert("Preencha Processo, Produto e Quantidade corretamente."); return;
-        }
-
-        const nomeProcesso = $('#select_processo option:selected').text();
-        const nomeProduto = $('#select_produto option:selected').text();
-
-        listaProducao.push({
-            processo_id: procId,
-            nomeProcesso: nomeProcesso,
-            item_id: prodId,
-            nomeProduto: nomeProduto,
-            qtd: parseInt(inputQtd)
         });
-
-        atualizarTabela();
         
-        $('#select_produto').val('').trigger('change');
-        $('#input_qtd').val('');
+        renderizarModalProdutos();
+        $('#modalBuscaProdutos').modal('show');
+        
+        if (filtroInicial) {
+            setTimeout(() => {
+                $('#inputBuscaProduto').val(filtroInicial);
+                filtrarModalProdutos();
+            }, 300);
+        } else {
+            $('#inputBuscaProduto').val('');
+            filtrarModalProdutos();
+        }
+    }
+
+    function renderizarModalProdutos() {
+        const tbody = $('#tbodyModalProdutos');
+        tbody.empty();
+        
+        if(combinacoesDisponiveis.length === 0) {
+            tbody.append('<tr><td colspan="4" class="text-center text-muted py-3">Nenhum produto pendente encontrado.</td></tr>');
+            return;
+        }
+
+        combinacoesDisponiveis.forEach(comb => {
+            const jaAdicionado = listaProducao.some(lp => lp.processo_id == comb.processo_id && lp.item_id == comb.item_id);
+            if(!jaAdicionado) {
+                tbody.append(`
+                    <tr>
+                        <td class="text-center align-middle">
+                            <input type="checkbox" class="form-check-input check-produto" value="${comb.id_unico}">
+                        </td>
+                        <td class="busca-texto align-middle fw-bold">${escapeHTML(comb.orgao)}</td>
+                        <td class="busca-texto align-middle">${escapeHTML(comb.nome_produto)}</td>
+                        <td class="busca-texto align-middle text-muted small">${escapeHTML(comb.descricao)}</td>
+                    </tr>
+                `);
+            }
+        });
+    }
+
+    function filtrarModalProdutos() {
+        const termo = $('#inputBuscaProduto').val().toLowerCase();
+        $('#tbodyModalProdutos tr').each(function() {
+            const textoLinha = $(this).find('.busca-texto').text().toLowerCase();
+            $(this).toggle(textoLinha.includes(termo));
+        });
+    }
+
+    function toggleAllModal(source) {
+        $('.check-produto:visible').prop('checked', source.checked);
+    }
+
+    function adicionarProdutosSelecionados() {
+        const selecionados = $('.check-produto:checked');
+        if(selecionados.length === 0) {
+            alert("Selecione pelo menos um produto.");
+            return;
+        }
+        
+        selecionados.each(function() {
+            const idUnicoSelecionado = $(this).val();
+            // Busca os dados diretamente da memória usando o ID único
+            const comb = combinacoesDisponiveis.find(c => c.id_unico === idUnicoSelecionado);
+
+            if (comb) {
+                listaProducao.push({
+                    processo_id: comb.processo_id,
+                    orgao: comb.orgao,
+                    item_id: comb.item_id,
+                    nomeProduto: comb.nome_produto,
+                    descricao: comb.descricao,
+                    qtd: 0 
+                });
+            }
+        });
+        
+        atualizarTabela();
+        $('#modalBuscaProdutos').modal('hide');
     }
 
     function removerProducao(index) {
@@ -287,37 +371,49 @@
     function atualizarTabela() {
         const tbody = document.querySelector('#tabelaProducao tbody');
         if(listaProducao.length === 0) {
-            tbody.innerHTML = '<tr id="linhaVazia"><td colspan="4" class="text-center text-muted">Nenhuma produção adicionada ainda.</td></tr>';
-        } else {
-            tbody.innerHTML = '';
-            let totalProduzido = 0;
+            tbody.innerHTML = '<tr id="linhaVazia"><td colspan="5" class="text-center text-muted">Nenhum produto adicionado na lista de hoje.</td></tr>';
+            document.getElementById('displayTotalProduzido').innerText = 0;
+            recalcularMeta();
+            return;
+        } 
 
-            listaProducao.forEach((prod, index) => {
-                totalProduzido += prod.qtd;
-                tbody.innerHTML += `
-                    <tr>
-                        <td>
-                            <input type="hidden" name="processos_ids[]" value="${prod.processo_id}">
-                            ${prod.nomeProcesso}
-                        </td>
-                        <td>
-                            <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
-                            ${prod.nomeProduto}
-                        </td>
-                        <td>
-                            <input type="hidden" name="qtds_produzidas[]" value="${prod.qtd}">
-                            ${prod.qtd}
-                        </td>
-                        <td class="text-center">
-                            <button type="button" class="btn btn-sm btn-danger" onclick="removerProducao(${index})"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-            document.getElementById('displayTotalProduzido').innerText = totalProduzido;
-        }
+        tbody.innerHTML = '';
+        let totalProduzido = 0;
 
+        listaProducao.forEach((prod, index) => {
+            totalProduzido += parseInt(prod.qtd) || 0;
+            tbody.innerHTML += `
+                <tr>
+                    <td class="align-middle fw-bold">
+                        <input type="hidden" name="processos_ids[]" value="${prod.processo_id}">
+                        ${escapeHTML(prod.orgao)}
+                    </td>
+                    <td class="align-middle">
+                        <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
+                        ${escapeHTML(prod.nomeProduto)}
+                    </td>
+                    <td class="align-middle text-muted small">
+                        ${escapeHTML(prod.descricao)}
+                    </td>
+                    <td class="align-middle text-center" style="width: 150px;">
+                        <input type="number" class="form-control text-center fw-bold" name="qtds_produzidas[]" value="${prod.qtd}" min="0" oninput="atualizarQtd(${index}, this)">
+                    </td>
+                    <td class="text-center align-middle" style="width: 80px;">
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removerProducao(${index})"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('displayTotalProduzido').innerText = totalProduzido;
         recalcularMeta();
+    }
+
+    function atualizarQtd(index, input) {
+        listaProducao[index].qtd = parseInt(input.value) || 0;
+        let total = 0;
+        listaProducao.forEach(p => total += p.qtd);
+        document.getElementById('displayTotalProduzido').innerText = total;
+        verificarJustificativa();
     }
 
     function recalcularMeta() {
@@ -325,11 +421,11 @@
         const inputMeta = document.getElementById('meta_calculada');
         
         if(listaProducao.length === 0) {
-            displayMeta.innerText = "0"; inputMeta.value = 0; verificarJustificativa(); return;
+            displayMeta.innerText = "0";
+            inputMeta.value = 0; verificarJustificativa(); return;
         }
 
         let explicacao = "CÁLCULO DE META AUTOMÁTICO:\n==============================================\n\n";
-        
         if (maquinasDaMalharia.length === 0) {
             explicacao += "AVISO: A malharia selecionada NÃO possui máquinas no sistema.\nA meta calculada será 0.";
             displayMeta.innerText = "0"; inputMeta.value = 0; document.getElementById('textoExplicacaoMeta').innerText = explicacao; verificarJustificativa(); return;
@@ -379,7 +475,6 @@
                 
                 const somaMetas = produtosQueUsam.reduce((acc, p) => acc + p.meta, 0);
                 const mediaMetaPorMaquina = somaMetas / produtosQueUsam.length;
-                
                 const subtotal = mediaMetaPorMaquina * qtdFisica;
                 metaTotalGeral += subtotal;
 
@@ -392,9 +487,7 @@
             }
         }
 
-        if (maquinasCompativeisEncontradas === 0) {
-            alertas.push("A malharia NÃO possui nenhuma máquina compatível para fazer os produtos da tabela.");
-        }
+        if (maquinasCompativeisEncontradas === 0) alertas.push("A malharia NÃO possui nenhuma máquina compatível para fazer os produtos da tabela.");
 
         if (alertas.length > 0) {
             explicacao += "AVISOS DO SISTEMA:\n";
@@ -403,7 +496,6 @@
         }
 
         explicacao += `==============================================\nMETA FINAL DO DIA: ${Math.round(metaTotalGeral)}`;
-
         displayMeta.innerText = Math.round(metaTotalGeral);
         inputMeta.value = Math.round(metaTotalGeral);
         document.getElementById('explicacao_meta').value = explicacao;
@@ -417,15 +509,24 @@
         const totalProduzido = parseInt(document.getElementById('displayTotalProduzido').innerText) || 0;
         const box = document.getElementById('boxJustificativa');
         const selectJust = document.getElementById('justificativa_id');
+        const labelJust = document.getElementById('justificativaLabel');
 
         if(listaProducao.length > 0 && totalProduzido < meta) {
-            box.style.display = 'block'; 
-            selectJust.required = true;
+            box.style.display = 'block';
+            if(totalProduzido === 0) {
+                selectJust.required = false;
+                labelJust.innerHTML = '<i class="bi bi-info-circle"></i> Planejamento de Produção: Quantidade zerada. Justificativa opcional.';
+                box.className = 'mb-3 p-3 bg-info bg-opacity-10 border border-info rounded';
+                labelJust.className = 'form-label fw-bold text-info-emphasis';
+            } else {
+                selectJust.required = true;
+                labelJust.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Meta Não Atingida. Informe o motivo:';
+                box.className = 'mb-3 p-3 bg-warning bg-opacity-10 border border-warning rounded';
+                labelJust.className = 'form-label fw-bold text-warning-emphasis';
+            }
         } else {
-            box.style.display = 'none'; 
+            box.style.display = 'none';
             selectJust.required = false; 
-            // Apenas acionamos o reset no selectJust se NÃO for o carregamento inicial, 
-            // senão perderíamos a justificativa guardada
             if(!isCarregamentoInicial) {
                 $(selectJust).val('').trigger('change');
             }

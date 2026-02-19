@@ -72,7 +72,7 @@
                             </div>
                             <div class="card-footer bg-transparent d-flex justify-content-end gap-2 border-top-0 pt-0">
                                 <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
-                                <form action="/registros/<%= reg.id %>/delete" method="POST" onsubmit="return confirm('Excluir este registo?');">
+                                <form action="/registros/<%= reg.id %>/delete" method="POST" onsubmit="return confirm('Excluir este registro?');">
                                     <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </form>
                             </div>
@@ -84,7 +84,7 @@
     </div>
 
     <div class="col-md-4">
-        <h4 class="text-secondary mb-3"><i class="bi bi-clock-history"></i> Aguardam Registo</h4>
+        <h4 class="text-secondary mb-3"><i class="bi bi-clock-history"></i> Aguardam Registro</h4>
         
         <% if (malhariasPendentes.length === 0) { %>
             <div class="alert alert-success text-center">
