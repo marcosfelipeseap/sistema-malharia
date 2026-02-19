@@ -4,7 +4,7 @@ exports.getAllItens = async (busca = '') => {
     let query = supabase
         .schema('malharia')
         .from('item')
-        .select('*, maquinas:item_maquinario(maquina:maquinario(nome))')
+        .select('*, maquinas:item_maquinario(maquinario_id, maquina:maquinario(nome))')
         .order('nome');
 
     if (busca) {

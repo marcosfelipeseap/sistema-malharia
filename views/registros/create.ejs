@@ -1,52 +1,429 @@
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Novo Apontamento</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/registros" class="btn btn-sm btn-secondary">Voltar</a>
-    </div>
+    <div class="btn-toolbar mb-2 mb-md-0"><a href="/registros" class="btn btn-sm btn-secondary">Voltar</a></div>
 </div>
 
 <div class="row">
-    <div class="col-md-8 offset-md-2">
-        <div class="card">
+    <div class="col-md-10 offset-md-1">
+        <div class="card shadow-sm">
             <div class="card-body">
-                <form action="/registros" method="POST">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="data_registro" class="form-label">Data do Apontamento</label>
-                            <input type="date" class="form-control" id="data_registro" name="data_registro" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                <form action="/registros" method="POST" id="formRegistro" onsubmit="return validarFormulario(event)">
+                    
+                    <h5 class="card-title text-primary border-bottom pb-2">Dados Gerais</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Data do Apontamento</label>
+                            <input type="date" class="form-control" name="data_registro" value="<%= new Date().toISOString().split('T')[0] %>" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Malharia / Setor</label>
+                            <select class="form-select" id="malharia_id" name="malharia_id" required onchange="carregarDadosMalharia()">
+                                <option value="" disabled selected>Selecione a malharia...</option>
+                                <% malharias.forEach(function(mal) { %>
+                                    <option value="<%= mal.id %>" data-internos="<%= mal.num_internos || 0 %>"><%= mal.nome %></option>
+                                <% }); %>
+                            </select>
+                            <small class="text-muted" id="sugestoesBox" style="display:none;">
+                                Sugestões p/ hoje: <span id="sugestoesTags" class="text-primary"></span>
+                            </small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Internos Trabalhando</label>
+                            <input type="number" class="form-control" id="qtd_internos" name="qtd_internos" min="1" required disabled oninput="validarInternos()">
+                            <small class="text-danger" id="avisoInternos"></small>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="processo_id" class="form-label">Processo / Lote</label>
-                            <select class="form-select" id="processo_id" name="processo_id" required>
-                                <option value="" disabled selected>Selecione o processo...</option>
-                                <% processos.forEach(function(proc) { %>
-                                    <option value="<%= proc.id %>"><%= proc.nome %></option>
+                    <h5 class="card-title text-primary border-bottom pb-2">Produção do Dia</h5>
+                    <div class="row bg-light p-3 rounded mb-3 border">
+                        <div class="col-md-5 mb-2">
+                            <label class="form-label">Processo (Órgão)</label>
+                            <select class="form-select" id="select_processo">
+                                <option value="">Selecione o Processo</option>
+                                <% 
+                                    const processosPendentes = processos.filter(p => {
+                                        const statusConcluido = p.situacao === 'Concluído' || p.situacao === 'Finalizado';
+                                        const semDemanda = p.totais && p.totais.faltante <= 0;
+                                        return !statusConcluido && !semDemanda;
+                                    });
+                                    processosPendentes.forEach(function(proc) { 
+                                %>
+                                    <option value="<%= proc.id %>" data-orgao="<%= proc.orgao %>">
+                                        <%= proc.numero_processo %> - <%= proc.orgao %>
+                                    </option>
                                 <% }); %>
                             </select>
                         </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="malharia_id" class="form-label">Malharia / Setor</label>
-                            <select class="form-select" id="malharia_id" name="malharia_id" required>
-                                <option value="" disabled selected>Selecione a malharia...</option>
-                                <% malharias.forEach(function(mal) { %>
-                                    <option value="<%= mal.id %>"><%= mal.nome %> (<%= mal.tipo %>)</option>
-                                <% }); %>
+                        <div class="col-md-4 mb-2">
+                            <label class="form-label">Produto</label>
+                            <select class="form-select" id="select_produto" disabled>
+                                <option value="">Selecione primeiro o Processo</option>
                             </select>
                         </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Qtd Produzida</label>
+                            <input type="number" class="form-control" id="input_qtd" min="1">
+                        </div>
+                        <div class="col-md-1 mb-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-success w-100" onclick="adicionarProducao()"><i class="bi bi-plus-lg"></i></button>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered table-sm" id="tabelaProducao">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Processo</th>
+                                <th>Produto</th>
+                                <th>Qtd Produzida</th>
+                                <th class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr id="linhaVazia"><td colspan="4" class="text-center text-muted">Nenhuma produção adicionada ainda.</td></tr>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">Meta Calculada:</td>
+                                <td colspan="2">
+                                    <span id="displayMeta" class="badge bg-primary fs-5" style="cursor:help;" onclick="mostrarExplicacaoMeta()">0</span>
+                                    <span class="ms-2 text-muted" style="font-size: 0.8em; cursor:help;" onclick="mostrarExplicacaoMeta()">(Clique para entender)</span>
+                                    <input type="hidden" name="meta_calculada" id="meta_calculada" value="0">
+                                    <input type="hidden" name="explicacao_meta" id="explicacao_meta">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="text-end fw-bold">Total Produzido Hoje:</td>
+                                <td colspan="2"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div id="boxJustificativa" class="mb-3 p-3 bg-warning bg-opacity-10 border border-warning rounded" style="display: none;">
+                        <label class="form-label fw-bold text-warning-emphasis"><i class="bi bi-exclamation-triangle"></i> Meta Não Atingida. Informe o motivo:</label>
+                        <select class="form-select border-warning" name="justificativa_id" id="justificativa_id">
+                            <option value="">Selecione a Justificativa...</option>
+                            <% justificativas.forEach(function(just) { %>
+                                <option value="<%= just.id %>"><%= just.nome %></option>
+                            <% }); %>
+                        </select>
                     </div>
 
                     <div class="mb-3">
-                        <label for="observacao" class="form-label">Observações / Ocorrências</label>
-                        <textarea class="form-control" id="observacao" name="observacao" rows="3" placeholder="Detalhes da produção, paradas, etc."></textarea>
+                        <label class="form-label fw-bold">Observações Adicionais</label>
+                        <textarea class="form-control" name="observacao" rows="2"></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary">Salvar Apontamento</button>
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary btn-lg px-5">Salvar Apontamento</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalMeta" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Como a meta foi calculada?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="textoExplicacaoMeta" style="white-space: pre-wrap; font-family: monospace; font-size: 14px;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    const todosItens = <%- todosItensJSON %>;
+    const todosProcessos = <%- JSON.stringify(processos) %>; 
+    
+    let maquinasDaMalharia = []; 
+    let maxInternos = 0;
+    let listaProducao = []; 
+
+    $(document).ready(function() {
+        $('#malharia_id, #select_processo, #select_produto, #justificativa_id').select2({ theme: 'bootstrap-5', width: '100%' });
+        $('#select_processo').on('change', function() { carregarProdutosDoProcesso($(this).val()); });
+        // Verifica se vieram atalhos do calendário (clique nas malharias pendentes)
+        const params = new URLSearchParams(window.location.search);
+        if(params.has('malharia')) {
+            $('#malharia_id').val(params.get('malharia')).trigger('change');
+        }
+        if(params.has('data')) {
+            $('input[name="data_registro"]').val(params.get('data'));
+        }
+    });
+
+    async function carregarDadosMalharia() {
+        const selectMal = document.getElementById('malharia_id');
+        const selectedOption = selectMal.options[selectMal.selectedIndex];
+        
+        maxInternos = parseInt(selectedOption.getAttribute('data-internos')) || 0;
+        
+        const inputInternos = document.getElementById('qtd_internos');
+        inputInternos.disabled = false;
+        inputInternos.max = maxInternos;
+        inputInternos.value = '';
+        inputInternos.placeholder = `Máx: ${maxInternos}`;
+        
+        try {
+            const res = await fetch(`/registros/api/malharia-info/${selectMal.value}`);
+            const data = await res.json();
+            // Guarda o inventário físico completo desta malharia
+            maquinasDaMalharia = data.itens || []; 
+        } catch (e) {
+            console.error("Erro ao procurar máquinas:", e);
+        }
+
+        buscarSugestoes(selectMal.value);
+        recalcularMeta();
+    }
+
+    function validarInternos() {
+        const input = document.getElementById('qtd_internos');
+        const aviso = document.getElementById('avisoInternos');
+        if(parseInt(input.value) > maxInternos) {
+            aviso.innerText = `O número não pode exceder os ${maxInternos} vinculados!`;
+            input.value = maxInternos;
+        } else {
+            aviso.innerText = '';
+        }
+    }
+
+    async function buscarSugestoes(malharia_id) {
+        try {
+            const res = await fetch(`/registros/api/sugestoes/${malharia_id}`);
+            const data = await res.json();
+            const box = document.getElementById('sugestoesBox');
+            const tags = document.getElementById('sugestoesTags');
+            if(data && data.length > 0) {
+                tags.innerHTML = data.map(p => `<a href="#" onclick="$('#select_processo').val('${p.id}').trigger('change'); return false;">${p.numero_processo}</a>`).join(', ');
+                box.style.display = 'block';
+            } else {
+                box.style.display = 'none';
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function carregarProdutosDoProcesso(procId) {
+        const $selectProd = $('#select_produto');
+        $selectProd.empty().append('<option value="">Selecione o Produto</option>');
+        
+        if(!procId) { $selectProd.prop('disabled', true).trigger('change'); return; }
+
+        const processo = todosProcessos.find(p => p.id == procId);
+        
+        if(processo && processo.itens) {
+            processo.itens.forEach(pi => {
+                const dadosItem = todosItens.find(i => String(i.id) === String(pi.item_id));
+                if(dadosItem) {
+                    $selectProd.append(new Option(dadosItem.nome, dadosItem.id, false, false));
+                }
+            });
+            $selectProd.prop('disabled', false).trigger('change');
+        }
+    }
+
+    function adicionarProducao() {
+        const procId = $('#select_processo').val();
+        const prodId = $('#select_produto').val();
+        const inputQtd = $('#input_qtd').val();
+
+        if(!procId || !prodId || !inputQtd || inputQtd <= 0) {
+            alert("Preencha Processo, Produto e Quantidade corretamente."); return;
+        }
+
+        const nomeProcesso = $('#select_processo option:selected').text();
+        const nomeProduto = $('#select_produto option:selected').text();
+
+        listaProducao.push({
+            processo_id: procId,
+            nomeProcesso: nomeProcesso,
+            item_id: prodId,
+            nomeProduto: nomeProduto,
+            qtd: parseInt(inputQtd)
+        });
+
+        atualizarTabela();
+        
+        $('#select_produto').val('').trigger('change');
+        $('#input_qtd').val('');
+    }
+
+    function removerProducao(index) {
+        listaProducao.splice(index, 1);
+        atualizarTabela();
+    }
+
+    function atualizarTabela() {
+        const tbody = document.querySelector('#tabelaProducao tbody');
+        if(listaProducao.length === 0) {
+            tbody.innerHTML = '<tr id="linhaVazia"><td colspan="4" class="text-center text-muted">Nenhuma produção adicionada ainda.</td></tr>';
+        } else {
+            tbody.innerHTML = '';
+            let totalProduzido = 0;
+
+            listaProducao.forEach((prod, index) => {
+                totalProduzido += prod.qtd;
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <input type="hidden" name="processos_ids[]" value="${prod.processo_id}">
+                            ${prod.nomeProcesso}
+                        </td>
+                        <td>
+                            <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
+                            ${prod.nomeProduto}
+                        </td>
+                        <td>
+                            <input type="hidden" name="qtds_produzidas[]" value="${prod.qtd}">
+                            ${prod.qtd}
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-danger" onclick="removerProducao(${index})"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+            document.getElementById('displayTotalProduzido').innerText = totalProduzido;
+        }
+
+        recalcularMeta();
+    }
+
+    function recalcularMeta() {
+        const displayMeta = document.getElementById('displayMeta');
+        const inputMeta = document.getElementById('meta_calculada');
+        
+        if(listaProducao.length === 0) {
+            displayMeta.innerText = "0"; inputMeta.value = 0; verificarJustificativa(); return;
+        }
+
+        let explicacao = "CÁLCULO DE META AUTOMÁTICO:\n==============================================\n\n";
+        
+        if (maquinasDaMalharia.length === 0) {
+            explicacao += "AVISO: A malharia selecionada NÃO possui máquinas no sistema.\nA meta calculada será 0.";
+            displayMeta.innerText = "0"; inputMeta.value = 0; document.getElementById('textoExplicacaoMeta').innerText = explicacao; verificarJustificativa(); return;
+        }
+
+        // 1. Agrupar produtos e as máquinas que eles precisam
+        const produtosUnicosIds = [...new Set(listaProducao.map(p => String(p.item_id)))];
+        let usoMaquinario = {};
+        let alertas = [];
+
+        produtosUnicosIds.forEach(itemId => {
+            const dadosItem = todosItens.find(i => String(i.id) === itemId);
+            if(dadosItem) {
+                if(dadosItem.maquinas && dadosItem.maquinas.length > 0) {
+                    dadosItem.maquinas.forEach(maq => {
+                        // Captura o ID da máquina garantindo que seja uma String (Proteção contra bugs)
+                        const idMaq = String(maq.maquinario_id || (maq.maquina && maq.maquina.id));
+                        if(idMaq && idMaq !== 'undefined') {
+                            if(!usoMaquinario[idMaq]) usoMaquinario[idMaq] = [];
+                            usoMaquinario[idMaq].push({ nome: dadosItem.nome, meta: parseFloat(dadosItem.meta_diaria) || 100 });
+                        }
+                    });
+                } else {
+                    alertas.push(`O produto '${dadosItem.nome}' NÃO tem máquinas exigidas no cadastro.`);
+                }
+            }
+        });
+
+        // 2. Mapear as máquinas FÍSICAS disponíveis na malharia
+        let contagemMalharia = {};
+        let nomesMaquinas = {};
+        
+        maquinasDaMalharia.forEach(maqFisica => {
+            // Conta apenas as disponíveis
+            if(maqFisica.status !== 'indisponivel') {
+                const idMaq = String(maqFisica.maquinario_id || (maqFisica.maquinario && maqFisica.maquinario.id));
+                if (idMaq && idMaq !== 'undefined') {
+                    contagemMalharia[idMaq] = (contagemMalharia[idMaq] || 0) + 1;
+                    if(maqFisica.maquinario) nomesMaquinas[idMaq] = maqFisica.maquinario.nome;
+                }
+            }
+        });
+
+        // 3. Cruzar dados: Máquinas Físicas vs Máquinas Necessárias
+        let metaTotalGeral = 0;
+        let maquinasCompativeisEncontradas = 0;
+
+        for (const [maqId, qtdFisica] of Object.entries(contagemMalharia)) {
+            // Se algum dos produtos selecionados usa ESTA máquina que existe na oficina
+            if (usoMaquinario[maqId]) {
+                maquinasCompativeisEncontradas++;
+                const produtosQueUsam = usoMaquinario[maqId];
+                
+                // Faz a Média entre as metas dos produtos para não duplicar esforço da mesma máquina
+                const somaMetas = produtosQueUsam.reduce((acc, p) => acc + p.meta, 0);
+                const mediaMetaPorMaquina = somaMetas / produtosQueUsam.length;
+                
+                // Subtotal = Média x Quantidade Físicas Existentes
+                const subtotal = mediaMetaPorMaquina * qtdFisica;
+                metaTotalGeral += subtotal;
+
+                const nomeDaMaquina = nomesMaquinas[maqId] || `Máquina ID ${maqId}`;
+                explicacao += `>> ${nomeDaMaquina.toUpperCase()}\n`;
+                explicacao += `   - Quantidade Física na Oficina: ${qtdFisica} un.\n`;
+                explicacao += `   - Produtos que a utilizam: ${produtosQueUsam.map(p => p.nome).join(' e ')}\n`;
+                explicacao += `   - Média de Produção: ${mediaMetaPorMaquina.toFixed(2)} por máquina/dia\n`;
+                explicacao += `   - Subtotal Gerado (${mediaMetaPorMaquina.toFixed(2)} x ${qtdFisica}): ${subtotal.toFixed(2)}\n\n`;
+            }
+        }
+
+        if (maquinasCompativeisEncontradas === 0) {
+            alertas.push("A malharia NÃO possui nenhuma máquina compatível para fazer os produtos da tabela.");
+        }
+
+        if (alertas.length > 0) {
+            explicacao += "AVISOS DO SISTEMA:\n";
+            alertas.forEach(a => explicacao += `- ${a}\n`);
+            explicacao += "\n";
+        }
+
+        explicacao += `==============================================\nMETA FINAL DO DIA: ${Math.round(metaTotalGeral)}`;
+
+        displayMeta.innerText = Math.round(metaTotalGeral);
+        inputMeta.value = Math.round(metaTotalGeral);
+        document.getElementById('explicacao_meta').value = explicacao;
+        document.getElementById('textoExplicacaoMeta').innerText = explicacao;
+
+        verificarJustificativa();
+    }
+
+    function verificarJustificativa() {
+        const meta = parseFloat(document.getElementById('meta_calculada').value) || 0;
+        const totalProduzido = parseInt(document.getElementById('displayTotalProduzido').innerText) || 0;
+        const box = document.getElementById('boxJustificativa');
+        const selectJust = document.getElementById('justificativa_id');
+
+        if(listaProducao.length > 0 && totalProduzido < meta) {
+            box.style.display = 'block'; 
+            selectJust.required = true;
+        } else {
+            box.style.display = 'none'; 
+            selectJust.required = false; 
+            // CORREÇÃO: Adicionado o $() em volta do selectJust para usar o jQuery corretamente com o Select2
+            $(selectJust).val('').trigger('change');
+        }
+    }
+
+    function mostrarExplicacaoMeta() { new bootstrap.Modal(document.getElementById('modalMeta')).show(); }
+
+    function validarFormulario(e) {
+        if(listaProducao.length === 0) {
+            alert("Precisa de adicionar pelo menos um produto na tabela de produção.");
+            e.preventDefault(); return false;
+        }
+        return true;
+    }
+</script>

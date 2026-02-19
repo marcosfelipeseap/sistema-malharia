@@ -1,49 +1,110 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Registro Diário de Produção</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/registros/create" class="btn btn-sm btn-primary">
-            <i class="bi bi-clipboard-plus"></i> Novo Apontamento
-        </a>
+    <h1 class="h2">Controlo Diário de Produção</h1>
+</div>
+
+<div class="card shadow-sm mb-4 border-primary border-top border-3">
+    <div class="card-body bg-light">
+        <form action="/registros" method="GET" class="row align-items-center">
+            <div class="col-auto">
+                <label for="data" class="col-form-label fw-bold"><i class="bi bi-calendar-event"></i> Selecionar Dia:</label>
+            </div>
+            <div class="col-auto">
+                <input type="date" name="data" id="data" class="form-control form-control-lg text-primary fw-bold" value="<%= dataBusca %>" onchange="this.form.submit()">
+            </div>
+            <div class="col-auto">
+                <span class="badge bg-success fs-6"><%= registros.length %> Registados</span>
+                <span class="badge bg-secondary fs-6"><%= malhariasPendentes.length %> Pendentes</span>
+            </div>
+        </form>
     </div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-sm table-striped table-hover">
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Processo</th>
-                <th>Malharia/Setor</th>
-                <th>Observação</th>
-                <th class="text-end">Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            <% if (registros.length === 0) { %>
-                <tr>
-                    <td colspan="5" class="text-center">Nenhum registro encontrado.</td>
-                </tr>
-            <% } else { %>
+<div class="row">
+    <div class="col-md-8">
+        <h4 class="text-success mb-3"><i class="bi bi-check-circle-fill"></i> Apontamentos Realizados</h4>
+        
+        <% if (registros.length === 0) { %>
+            <div class="alert alert-secondary text-center py-4 border-dashed">
+                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                Nenhuma produção registada nesta data.
+            </div>
+        <% } else { %>
+            <div class="row g-3">
                 <% registros.forEach(function(reg) { %>
-                    <tr>
-                        <td><%= new Date(reg.data_registro).toLocaleDateString('pt-BR') %></td>
-                        <td>
-                            <span class="badge bg-info text-dark">
-                                <%= reg.processo ? reg.processo.nome : 'N/A' %>
-                            </span>
-                        </td>
-                        <td><%= reg.malharia ? reg.malharia.nome : 'N/A' %></td>
-                        <td class="text-truncate" style="max-width: 300px;"><%= reg.observacao %></td>
-                        <td class="text-end">
-                            <form action="/registros/<%= reg.id %>/delete" method="POST" style="display:inline;" onsubmit="return confirm('Deseja excluir este apontamento?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
+                    <% 
+                        let totalProd = 0;
+                        reg.itens.forEach(i => totalProd += i.qtd_produzida);
+                        let percentual = reg.meta_calculada > 0 ? Math.round((totalProd / reg.meta_calculada) * 100) : 0;
+                        let corBarra = percentual >= 100 ? 'bg-success' : (percentual >= 70 ? 'bg-warning' : 'bg-danger');
+                    %>
+                    <div class="col-md-6">
+                        <div class="card h-100 shadow-sm border-start border-4 <%= percentual >= 100 ? 'border-success' : 'border-warning' %>">
+                            <div class="card-body pb-2">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="card-title fw-bold text-dark mb-0"><%= reg.malharia ? reg.malharia.nome : 'N/A' %></h5>
+                                    <span class="badge bg-light text-dark border" title="Internos a trabalhar"><i class="bi bi-people-fill"></i> <%= reg.qtd_internos %></span>
+                                </div>
+                                <hr class="my-2">
+                                
+                                <ul class="list-unstyled mb-2 small text-secondary" style="min-height: 50px;">
+                                <% reg.itens.slice(0, 3).forEach(function(item) { %>
+                                    <li class="text-truncate">
+                                        <span class="badge bg-secondary opacity-75"><%= item.processo.numero_processo %></span> 
+                                        <%= item.item.nome %> (<%= item.qtd_produzida %> un)
+                                    </li>
+                                <% }); %>
+                                <% if(reg.itens.length > 3) { %> <li><small class="text-muted fst-italic">+ <%= reg.itens.length - 3 %> outros...</small></li> <% } %>
+                                </ul>
+
+                                <div class="mt-2">
+                                    <div class="d-flex justify-content-between small fw-bold mb-1">
+                                        <span>Meta: <%= percentual %>%</span>
+                                        <span><%= totalProd %> / <%= Math.round(reg.meta_calculada) %> un</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar <%= corBarra %>" role="progressbar" style="width: <%= percentual %>%" aria-valuenow="<%= percentual %>" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                
+                                <% if(reg.justificativa) { %>
+                                    <div class="mt-2 text-danger small"><i class="bi bi-exclamation-triangle"></i> <%= reg.justificativa.nome %></div>
+                                <% } %>
+                            </div>
+                            <div class="card-footer bg-transparent d-flex justify-content-end gap-2 border-top-0 pt-0">
+                                <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
+                                <form action="/registros/<%= reg.id %>/delete" method="POST" onsubmit="return confirm('Excluir este registo?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 <% }); %>
-            <% } %>
-        </tbody>
-    </table>
+            </div>
+        <% } %>
+    </div>
+
+    <div class="col-md-4">
+        <h4 class="text-secondary mb-3"><i class="bi bi-clock-history"></i> Aguardam Registo</h4>
+        
+        <% if (malhariasPendentes.length === 0) { %>
+            <div class="alert alert-success text-center">
+                <i class="bi bi-emoji-sunglasses d-block fs-3 mb-1"></i>
+                Todas as malharias já preencheram a produção!
+            </div>
+        <% } else { %>
+            <div class="list-group shadow-sm">
+                <% malhariasPendentes.forEach(function(mal) { %>
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center bg-light">
+                        <div>
+                            <h6 class="mb-0 text-dark fw-bold"><%= mal.nome %></h6>
+                            <small class="text-muted"><%= mal.tipo || 'Setor Padrão' %></small>
+                        </div>
+                        <a href="/registros/create?malharia=<%= mal.id %>&data=<%= dataBusca %>" class="btn btn-sm btn-primary rounded-pill shadow-sm" title="Criar apontamento">
+                            <i class="bi bi-plus-lg"></i> Inserir
+                        </a>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
 </div>
