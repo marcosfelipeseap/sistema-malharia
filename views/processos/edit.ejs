@@ -52,7 +52,9 @@
                     <thead class="table-light small text-center text-uppercase">
                         <tr>
                             <th style="min-width: 250px;">Produto</th>
-                            <th style="width: 80px;">Tam.</th> <th style="width: 100px;">Solic.</th>
+                            <th style="min-width: 150px;">Descrição</th>
+                            <th style="width: 80px;">Tam.</th> 
+                            <th style="width: 100px;">Solic.</th>
                             <th style="width: 100px;">Aut.</th>
                             <th style="width: 100px;">Entr.</th>
                             <th style="width: 80px;">Falt.</th>
@@ -161,7 +163,8 @@
         const prazo = document.getElementById('prazoGlobal').value;
 
         const valId = dados ? dados.item_id : '';
-        const valTamanho = dados && dados.tamanho ? dados.tamanho : ''; // <--- RECUPERA TAMANHO
+        const valDescricao = dados && dados.descricao ? dados.descricao : ''; // <--- RECUPERA A DESCRIÇÃO
+        const valTamanho = dados && dados.tamanho ? dados.tamanho : ''; 
         const valSol = dados ? dados.qtd_solicitada : 0;
         const valAut = dados ? dados.qtd_autorizada : 0;
         const valEnt = dados ? dados.qtd_entregue : 0;
@@ -171,6 +174,10 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="p-0"><select class="tom-select-init" name="item_id" required>${criarHTMLOptions(valId)}</select></td>
+            <td>
+                <input type="text" class="form-control form-control-sm border-0" 
+                       name="descricao" value="${valDescricao}" placeholder="Detalhes..." autocomplete="off">
+            </td>
             <td>
                 <input type="text" class="form-control form-control-sm text-center border-0" 
                        name="tamanho" value="${valTamanho}" placeholder="-" autocomplete="off">

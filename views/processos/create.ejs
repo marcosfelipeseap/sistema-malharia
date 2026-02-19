@@ -73,7 +73,9 @@
                     <thead class="table-light small text-center text-uppercase">
                         <tr>
                             <th style="min-width: 250px;">Produto</th>
-                            <th style="width: 80px;">Tam.</th> <th style="width: 100px;">Solic.</th>
+                            <th style="min-width: 150px;">Descrição</th>
+                            <th style="width: 80px;">Tam.</th> 
+                            <th style="width: 100px;">Solic.</th>
                             <th style="width: 100px;">Aut.</th>
                             <th style="width: 100px;">Entr.</th>
                             <th style="width: 80px;">Falt.</th>
@@ -202,6 +204,10 @@
                 <select class="tom-select-init" name="item_id" required>
                     ${criarHTMLOptions(preSelecionadoId)}
                 </select>
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm border-0" 
+                       name="descricao" placeholder="Detalhes..." autocomplete="off">
             </td>
             <td>
                 <input type="text" class="form-control form-control-sm text-center border-0" 

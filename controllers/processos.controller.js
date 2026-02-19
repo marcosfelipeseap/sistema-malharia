@@ -49,7 +49,8 @@ const parseItensFromBody = (body) => {
     const toArray = (val) => (val === undefined || val === null) ? [] : (Array.isArray(val) ? val : [val]);
 
     const ids = toArray(body.item_id);
-    const tamanhos = toArray(body.tamanho); // <--- CAPTURA OS TAMANHOS
+    const descricoes = toArray(body.descricao); // <--- CAPTURA AS DESCRIÇÕES
+    const tamanhos = toArray(body.tamanho);
     const qSols = toArray(body.qtd_solicitada);
     const qAuts = toArray(body.qtd_autorizada);
     const qEnts = toArray(body.qtd_entregue);
@@ -58,7 +59,8 @@ const parseItensFromBody = (body) => {
 
     return ids.map((id, i) => ({
         item_id: parseInt(id),
-        tamanho: tamanhos[i] || null, // <--- SALVA O TAMANHO
+        descricao: descricoes[i] || null, // <--- SALVA A DESCRIÇÃO
+        tamanho: tamanhos[i] || null,
         qtd_solicitada: parseInt(qSols[i]) || 0,
         qtd_autorizada: parseInt(qAuts[i]) || 0,
         qtd_entregue: parseInt(qEnts[i]) || 0,
