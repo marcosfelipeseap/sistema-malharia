@@ -153,6 +153,21 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalAviso" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle"></i> Atenção</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-3" id="textoAviso"></div>
+            <div class="modal-footer py-1 justify-content-center">
+                <button type="button" class="btn btn-sm btn-dark px-3" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
@@ -164,6 +179,12 @@
     let maxInternos = 0;
     let isCarregamentoInicial = true;
     let combinacoesDisponiveis = [];
+
+    // Função para mostrar aviso elegante
+    function exibirAviso(msg) {
+        document.getElementById('textoAviso').innerText = msg;
+        new bootstrap.Modal(document.getElementById('modalAviso')).show();
+    }
 
     // Função para evitar que aspas e caracteres especiais quebrem o HTML
     function escapeHTML(str) {
@@ -267,7 +288,6 @@
                 p.itens.forEach(pi => {
                     const dadosItem = todosItens.find(i => String(i.id) === String(pi.item_id));
                     if(dadosItem) {
-                        // Tenta pegar a descrição do processo primeiro, senão vai à do item
                         const descricaoFinal = pi.descricao || dadosItem.descricao || '-';
 
                         combinacoesDisponiveis.push({
@@ -324,10 +344,13 @@
     }
 
     function filtrarModalProdutos() {
-        const termo = $('#inputBuscaProduto').val().toLowerCase();
+        const buscaTexto = $('#inputBuscaProduto').val().toLowerCase().trim();
+        const palavras = buscaTexto === '' ? [] : buscaTexto.split(/\s+/);
+        
         $('#tbodyModalProdutos tr').each(function() {
             const textoLinha = $(this).find('.busca-texto').text().toLowerCase();
-            $(this).toggle(textoLinha.includes(termo));
+            const corresponde = palavras.every(palavra => textoLinha.includes(palavra));
+            $(this).toggle(corresponde || palavras.length === 0);
         });
     }
 
@@ -338,13 +361,12 @@
     function adicionarProdutosSelecionados() {
         const selecionados = $('.check-produto:checked');
         if(selecionados.length === 0) {
-            alert("Selecione pelo menos um produto.");
+            exibirAviso("Selecione pelo menos um produto.");
             return;
         }
         
         selecionados.each(function() {
             const idUnicoSelecionado = $(this).val();
-            // Busca os dados diretamente da memória usando o ID único
             const comb = combinacoesDisponiveis.find(c => c.id_unico === idUnicoSelecionado);
 
             if (comb) {
@@ -527,7 +549,11 @@
         } else {
             box.style.display = 'none';
             selectJust.required = false; 
-            if(!isCarregamentoInicial) {
+            if (typeof isCarregamentoInicial !== 'undefined') {
+                if (!isCarregamentoInicial) {
+                    $(selectJust).val('').trigger('change');
+                }
+            } else {
                 $(selectJust).val('').trigger('change');
             }
         }
@@ -537,8 +563,9 @@
 
     function validarFormulario(e) {
         if(listaProducao.length === 0) {
-            alert("Precisa de adicionar pelo menos um produto na tabela de produção.");
-            e.preventDefault(); return false;
+            exibirAviso("Precisa de adicionar pelo menos um produto na tabela de produção.");
+            e.preventDefault(); 
+            return false;
         }
         return true;
     }

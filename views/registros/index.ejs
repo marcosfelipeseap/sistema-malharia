@@ -1,27 +1,62 @@
+<style>
+    .calendario-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .calendario-header { text-align: center; font-weight: bold; padding: 5px; background: #f8f9fa; border-radius: 4px; color: #495057;}
+    .calendario-dia { 
+        border: 1px solid #e9ecef; 
+        min-height: 80px; 
+        padding: 8px; 
+        cursor: pointer; 
+        border-radius: 6px; 
+        transition: all 0.2s ease-in-out; 
+        display:flex; 
+        flex-direction:column; 
+        background: #fff;
+    }
+    .calendario-dia:hover { background-color: #f1f3f5; border-color: #dee2e6; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .calendario-dia.dia-ativo { border: 2px solid #0d6efd; background-color: #f0f7ff; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2); }
+    .calendario-dia.outro-mes { background-color: #f8f9fa; color: #adb5bd; border-style: dashed; pointer-events: none; }
+    .dia-numero { font-weight: 700; font-size: 1.1em; color: #343a40; }
+    .dia-ativo .dia-numero { color: #0d6efd; }
+    .badge-status { font-size: 0.75rem; padding: 4px; margin-top: auto; text-align: center; border-radius: 4px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+    
+    @media (max-width: 768px) {
+        .calendario-dia { min-height: 60px; padding: 4px; }
+        .badge-status { font-size: 0.6rem; padding: 2px; }
+        .dia-numero { font-size: 0.9em; }
+    }
+</style>
+
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Controlo Diário de Produção</h1>
+    <div>
+        <a href="/registros" class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Ir para Hoje</a>
+        <button class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalFeriados"><i class="bi bi-cup-hot"></i> Gerir Folgas/Feriados</button>
+    </div>
 </div>
 
 <div class="card shadow-sm mb-4 border-primary border-top border-3">
-    <div class="card-body bg-light">
-        <form action="/registros" method="GET" class="row align-items-center">
-            <div class="col-auto">
-                <label for="data" class="col-form-label fw-bold"><i class="bi bi-calendar-event"></i> Selecionar Dia:</label>
-            </div>
-            <div class="col-auto">
-                <input type="date" name="data" id="data" class="form-control form-control-lg text-primary fw-bold" value="<%= dataBusca %>" onchange="this.form.submit()">
-            </div>
-            <div class="col-auto">
-                <span class="badge bg-success fs-6"><%= registros.length %> Registados</span>
-                <span class="badge bg-secondary fs-6"><%= malhariasPendentes.length %> Pendentes</span>
-            </div>
-        </form>
+    <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+        <button class="btn btn-sm btn-outline-secondary px-3" onclick="mudarMes(-1)"><i class="bi bi-chevron-left"></i> Anterior</button>
+        <h5 class="mb-0 fw-bold text-primary text-uppercase" id="mesAnoAtual"></h5>
+        <button class="btn btn-sm btn-outline-secondary px-3" onclick="mudarMes(1)">Próximo <i class="bi bi-chevron-right"></i></button>
+    </div>
+    <div class="card-body p-2 p-md-3 bg-light">
+        <div id="calendarioGrid" class="calendario-grid"></div>
+    </div>
+    <div class="card-footer bg-white py-2 small text-muted d-flex gap-4 justify-content-center flex-wrap">
+        <span><i class="bi bi-square-fill text-success"></i> Completo / Prod. Extra</span>
+        <span><i class="bi bi-square-fill text-warning"></i> Faltam Malharias</span>
+        <span><i class="bi bi-square-fill text-danger"></i> Nenhuma Registada (Pendente)</span>
+        <span><i class="bi bi-square-fill text-info"></i> Feriado/Folga</span>
+        <span><i class="bi bi-square text-secondary"></i> Fim de Semana normal</span>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-8">
-        <h4 class="text-success mb-3"><i class="bi bi-check-circle-fill"></i> Apontamentos Realizados</h4>
+        <h4 class="text-success mb-3">
+            <i class="bi bi-check-circle-fill"></i> Apontamentos do Dia <%= dataBusca.split('-').reverse().join('/') %>
+        </h4>
         
         <% if (registros.length === 0) { %>
             <div class="alert alert-secondary text-center py-4 border-dashed">
@@ -72,8 +107,8 @@
                             </div>
                             <div class="card-footer bg-transparent d-flex justify-content-end gap-2 border-top-0 pt-0">
                                 <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
-                                <form action="/registros/<%= reg.id %>/delete" method="POST" onsubmit="return confirm('Excluir este registro?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                <form action="/registros/<%= reg.id %>/delete" method="POST">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarExclusao(this, 'registro')"><i class="bi bi-trash"></i></button>
                                 </form>
                             </div>
                         </div>
@@ -84,12 +119,15 @@
     </div>
 
     <div class="col-md-4">
-        <h4 class="text-secondary mb-3"><i class="bi bi-clock-history"></i> Aguardam Registro</h4>
+        <h4 class="text-secondary mb-3">
+            <i class="bi bi-clock-history"></i> Faltam Registar Hoje
+            <span class="badge bg-secondary ms-2 fs-6"><%= malhariasPendentes.length %></span>
+        </h4>
         
         <% if (malhariasPendentes.length === 0) { %>
             <div class="alert alert-success text-center">
                 <i class="bi bi-emoji-sunglasses d-block fs-3 mb-1"></i>
-                Todas as malharias já preencheram a produção!
+                Nenhuma produção pendente para este dia!
             </div>
         <% } else { %>
             <div class="list-group shadow-sm">
@@ -108,3 +146,272 @@
         <% } %>
     </div>
 </div>
+
+<div class="modal fade" id="modalFeriados" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-cup-hot"></i> Gerir Folgas e Feriados</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <form action="/registros/feriados" method="POST" class="row g-2 mb-4 align-items-end border-bottom pb-3">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Data da Folga/Feriado</label>
+                        <input type="date" name="data_feriado" class="form-control" required>
+                    </div>
+                    
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Aplicar a (Nenhuma selecionada = Todas):</label>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary w-100 text-start dropdown-toggle bg-white" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" id="btnDropdownMalharias">
+                                <span id="textoMalhariasSelecionadas" class="text-muted">Todas as Malharias (Global)</span>
+                            </button>
+                            <ul class="dropdown-menu w-100 p-0 shadow" style="max-height: 280px; overflow-y: auto;">
+                                <li class="position-sticky top-0 bg-white z-1 p-2 border-bottom shadow-sm">
+                                    <input type="text" class="form-control form-control-sm" id="buscaMalhariaFeriado" placeholder="Buscar pelo nome..." onkeyup="filtrarMalhariasFeriado()">
+                                </li>
+                                <div class="p-2 pt-1" id="listaCheckboxesMalharias">
+                                    <% todasMalharias.forEach(function(m) { %>
+                                        <li class="item-malharia-feriado rounded px-2">
+                                            <div class="form-check py-1 m-0">
+                                                <input class="form-check-input check-malharia-feriado" type="checkbox" name="malharia_id" value="<%= m.id %>" id="checkMal_<%= m.id %>" onchange="atualizarTextoMalharias()">
+                                                <label class="form-check-label busca-texto-malharia w-100 user-select-none" for="checkMal_<%= m.id %>" style="cursor:pointer;">
+                                                    <%= m.nome %>
+                                                </label>
+                                            </div>
+                                        </li>
+                                    <% }); %>
+                                </div>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label small fw-bold">Motivo</label>
+                        <input type="text" name="descricao" class="form-control" placeholder="Ex: Feriado Municipal, Manutenção..." required>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="bi bi-plus-lg"></i></button>
+                    </div>
+                </form>
+
+                <h6 class="fw-bold text-secondary">Feriados e Folgas Registadas</h6>
+                <% if(feriados.length === 0) { %>
+                    <p class="text-muted small">Nenhum feriado registado no sistema.</p>
+                <% } else { %>
+                    <ul class="list-group">
+                        <% feriados.forEach(function(f) { %>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold"><%= new Date(f.data_feriado).toISOString().split('T')[0].split('-').reverse().join('/') %></span> - 
+                                    <span class="text-muted"><%= f.descricao %></span>
+                                    <span class="badge <%= f.malharia ? 'bg-secondary' : 'bg-primary' %> ms-2">
+                                        <%= f.malharia ? f.malharia.nome : 'GLOBAL (Todas as Malharias)' %>
+                                    </span>
+                                </div>
+                                <form action="/registros/feriados/<%= f.id %>/delete" method="POST">
+                                    <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="confirmarExclusao(this, 'feriado')"><i class="bi bi-trash"></i></button>
+                                </form>
+                            </li>
+                        <% }); %>
+                    </ul>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalConfirmDelete" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle"></i> Confirmação</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-3" id="textoConfirmDelete">
+                Tem a certeza que deseja apagar?
+            </div>
+            <div class="modal-footer py-1 justify-content-center">
+                <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-danger px-3" id="btnConfirmDelete">Apagar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+<script>
+    // --- LÓGICA DO NOVO DROPDOWN COM CHECKBOXES ---
+    function filtrarMalhariasFeriado() {
+        const termo = document.getElementById('buscaMalhariaFeriado').value.toLowerCase().trim();
+        const itens = document.querySelectorAll('.item-malharia-feriado');
+        
+        itens.forEach(item => {
+            const texto = item.querySelector('.busca-texto-malharia').innerText.toLowerCase();
+            item.style.display = texto.includes(termo) ? '' : 'none';
+        });
+    }
+
+    function atualizarTextoMalharias() {
+        const checks = document.querySelectorAll('.check-malharia-feriado:checked');
+        const textoBtn = document.getElementById('textoMalhariasSelecionadas');
+        
+        if (checks.length === 0) {
+            textoBtn.innerText = 'Todas as Malharias (Global)';
+            textoBtn.classList.add('text-muted');
+        } else if (checks.length === 1) {
+            // Se só tem 1, mostra o nome dela
+            const nomeUnico = checks[0].nextElementSibling.innerText;
+            textoBtn.innerText = nomeUnico;
+            textoBtn.classList.remove('text-muted');
+        } else {
+            // Se tem mais, mostra a contagem
+            textoBtn.innerText = checks.length + ' Malharias Selecionadas';
+            textoBtn.classList.remove('text-muted');
+        }
+    }
+
+    // Modal de Confirmação
+    let formToDelete = null;
+
+    function confirmarExclusao(btn, tipo) {
+        formToDelete = btn.closest('form');
+        const msg = tipo === 'feriado' ? 'Tem a certeza que deseja apagar este registo de Feriado/Folga?' : 'Tem a certeza que deseja apagar permanentemente este apontamento de produção?';
+        document.getElementById('textoConfirmDelete').innerText = msg;
+        new bootstrap.Modal(document.getElementById('modalConfirmDelete')).show();
+    }
+
+    document.getElementById('btnConfirmDelete').addEventListener('click', function() {
+        if(formToDelete) formToDelete.submit();
+    });
+
+    // Lógica do Calendário 
+    const resumoRegistros = <%- resumoGeralJSON || '[]' %>;
+    const listaFeriados = <%- feriadosJSON || '[]' %>;
+    const totalMalharias = parseInt("<%= totalMalharias || 0 %>");
+    const dataBusca = "<%= dataBusca %>";
+    const primeiraDataStr = "<%= primeiraData %>";
+
+    let currentViewDate = new Date(dataBusca + "T12:00:00"); 
+    const primeiraDataObj = new Date(primeiraDataStr + "T00:00:00");
+    const hojeObj = new Date(); 
+    hojeObj.setHours(23,59,59,999); 
+
+    const registrosMap = {};
+    resumoRegistros.forEach(r => {
+        if (!registrosMap[r.data_registro]) registrosMap[r.data_registro] = new Set();
+        registrosMap[r.data_registro].add(r.malharia_id);
+    });
+
+    const feriadosMap = {};
+    listaFeriados.forEach(f => {
+        if (!feriadosMap[f.data_feriado]) feriadosMap[f.data_feriado] = [];
+        feriadosMap[f.data_feriado].push(f);
+    });
+
+    function pad(n) { return n < 10 ? '0'+n : n; }
+    function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+
+    function mudarMes(delta) {
+        let currentMonth = currentViewDate.getMonth();
+        currentViewDate.setMonth(currentMonth + delta, 1); 
+        renderCalendar();
+    }
+
+    function renderCalendar() {
+        const currentMonth = currentViewDate.getMonth();
+        const currentYear = currentViewDate.getFullYear();
+        
+        const firstDay = new Date(currentYear, currentMonth, 1);
+        const lastDay = new Date(currentYear, currentMonth + 1, 0);
+        
+        const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        document.getElementById('mesAnoAtual').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+        const grid = document.getElementById('calendarioGrid');
+        grid.innerHTML = '';
+        
+        const diasSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        diasSemana.forEach(d => {
+            let el = document.createElement('div');
+            el.className = 'calendario-header';
+            el.innerText = d;
+            grid.appendChild(el);
+        });
+
+        let startDayWeek = firstDay.getDay(); 
+        for(let i = 0; i < startDayWeek; i++) {
+            let el = document.createElement('div');
+            el.className = 'calendario-dia outro-mes';
+            grid.appendChild(el);
+        }
+
+        for(let day = 1; day <= lastDay.getDate(); day++) {
+            let loopDate = new Date(currentYear, currentMonth, day, 12, 0, 0); 
+            let loopDateStr = toDateStr(loopDate);
+            
+            let el = document.createElement('div');
+            el.className = 'calendario-dia';
+            
+            if (loopDateStr === dataBusca) el.classList.add('dia-ativo');
+            el.onclick = () => { window.location.href = '/registros?data=' + loopDateStr; };
+
+            let numDiv = document.createElement('div');
+            numDiv.className = 'dia-numero';
+            numDiv.innerText = day;
+            el.appendChild(numDiv);
+
+            let qtdRegistros = registrosMap[loopDateStr] ? registrosMap[loopDateStr].size : 0;
+            let isWeekend = loopDate.getDay() === 0 || loopDate.getDay() === 6; 
+            
+            let feriadosNoDia = feriadosMap[loopDateStr] || [];
+            let isGlobalHoliday = feriadosNoDia.some(f => !f.malharia_id); 
+            let malhariasDeFolga = new Set(feriadosNoDia.map(f => f.malharia_id).filter(id => id)); 
+            
+            let expectedMalharias = totalMalharias;
+            
+            if (isWeekend || isGlobalHoliday) {
+                expectedMalharias = 0; 
+            } else {
+                expectedMalharias -= malhariasDeFolga.size; 
+            }
+            if(expectedMalharias < 0) expectedMalharias = 0;
+
+            let statusBadge = document.createElement('div');
+            statusBadge.className = 'badge-status text-white mt-1 shadow-sm';
+            
+            if (qtdRegistros === 0) {
+                if (expectedMalharias > 0 && loopDate >= primeiraDataObj && loopDate <= hojeObj) {
+                    statusBadge.classList.add('bg-danger');
+                    statusBadge.innerText = 'Pendente';
+                } else if (isGlobalHoliday) {
+                    statusBadge.classList.add('bg-info', 'text-dark');
+                    statusBadge.innerText = feriadosNoDia.find(f => !f.malharia_id).descricao || 'Feriado';
+                } else if (malhariasDeFolga.size > 0 && loopDate <= hojeObj) {
+                    statusBadge.classList.add('bg-danger');
+                    statusBadge.innerText = 'Pendente';
+                } else {
+                    statusBadge.style.display = 'none'; 
+                }
+            } else {
+                if (expectedMalharias === 0) {
+                    statusBadge.classList.add('bg-success');
+                    statusBadge.innerText = isWeekend ? 'Prod. no FDS' : 'Prod. no Feriado';
+                } else if (qtdRegistros >= expectedMalharias) {
+                    statusBadge.classList.add('bg-success');
+                    statusBadge.innerText = malhariasDeFolga.size > 0 ? 'Completo (C/ Folgas)' : 'Completo';
+                } else {
+                    statusBadge.classList.add('bg-warning', 'text-dark');
+                    statusBadge.innerText = `Faltam ${expectedMalharias - qtdRegistros}`;
+                }
+            }
+
+            if(statusBadge.style.display !== 'none') el.appendChild(statusBadge);
+            grid.appendChild(el);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', renderCalendar);
+</script>

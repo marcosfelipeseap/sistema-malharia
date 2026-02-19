@@ -7,10 +7,12 @@ router.get('/create', registrosController.create);
 router.post('/', registrosController.store);
 router.post('/:id/delete', registrosController.destroy);
 
-// Rota AJAX para a tela de apontamento
-router.get('/api/malharia-info/:id', registrosController.getMalhariaInfo);
+// Novas rotas para Feriados e Folgas
+router.post('/feriados', registrosController.storeFeriado);
+router.post('/feriados/:id/delete', registrosController.destroyFeriado);
 
-// Rotas de edição
+// Rotas da API e Edição
+router.get('/api/malharia-info/:id', registrosController.getMalhariaInfo);
 router.get('/:id/edit', registrosController.edit);
 router.post('/:id/update', registrosController.update);
 
