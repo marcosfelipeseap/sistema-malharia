@@ -11,7 +11,7 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <form action="/registros" method="POST" id="formRegistro" onsubmit="return validarFormulario(event)">
-                    
+                 
                     <h5 class="card-title text-primary border-bottom pb-2">Dados Gerais</h5>
                     <div class="row mb-4">
                         <div class="col-md-3 mb-3">
@@ -35,7 +35,7 @@
                     </div>
 
                     <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
-                    
+               
                     <div class="row bg-light p-3 rounded mb-3 border align-items-center">
                         <div class="col-md-8">
                             <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
@@ -140,7 +140,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbodyModalProdutos">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -174,7 +174,7 @@
     const todosItens = <%- todosItensJSON %>;
     const todosProcessos = <%- JSON.stringify(processos) %>; 
     
-    let maquinasDaMalharia = []; 
+    let maquinasDaMalharia = [];
     let maxInternos = 0;
     let listaProducao = []; 
     let combinacoesDisponiveis = [];
@@ -215,11 +215,11 @@
         inputInternos.max = maxInternos;
         inputInternos.value = '';
         inputInternos.placeholder = `Máx: ${maxInternos}`;
-        
+
         try {
             const res = await fetch(`/registros/api/malharia-info/${selectMal.value}`);
             const data = await res.json();
-            maquinasDaMalharia = data.itens || []; 
+            maquinasDaMalharia = data.itens || [];
         } catch (e) {
             console.error("Erro ao procurar máquinas:", e);
         }
@@ -240,15 +240,18 @@
 
     function abrirModalBusca(filtroInicial = '') {
         combinacoesDisponiveis = [];
+        $('#checkAllModal').prop('checked', false);
+
         todosProcessos.forEach(p => {
             const statusConcluido = p.situacao === 'Concluído' || p.situacao === 'Finalizado';
             const semDemanda = p.totais && p.totais.faltante <= 0;
             
             if(!statusConcluido && !semDemanda && p.itens) {
-                p.itens.forEach(pi => {
+                p.itens.forEach((pi, idx) => {
                     const dadosItem = todosItens.find(i => String(i.id) === String(pi.item_id));
                     if(dadosItem) {
                         const descricaoFinal = pi.descricao || dadosItem.descricao || '-';
+                        const tamanhoFinal = pi.tamanho || dadosItem.tamanho || ''; 
 
                         combinacoesDisponiveis.push({
                             processo_id: p.id,
@@ -256,7 +259,8 @@
                             item_id: dadosItem.id,
                             nome_produto: dadosItem.nome || 'Sem Nome',
                             descricao: descricaoFinal,
-                            id_unico: `${p.id}_${dadosItem.id}`
+                            tamanho: tamanhoFinal,
+                            id_unico: `${p.id}_${dadosItem.id}_${pi.id || idx}`
                         });
                     }
                 });
@@ -287,7 +291,14 @@
         }
 
         combinacoesDisponiveis.forEach(comb => {
-            const jaAdicionado = listaProducao.some(lp => lp.processo_id == comb.processo_id && lp.item_id == comb.item_id);
+            // VALIDAÇÃO SUPER ROBUSTA: Compara Processo + Item + Tamanho + Descrição
+            const jaAdicionado = listaProducao.some(lp => 
+                String(lp.processo_id) === String(comb.processo_id) && 
+                String(lp.item_id) === String(comb.item_id) &&
+                String(lp.tamanho || '').trim() === String(comb.tamanho || '').trim() &&
+                String(lp.descricao || '').trim() === String(comb.descricao || '').trim()
+            );
+
             if(!jaAdicionado) {
                 tbody.append(`
                     <tr>
@@ -296,7 +307,10 @@
                         </td>
                         <td class="busca-texto align-middle fw-bold">${escapeHTML(comb.orgao)}</td>
                         <td class="busca-texto align-middle">${escapeHTML(comb.nome_produto)}</td>
-                        <td class="busca-texto align-middle text-muted small">${escapeHTML(comb.descricao)}</td>
+                        <td class="busca-texto align-middle text-muted small">
+                            ${comb.tamanho ? `<span class="badge bg-secondary me-1">Tam: ${escapeHTML(comb.tamanho)}</span>` : ''}
+                            ${escapeHTML(comb.descricao)}
+                        </td>
                     </tr>
                 `);
             }
@@ -306,7 +320,6 @@
     function filtrarModalProdutos() {
         const buscaTexto = $('#inputBuscaProduto').val().toLowerCase().trim();
         const palavras = buscaTexto === '' ? [] : buscaTexto.split(/\s+/);
-        
         $('#tbodyModalProdutos tr').each(function() {
             const textoLinha = $(this).find('.busca-texto').text().toLowerCase();
             const corresponde = palavras.every(palavra => textoLinha.includes(palavra));
@@ -331,16 +344,17 @@
             
             if (comb) {
                 listaProducao.push({
+                    id_unico: comb.id_unico,
                     processo_id: comb.processo_id,
                     orgao: comb.orgao,
                     item_id: comb.item_id,
                     nomeProduto: comb.nome_produto,
                     descricao: comb.descricao,
+                    tamanho: comb.tamanho,
                     qtd: 0
                 });
             }
         });
-        
         atualizarTabela();
         $('#modalBuscaProdutos').modal('hide');
     }
@@ -375,6 +389,7 @@
                         ${escapeHTML(prod.nomeProduto)}
                     </td>
                     <td class="align-middle text-muted small">
+                        ${prod.tamanho ? `<span class="badge bg-secondary me-1">Tam: ${escapeHTML(prod.tamanho)}</span>` : ''}
                         ${escapeHTML(prod.descricao)}
                     </td>
                     <td class="align-middle text-center" style="width: 150px;">
@@ -425,6 +440,7 @@
                         const idMaq = String(maq.maquinario_id || (maq.maquina && maq.maquina.id));
                         if(idMaq && idMaq !== 'undefined') {
                             if(!usoMaquinario[idMaq]) usoMaquinario[idMaq] = [];
+                            
                             usoMaquinario[idMaq].push({ nome: dadosItem.nome, meta: parseFloat(dadosItem.meta_diaria) || 100 });
                         }
                     });
@@ -469,6 +485,7 @@
         }
 
         if (maquinasCompativeisEncontradas === 0) alertas.push("A malharia NÃO possui nenhuma máquina compatível para fazer os produtos da tabela.");
+
         if (alertas.length > 0) {
             explicacao += "AVISOS DO SISTEMA:\n";
             alertas.forEach(a => explicacao += `- ${a}\n`);
@@ -493,7 +510,6 @@
 
         if(listaProducao.length > 0 && totalProduzido < meta) {
             box.style.display = 'block';
-            
             if(totalProduzido === 0) {
                 selectJust.required = false;
                 labelJust.innerHTML = '<i class="bi bi-info-circle"></i> Planejamento de Produção: Quantidade zerada. Justificativa opcional.';

@@ -37,7 +37,7 @@
                     </div>
 
                     <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
-                   
+                    
                     <div class="row bg-light p-3 rounded mb-3 border align-items-center">
                         <div class="col-md-8">
                             <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
@@ -97,7 +97,7 @@
                     <div class="text-end">
                         <button type="submit" class="btn btn-primary btn-lg px-5"><i class="bi bi-save"></i> Atualizar Apontamento</button>
                     </div>
-                 </form>
+                </form>
             </div>
         </div>
     </div>
@@ -141,7 +141,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbodyModalProdutos">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -208,27 +208,44 @@
         <% }) %>
     ];
 
-    // Enriquecer a lista com dados de Órgão, Nome e Descrição dinamicamente através do ID
+    // LÓGICA DE PROTEÇÃO DE DUPLICADOS NO CARREGAMENTO
+    // Para evitar que o sistema puxe a mesma descrição para itens com o mesmo ID
+    let matchedProcessItems = [];
+
     listaProducao.forEach(prod => {
         const p = todosProcessos.find(x => String(x.id) === String(prod.processo_id));
         const i = todosItens.find(x => String(x.id) === String(prod.item_id));
         
-        // Procurar a descrição específica dentro dos itens do processo
         let desc = '-';
+        let tam = '';
+      
         if (p && p.itens) {
-            const itemNoProcesso = p.itens.find(x => String(x.item_id) === String(prod.item_id));
-            if (itemNoProcesso && itemNoProcesso.descricao) {
-                desc = itemNoProcesso.descricao;
+            // Procura um item que seja correspondente E QUE AINDA NÃO TENHA SIDO USADO
+            const itemNoProcesso = p.itens.find((x, index) => {
+                const isMatch = String(x.item_id) === String(prod.item_id);
+                const isUsed = matchedProcessItems.includes(`${p.id}_${index}`);
+                return isMatch && !isUsed;
+            });
+
+            if (itemNoProcesso) {
+                if (itemNoProcesso.descricao) desc = itemNoProcesso.descricao;
+                if (itemNoProcesso.tamanho) tam = itemNoProcesso.tamanho;
+                
+                // Marca este índice específico como usado
+                const idx = p.itens.indexOf(itemNoProcesso);
+                matchedProcessItems.push(`${p.id}_${idx}`);
             }
         }
-        // Se não houver descrição no processo, tenta pegar do cadastro geral do item
-        if (desc === '-' && i && i.descricao) {
-            desc = i.descricao;
-        }
+        
+        // Se não houver dados no processo, tenta pegar do cadastro geral do item
+        if (desc === '-' && i && i.descricao) desc = i.descricao;
+        if (tam === '' && i && i.tamanho) tam = i.tamanho;
 
         prod.orgao = p ? p.orgao : 'N/A';
         prod.nomeProduto = i ? i.nome : 'Sem Nome';
         prod.descricao = desc;
+        prod.tamanho = tam;
+        prod.id_unico = `${prod.processo_id}_${prod.item_id}_${tam}_${desc}`; // Apenas para debug interno
     });
 
     $(document).ready(function() {
@@ -281,14 +298,17 @@
 
     function abrirModalBusca(filtroInicial = '') {
         combinacoesDisponiveis = [];
+        $('#checkAllModal').prop('checked', false);
+
         todosProcessos.forEach(p => {
             const statusConcluido = p.situacao === 'Concluído' || p.situacao === 'Finalizado';
             const semDemanda = p.totais && p.totais.faltante <= 0;
             if(!statusConcluido && !semDemanda && p.itens) {
-                p.itens.forEach(pi => {
+                p.itens.forEach((pi, idx) => {
                     const dadosItem = todosItens.find(i => String(i.id) === String(pi.item_id));
                     if(dadosItem) {
                         const descricaoFinal = pi.descricao || dadosItem.descricao || '-';
+                        const tamanhoFinal = pi.tamanho || dadosItem.tamanho || '';
 
                         combinacoesDisponiveis.push({
                             processo_id: p.id,
@@ -296,7 +316,8 @@
                             item_id: dadosItem.id,
                             nome_produto: dadosItem.nome || 'Sem Nome',
                             descricao: descricaoFinal,
-                            id_unico: `${p.id}_${dadosItem.id}`
+                            tamanho: tamanhoFinal,
+                            id_unico: `${p.id}_${dadosItem.id}_${pi.id || idx}` // Indexador apenas para a checkbox
                         });
                     }
                 });
@@ -327,7 +348,14 @@
         }
 
         combinacoesDisponiveis.forEach(comb => {
-            const jaAdicionado = listaProducao.some(lp => lp.processo_id == comb.processo_id && lp.item_id == comb.item_id);
+            // VALIDAÇÃO SUPER ROBUSTA: Compara Processo + Item + Tamanho + Descrição
+            const jaAdicionado = listaProducao.some(lp => 
+                String(lp.processo_id) === String(comb.processo_id) && 
+                String(lp.item_id) === String(comb.item_id) &&
+                String(lp.tamanho || '').trim() === String(comb.tamanho || '').trim() &&
+                String(lp.descricao || '').trim() === String(comb.descricao || '').trim()
+            );
+
             if(!jaAdicionado) {
                 tbody.append(`
                     <tr>
@@ -336,7 +364,10 @@
                         </td>
                         <td class="busca-texto align-middle fw-bold">${escapeHTML(comb.orgao)}</td>
                         <td class="busca-texto align-middle">${escapeHTML(comb.nome_produto)}</td>
-                        <td class="busca-texto align-middle text-muted small">${escapeHTML(comb.descricao)}</td>
+                        <td class="busca-texto align-middle text-muted small">
+                            ${comb.tamanho ? `<span class="badge bg-secondary me-1">Tam: ${escapeHTML(comb.tamanho)}</span>` : ''}
+                            ${escapeHTML(comb.descricao)}
+                        </td>
                     </tr>
                 `);
             }
@@ -346,7 +377,6 @@
     function filtrarModalProdutos() {
         const buscaTexto = $('#inputBuscaProduto').val().toLowerCase().trim();
         const palavras = buscaTexto === '' ? [] : buscaTexto.split(/\s+/);
-        
         $('#tbodyModalProdutos tr').each(function() {
             const textoLinha = $(this).find('.busca-texto').text().toLowerCase();
             const corresponde = palavras.every(palavra => textoLinha.includes(palavra));
@@ -371,16 +401,17 @@
 
             if (comb) {
                 listaProducao.push({
+                    id_unico: comb.id_unico,
                     processo_id: comb.processo_id,
                     orgao: comb.orgao,
                     item_id: comb.item_id,
                     nomeProduto: comb.nome_produto,
                     descricao: comb.descricao,
+                    tamanho: comb.tamanho,
                     qtd: 0 
                 });
             }
         });
-        
         atualizarTabela();
         $('#modalBuscaProdutos').modal('hide');
     }
@@ -415,6 +446,7 @@
                         ${escapeHTML(prod.nomeProduto)}
                     </td>
                     <td class="align-middle text-muted small">
+                        ${prod.tamanho ? `<span class="badge bg-secondary me-1">Tam: ${escapeHTML(prod.tamanho)}</span>` : ''}
                         ${escapeHTML(prod.descricao)}
                     </td>
                     <td class="align-middle text-center" style="width: 150px;">
@@ -465,6 +497,7 @@
                         const idMaq = String(maq.maquinario_id || (maq.maquina && maq.maquina.id));
                         if(idMaq && idMaq !== 'undefined') {
                             if(!usoMaquinario[idMaq]) usoMaquinario[idMaq] = [];
+                            
                             usoMaquinario[idMaq].push({ nome: dadosItem.nome, meta: parseFloat(dadosItem.meta_diaria) || 100 });
                         }
                     });

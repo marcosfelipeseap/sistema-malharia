@@ -54,7 +54,7 @@
                                 <li><a class="dropdown-item" href="/processos/<%= processo.id %>/edit"><i class="bi bi-pencil me-2"></i>Editar</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <form action="/processos/<%= processo.id %>?_method=DELETE" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este processo?');">
+                                    <form action="/processos/<%= processo.id %>/delete" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este processo?');">
                                         <button type="submit" class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Excluir</button>
                                     </form>
                                 </li>
@@ -62,6 +62,17 @@
                         </div>
                     </div>
                     <div class="card-body pt-0 pb-2">
+                        
+                        <p class="card-text text-primary small mb-2 d-inline-block" 
+                           style="cursor: pointer; position: relative; z-index: 2;" 
+                           onclick="mostrarDetalhesFabricacao(this)" 
+                           data-detalhes='<%= JSON.stringify(processo.detalhesMalharias || {}) %>' 
+                           data-numero="<%= processo.numero_processo %>"
+                           title="Clique para ver detalhes de produção por malharia">
+                            <i class="bi bi-box-seam me-1"></i> Fabricado: 
+                            <span class="fw-bold" style="border-bottom: 1px dotted #0d6efd;"><%= processo.totalFabricado || 0 %> un</span>
+                        </p>
+
                         <p class="card-text text-muted small mb-2">
                             <i class="bi bi-building me-1"></i> <%= processo.orgao || 'Órgão não informado' %>
                         </p>
@@ -74,7 +85,7 @@
                         </div>
                     </div>
                     
-                    <div class="card-footer bg-light border-top py-2 px-3">
+                    <div class="card-footer bg-light border-top py-2 px-3 position-relative" style="z-index: 2;">
                         <div class="row text-center gx-0">
                             <div class="col border-end">
                                 <small class="d-block text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Solic.</small>
@@ -100,6 +111,29 @@
     <% } %>
 </div>
 
+<div class="modal fade" id="modalDetalhesFabricacao" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-2 border-0">
+                <h6 class="modal-title mb-0 fw-bold"><i class="bi bi-clipboard-data"></i> Detalhes de Produção</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="p-3 bg-light border-bottom text-center">
+                    <span class="text-muted small d-block">Processo</span>
+                    <strong class="text-dark fs-5" id="modalFabricacaoNumProcesso"></strong>
+                </div>
+                <ul class="list-group list-group-flush" id="listaDetalhesMalharias">
+                    </ul>
+            </div>
+            <div class="modal-footer py-2 bg-light justify-content-between border-top-0">
+                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem;">Total Fabricado</small>
+                <strong class="text-primary fs-5" id="modalFabricacaoTotal"></strong>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .hover-shadow:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
     .transition-all { transition: all 0.3s ease; }
@@ -119,7 +153,6 @@
                 try {
                     const novaUrl = `/processos?busca=${encodeURIComponent(termo)}`;
                     window.history.replaceState(null, '', novaUrl);
-
                     grid.style.opacity = '0.5';
                     
                     const response = await fetch(novaUrl);
@@ -139,5 +172,42 @@
                 }
             }, 500);
         });
+    }
+
+    // Função para exibir o modal de detalhes de fabricação
+    function mostrarDetalhesFabricacao(element) {
+        const dadosJson = element.getAttribute('data-detalhes');
+        const numProcesso = element.getAttribute('data-numero');
+        let detalhes = {};
+        let total = 0;
+        
+        try {
+            detalhes = JSON.parse(dadosJson);
+        } catch (e) {
+            console.error("Erro ao fazer parse dos detalhes", e);
+        }
+
+        document.getElementById('modalFabricacaoNumProcesso').innerText = numProcesso;
+        const listaEl = document.getElementById('listaDetalhesMalharias');
+        listaEl.innerHTML = '';
+
+        if (Object.keys(detalhes).length === 0) {
+            listaEl.innerHTML = '<li class="list-group-item text-center text-muted py-4 border-0"><i class="bi bi-inbox d-block mb-2 fs-3 text-secondary"></i>Nenhuma produção registada.</li>';
+        } else {
+            for (const [nomeMalharia, qtd] of Object.entries(detalhes)) {
+                total += qtd;
+                listaEl.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-secondary small fw-medium"><i class="bi bi-house-door me-2 text-muted"></i>${nomeMalharia}</span>
+                        <span class="badge bg-primary rounded-pill">${qtd} un</span>
+                    </li>
+                `;
+            }
+        }
+
+        document.getElementById('modalFabricacaoTotal').innerText = total + " un";
+        
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesFabricacao'));
+        modal.show();
     }
 </script>

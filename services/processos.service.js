@@ -9,6 +9,7 @@ exports.getAllItensDisponiveis = async () => {
 };
 
 exports.getAllProcessos = async (busca = '') => {
+    // 1. Busca os processos e os seus itens solicitados
     let query = supabase
         .schema('malharia')
         .from(TABLE)
@@ -22,7 +23,33 @@ exports.getAllProcessos = async (busca = '') => {
     const { data, error } = await query;
     if (error) throw error;
 
+    // 2. Busca separadamente toda a produção registada para os processos encontrados (Mais seguro)
+    const processosIds = data.map(p => p.id);
+    let producaoRegistada = [];
+    
+    if (processosIds.length > 0) {
+        const { data: rData, error: rError } = await supabase
+            .schema('malharia')
+            .from('registro_diario_item')
+            .select(`
+                processo_id,
+                qtd_produzida,
+                registro:registro_id (
+                    malharia:malharia_id (nome)
+                )
+            `)
+            .in('processo_id', processosIds);
+            
+        if (!rError && rData) {
+            producaoRegistada = rData;
+        } else if (rError) {
+            console.error("Erro ao buscar a produção dos processos:", rError);
+        }
+    }
+
+    // 3. Junta tudo e faz os cálculos finais
     const processosComTotais = data.map(p => {
+        // Cálculo dos totais de itens (solicitado, autorizado, entregue, faltante)
         const totais = (p.itens || []).reduce((acc, item) => {
             return {
                 solicitado: acc.solicitado + (item.qtd_solicitada || 0),
@@ -32,7 +59,32 @@ exports.getAllProcessos = async (busca = '') => {
             };
         }, { solicitado: 0, autorizado: 0, entregue: 0, faltante: 0 });
 
-        return { ...p, totais };
+        // Cálculo do Total Fabricado e detalhes por Malharia
+        let totalFabricado = 0;
+        let detalhesMalharias = {}; // Formato: { "Malharia A": 50, "Malharia B": 120 }
+
+        // Filtra as produções que pertencem APENAS a este processo atual no loop
+        const producaoDesteProcesso = producaoRegistada.filter(reg => reg.processo_id === p.id);
+
+        producaoDesteProcesso.forEach(regItem => {
+            const qtd = regItem.qtd_produzida || 0;
+            totalFabricado += qtd;
+
+            // Navega com segurança para evitar erros caso alguma malharia tenha sido apagada
+            let nomeMalharia = 'Malharia Desconhecida';
+            if (regItem.registro && regItem.registro.malharia && regItem.registro.malharia.nome) {
+                nomeMalharia = regItem.registro.malharia.nome;
+            }
+            
+            // Soma a quantidade para essa malharia específica
+            if (detalhesMalharias[nomeMalharia]) {
+                detalhesMalharias[nomeMalharia] += qtd;
+            } else {
+                detalhesMalharias[nomeMalharia] = qtd;
+            }
+        });
+
+        return { ...p, totais, totalFabricado, detalhesMalharias };
     });
 
     return processosComTotais;
@@ -73,7 +125,6 @@ exports.getProcessoById = async (id) => {
     return { ...processo, itens: itens || [], termos: termosComUrl };
 };
 
-// ... (verificarNumeroExistente mantido igual)
 async function verificarNumeroExistente(numero, ignorarId = null) {
     let query = supabase
         .schema('malharia')
@@ -90,7 +141,6 @@ async function verificarNumeroExistente(numero, ignorarId = null) {
     return data.length > 0;
 }
 
-// ... (createProcessoComItens mantido igual)
 exports.createProcessoComItens = async (processoData, itensData) => {
     const existe = await verificarNumeroExistente(processoData.numero_processo);
     if (existe) throw new Error(`O número de processo "${processoData.numero_processo}" já está cadastrado!`);
@@ -112,7 +162,6 @@ exports.createProcessoComItens = async (processoData, itensData) => {
     return processo;
 };
 
-// ... (updateProcessoComItens mantido igual)
 exports.updateProcessoComItens = async (id, processoData, itensData) => {
     const existe = await verificarNumeroExistente(processoData.numero_processo, id);
     if (existe) throw new Error(`O número de processo "${processoData.numero_processo}" já pertence a outro registro!`);
