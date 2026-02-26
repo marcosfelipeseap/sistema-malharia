@@ -71,7 +71,12 @@ const parseItensFromBody = (body) => {
 
 exports.store = async (req, res) => {
     try {
-        const { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
+        let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
+        
+        // Remove todos os pontos do número de processo
+        if (numero_processo) {
+            numero_processo = String(numero_processo).replace(/\./g, '');
+        }
         
         const processoData = {
             numero_processo, orgao, tipo_demanda, 
@@ -156,7 +161,12 @@ exports.edit = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         const { id } = req.params;
-        const { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
+        let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
+
+        // Remove todos os pontos do número de processo
+        if (numero_processo) {
+            numero_processo = String(numero_processo).replace(/\./g, '');
+        }
 
         const processoData = { 
             numero_processo, orgao, tipo_demanda, 

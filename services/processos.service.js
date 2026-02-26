@@ -17,7 +17,9 @@ exports.getAllProcessos = async (busca = '') => {
         .order('data_entrada', { ascending: false });
 
     if (busca) {
-        query = query.or(`numero_processo.ilike.%${busca}%,orgao.ilike.%${busca}%,situacao.ilike.%${busca}%`);
+        // Limpa os pontos do termo de busca apenas para encontrar o número do processo corretamente
+        const buscaLimpaNumero = busca.replace(/\./g, '');
+        query = query.or(`numero_processo.ilike.%${buscaLimpaNumero}%,orgao.ilike.%${busca}%,situacao.ilike.%${busca}%`);
     }
 
     const { data, error } = await query;
@@ -126,11 +128,13 @@ exports.getProcessoById = async (id) => {
 };
 
 async function verificarNumeroExistente(numero, ignorarId = null) {
+    // Limpa pontos caso venha de alguma outra fonte interna
+    const numeroLimpo = String(numero).replace(/\./g, '');
     let query = supabase
         .schema('malharia')
         .from(TABLE)
         .select('id')
-        .eq('numero_processo', numero);
+        .eq('numero_processo', numeroLimpo);
 
     if (ignorarId) {
         query = query.neq('id', ignorarId);

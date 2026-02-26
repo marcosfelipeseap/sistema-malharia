@@ -36,7 +36,7 @@
     <div class="row mb-3 g-3">
         <div class="col-md-3">
             <label class="form-label small fw-bold">Número do Processo</label>
-            <input type="text" class="form-control" name="numero_processo" required placeholder="Ex: 2026/001">
+            <input type="text" class="form-control" name="numero_processo" required placeholder="Ex: 2026/001" oninput="this.value = this.value.replace(/\./g, '')">
         </div>
         <div class="col-md-3">
             <label class="form-label small fw-bold">Data de Entrada</label>
@@ -104,7 +104,7 @@
     <div class="row mb-3 g-3">
         <div class="col-md-4">
             <label class="form-label small fw-bold">Status Geral</label>
-            <select class="form-select" name="status">
+            <select class="form-select" name="status" id="statusGeral">
                 <option value="ENTREGA NÃO INICIADA" class="text-danger fw-bold">ENTREGA NÃO INICIADA</option>
                 <option value="PARCIAMENTE ENTREGUE" class="text-warning fw-bold">PARCIAMENTE ENTREGUE</option>
                 <option value="DEMANDA CONCLUÍDA" class="text-success fw-bold">DEMANDA CONCLUÍDA</option>
@@ -194,6 +194,29 @@
         return opts;
     }
 
+    function atualizarStatusGeral() {
+        const rows = document.querySelectorAll('#listaItens tr');
+        let totalAut = 0;
+        let totalEnt = 0;
+
+        rows.forEach(row => {
+            const aut = parseInt(row.querySelector('[name="qtd_autorizada"]').value) || 0;
+            const ent = parseInt(row.querySelector('[name="qtd_entregue"]').value) || 0;
+            totalAut += aut;
+            totalEnt += ent;
+        });
+
+        const selectStatus = document.getElementById('statusGeral');
+
+        if (rows.length === 0 || totalAut === 0 || totalEnt === 0) {
+            selectStatus.value = "ENTREGA NÃO INICIADA";
+        } else if (totalEnt > 0 && totalEnt < totalAut) {
+            selectStatus.value = "PARCIAMENTE ENTREGUE";
+        } else if (totalEnt >= totalAut) {
+            selectStatus.value = "DEMANDA CONCLUÍDA";
+        }
+    }
+
     function adicionarLinha(preSelecionadoId = null) {
         const tbody = document.getElementById('listaItens');
         const prazo = document.getElementById('prazoGlobal').value;
@@ -211,7 +234,7 @@
             </td>
             <td>
                 <input type="text" class="form-control form-control-sm text-center border-0" 
-                       name="tamanho" placeholder="-" autocomplete="off">
+                        name="tamanho" placeholder="-" autocomplete="off">
             </td>
             <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_solicitada" value="0" min="0" oninput="validarAutorizada(this)"></td>
             <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_autorizada" value="0" min="0" oninput="validarAutorizada(this)"></td>
@@ -233,7 +256,7 @@
             dropdownParent: 'body',
             render: {
                 no_results: function(data, escape) {
-                    return '<div class="no-results p-2 text-muted text-center">' +
+                     return '<div class="no-results p-2 text-muted text-center">' +
                            '<i class="bi bi-exclamation-circle"></i> Não encontrado.<br>' +
                            '<a href="#" class="no-results-link fw-bold" onclick="abrirModalCriacao(\'' + escape(data.input) + '\'); return false;">' +
                            'Criar "' + escape(data.input) + '"?</a>' +
@@ -241,12 +264,15 @@
                 }
             }
         });
+
+        atualizarStatusGeral();
     }
 
     function removerLinha(btn) {
         const row = btn.closest('tr');
         if(row.querySelector('select').tomselect) row.querySelector('select').tomselect.destroy();
         row.remove();
+        atualizarStatusGeral();
     }
 
     function validarAutorizada(input) {
@@ -272,6 +298,8 @@
         }
         let faltante = aut - ent;
         row.querySelector('[name="qtd_faltante"]').value = (aut - ent < 0 ? 0 : aut - ent);
+        
+        atualizarStatusGeral();
     }
 
     function aplicarPrazoGlobal() {

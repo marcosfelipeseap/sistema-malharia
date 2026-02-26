@@ -17,7 +17,7 @@
     <div class="row mb-3 g-3">
         <div class="col-md-3">
             <label class="form-label small fw-bold">Número do Processo</label>
-            <input type="text" class="form-control" name="numero_processo" value="<%= processo.numero_processo %>" required>
+            <input type="text" class="form-control" name="numero_processo" value="<%= processo.numero_processo %>" required oninput="this.value = this.value.replace(/\./g, '')">
         </div>
         <div class="col-md-3">
             <label class="form-label small fw-bold">Data de Entrada</label>
@@ -83,7 +83,7 @@
     <div class="row mb-3 g-3">
         <div class="col-md-4">
             <label class="form-label small fw-bold">Status</label>
-            <select class="form-select" name="status">
+            <select class="form-select" name="status" id="statusGeral">
                 <% ['ENTREGA NÃO INICIADA','PARCIAMENTE ENTREGUE','DEMANDA CONCLUÍDA'].forEach(st => { %>
                     <option value="<%= st %>" <%= processo.status === st ? 'selected' : '' %>><%= st %></option>
                 <% }) %>
@@ -158,12 +158,35 @@
         return opts;
     }
 
+    function atualizarStatusGeral() {
+        const rows = document.querySelectorAll('#listaItens tr');
+        let totalAut = 0;
+        let totalEnt = 0;
+
+        rows.forEach(row => {
+            const aut = parseInt(row.querySelector('[name="qtd_autorizada"]').value) || 0;
+            const ent = parseInt(row.querySelector('[name="qtd_entregue"]').value) || 0;
+            totalAut += aut;
+            totalEnt += ent;
+        });
+
+        const selectStatus = document.getElementById('statusGeral');
+
+        if (rows.length === 0 || totalAut === 0 || totalEnt === 0) {
+            selectStatus.value = "ENTREGA NÃO INICIADA";
+        } else if (totalEnt > 0 && totalEnt < totalAut) {
+            selectStatus.value = "PARCIAMENTE ENTREGUE";
+        } else if (totalEnt >= totalAut) {
+            selectStatus.value = "DEMANDA CONCLUÍDA";
+        }
+    }
+
     function adicionarLinha(dados = null) {
         const tbody = document.getElementById('listaItens');
         const prazo = document.getElementById('prazoGlobal').value;
 
         const valId = dados ? dados.item_id : '';
-        const valDescricao = dados && dados.descricao ? dados.descricao : ''; // <--- RECUPERA A DESCRIÇÃO
+        const valDescricao = dados && dados.descricao ? dados.descricao : ''; 
         const valTamanho = dados && dados.tamanho ? dados.tamanho : ''; 
         const valSol = dados ? dados.qtd_solicitada : 0;
         const valAut = dados ? dados.qtd_autorizada : 0;
@@ -194,12 +217,15 @@
         new TomSelect(tr.querySelector('.tom-select-init'), {
             create: false, sortField: { field: "text", direction: "asc" }, placeholder: "Buscar...", dropdownParent: 'body'
         });
+
+        atualizarStatusGeral();
     }
 
     function removerLinha(btn) {
         const row = btn.closest('tr');
         if(row.querySelector('select').tomselect) row.querySelector('select').tomselect.destroy();
         row.remove();
+        atualizarStatusGeral();
     }
     
     function validarAutorizada(input) {
@@ -218,6 +244,8 @@
         let ent = parseInt(inEnt.value) || 0;
         if(ent > aut) { exibirAviso('Entregue > Autorizada'); inEnt.value = aut; ent = aut; }
         row.querySelector('[name="qtd_faltante"]').value = (aut - ent < 0 ? 0 : aut - ent);
+
+        atualizarStatusGeral();
     }
 
     function aplicarPrazoGlobal() {
@@ -250,5 +278,8 @@
     document.addEventListener('DOMContentLoaded', () => {
         if(itensExistentes.length > 0) itensExistentes.forEach(item => adicionarLinha(item));
         else adicionarLinha();
+        
+        // Garante que o status inicie correto com os valores vindos do banco
+        atualizarStatusGeral();
     });
 </script>
