@@ -1,0 +1,25 @@
+<div class="container mt-4">
+    <h2>Meu Perfil</h2>
+    
+    <% if (error) { %> <div class="alert alert-danger"><%= error %></div> <% } %>
+    <% if (success) { %> <div class="alert alert-success"><%= success %></div> <% } %>
+
+    <div class="card shadow p-4 mt-3" style="max-width: 600px;">
+        <form action="/usuarios/perfil" method="POST">
+            <div class="mb-3">
+                <label>Nome Completo</label>
+                <input type="text" name="nome" class="form-control" value="<%= user.nome %>" required>
+            </div>
+            <div class="mb-3">
+                <label>Usuário (Login)</label>
+                <input type="text" name="username" class="form-control" value="<%= user.username %>" pattern="[a-zA-Z0-9_]+" oninput="this.value = this.value.replace(/[^a-zA-Z0-9_]/g, '')" required>
+            </div>
+            <div class="mb-3">
+                <label>Nova Senha</label>
+                <input type="password" name="senha" class="form-control" placeholder="Deixe em branco para manter a senha atual">
+                <small class="text-muted">Se você alterar a senha ou o usuário, precisará fazer login novamente.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </form>
+    </div>
+</div>

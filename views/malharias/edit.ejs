@@ -1,5 +1,6 @@
+<% const isRestrito = user.nivel < 3; %>
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Editar Malharia</h1>
+    <h1 class="h2"><%= isRestrito ? 'Minha Malharia (Modo Leitura)' : 'Editar Malharia' %></h1>
     <a href="/malharias" class="btn btn-sm btn-secondary">Voltar</a>
 </div>
 
@@ -13,17 +14,15 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="nome" class="form-label">Nome da Malharia</label>
-                            <input type="text" class="form-control" id="nome" name="nome" value="<%= malharia.nome %>" required>
+                            <label class="form-label">Nome da Malharia</label>
+                            <input type="text" class="form-control" name="nome" value="<%= malharia.nome %>" <%= isRestrito ? 'readonly' : 'required' %>>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="unidade_id" class="form-label">Unidade Vinculada</label>
-                            <select class="form-select" id="unidade_id" name="unidade_id" required>
+                            <label class="form-label">Unidade Vinculada</label>
+                            <select class="form-select" name="unidade_id" <%= isRestrito ? 'disabled' : 'required' %>>
                                 <option value="">Selecione...</option>
                                 <% unidades.forEach(u => { %>
-                                    <option value="<%= u.id %>" <%= malharia.unidade_id == u.id ? 'selected' : '' %>>
-                                        <%= u.nome %> - <%= u.cidade %>
-                                    </option>
+                                    <option value="<%= u.id %>" <%= malharia.unidade_id == u.id ? 'selected' : '' %>><%= u.nome %> - <%= u.cidade %></option>
                                 <% }) %>
                             </select>
                         </div>
@@ -31,19 +30,17 @@
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label for="responsavel" class="form-label">Responsável da Malharia</label>
-                            <input type="text" class="form-control" id="responsavel" name="responsavel" value="<%= malharia.responsavel || '' %>">
+                            <label class="form-label">Responsável da Malharia</label>
+                            <input type="text" class="form-control" name="responsavel" value="<%= malharia.responsavel || '' %>" <%= isRestrito ? 'readonly' : '' %>>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="num_internos" class="form-label">Nº Total de Internos</label>
-                            <input type="number" class="form-control" id="num_internos" name="num_internos" min="0" value="<%= malharia.num_internos || 0 %>" onchange="validarInternos()">
+                            <label class="form-label">Nº Total de Internos</label>
+                            <input type="number" class="form-control" id="num_internos" name="num_internos" value="<%= malharia.num_internos || 0 %>" <%= isRestrito ? 'readonly' : 'onchange="validarInternos()"' %>>
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="num_internos_remunerados" class="form-label">Nº Internos Remunerados</label>
-                            <input type="number" class="form-control" id="num_internos_remunerados" name="num_internos_remunerados" min="0" value="<%= malharia.num_internos_remunerados || 0 %>" onchange="validarInternos()">
-                            <div id="erroRemunerados" class="form-text text-danger" style="display:none;">
-                                Não pode ser maior que o total de internos.
-                            </div>
+                            <label class="form-label">Nº Internos Remunerados</label>
+                            <input type="number" class="form-control" id="num_internos_remunerados" name="num_internos_remunerados" value="<%= malharia.num_internos_remunerados || 0 %>" <%= isRestrito ? 'readonly' : 'onchange="validarInternos()"' %>>
+                            <div id="erroRemunerados" class="form-text text-danger" style="display:none;">Não pode ser maior que o total de internos.</div>
                         </div>
                     </div>
                 </div>
@@ -52,6 +49,8 @@
             <div class="card mb-4 shadow-sm">
                 <div class="card-header bg-light fw-bold">Inventário de Máquinas</div>
                 <div class="card-body">
+                    
+                    <% if (!isRestrito) { %>
                     <div class="row g-2 align-items-end mb-4 p-3 bg-light border rounded">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Selecionar Maquinário</label>
@@ -69,11 +68,10 @@
                             <input type="number" id="qtdMaquinario" class="form-control" value="1" min="1">
                         </div>
                         <div class="col-md-2">
-                            <button type="button" class="btn btn-success w-100 fw-bold" onclick="adicionarLote()">
-                                <i class="bi bi-plus-lg"></i> Adicionar
-                            </button>
+                            <button type="button" class="btn btn-success w-100 fw-bold" onclick="adicionarLote()"><i class="bi bi-plus-lg"></i> Adicionar</button>
                         </div>
                     </div>
+                    <% } %>
 
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover align-middle">
@@ -83,25 +81,24 @@
                                     <th>Modelo</th>
                                     <th>Série</th>
                                     <th>Status</th>
-                                    <th class="text-center">Ação</th>
+                                    <% if (!isRestrito) { %><th class="text-center">Ação</th><% } %>
                                 </tr>
                             </thead>
                             <tbody id="tabelaItens"></tbody>
                         </table>
-                        <div id="msgVazio" class="alert alert-light text-center border border-dashed my-3" style="display:none">
-                            Nenhuma máquina adicionada.
-                        </div>
+                        <div id="msgVazio" class="alert alert-light text-center border border-dashed my-3" style="display:none">Nenhuma máquina adicionada.</div>
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 btn-lg mb-5">Salvar Alterações</button>
+            <button type="submit" class="btn btn-primary w-100 btn-lg mb-5">Salvar Modelo e Séries</button>
         </form>
     </div>
 </div>
 
 <script>
-    // Carrega dados existentes
+    const userNivel = <%= user.nivel %>;
+    const isRestrito = userNivel < 3;
     const dadosIniciais = <%- JSON.stringify(malharia.itens || []) %>;
     
     let itens = dadosIniciais.map(i => {
@@ -119,38 +116,33 @@
         };
     });
 
-    // Validar ao carregar a página também
     document.addEventListener('DOMContentLoaded', () => {
         renderizarTabela();
-        validarInternos();
+        if(!isRestrito) validarInternos();
     });
 
     function validarInternos() {
+        if(isRestrito) return true;
         const total = parseInt(document.getElementById('num_internos').value) || 0;
         const rem = parseInt(document.getElementById('num_internos_remunerados').value) || 0;
         const msg = document.getElementById('erroRemunerados');
-        if (rem > total) {
-            msg.style.display = 'block';
-            return false;
-        }
+        if (rem > total) { msg.style.display = 'block'; return false; }
         msg.style.display = 'none';
         return true;
     }
 
     function validarFormulario() {
         if (!validarInternos()) { alert('Corrija os números de internos.'); return false; }
-        prepararEnvio();
+        document.getElementById('itensJSON').value = JSON.stringify(itens);
         return true;
     }
 
-    // Funções de Tabela (Iguais)
     function adicionarLote() {
         const select = document.getElementById('selMaquinario');
         const qtdInput = document.getElementById('qtdMaquinario');
         const id = select.value;
         const nome = select.options[select.selectedIndex]?.dataset.nome;
         const qtd = parseInt(qtdInput.value) || 1;
-
         if (!id) return alert('Selecione um maquinário.');
 
         for (let i = 0; i < qtd; i++) {
@@ -168,6 +160,7 @@
         const msg = document.getElementById('msgVazio');
         tbody.innerHTML = '';
         if (itens.length === 0) { msg.style.display = 'block'; } else { msg.style.display = 'none'; }
+        
         itens.forEach((item, index) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -176,16 +169,14 @@
                 <td><input type="text" class="form-control form-control-sm" value="${item.numero_serie}" oninput="atualizarCampo(${index}, 'numero_serie', this.value)"></td>
                 <td>
                     <select class="form-select form-select-sm ${item.status === 'disponivel' ? 'text-success' : 'text-danger'}" 
-                            onchange="atualizarCampo(${index}, 'status', this.value); renderizarTabela();">
+                            onchange="atualizarCampo(${index}, 'status', this.value);" ${isRestrito ? 'disabled' : ''}>
                         <option value="disponivel" ${item.status === 'disponivel' ? 'selected' : ''}>Disponível</option>
                         <option value="indisponivel" ${item.status === 'indisponivel' ? 'selected' : ''}>Indisponível</option>
                     </select>
                 </td>
-                <td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="removerLinha(${index})"><i class="bi bi-trash"></i></button></td>
+                ${!isRestrito ? `<td class="text-center"><button type="button" class="btn btn-outline-danger btn-sm" onclick="removerLinha(${index})"><i class="bi bi-trash"></i></button></td>` : ''}
             `;
             tbody.appendChild(tr);
         });
     }
-
-    function prepararEnvio() { document.getElementById('itensJSON').value = JSON.stringify(itens); }
 </script>

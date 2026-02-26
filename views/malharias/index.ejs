@@ -2,12 +2,15 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Gerenciar Malharias</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="/malharias/create" class="btn btn-sm btn-primary">
-            <i class="bi bi-plus-lg"></i> Nova Malharia
-        </a>
-    </div>
+    <h1 class="h2"><%= user.nivel >= 3 ? 'Gerenciar Malharias' : 'Minhas Malharias' %></h1>
+    
+    <% if (user.nivel >= 3) { %>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="/malharias/create" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> Nova Malharia
+            </a>
+        </div>
+    <% } %>
 </div>
 
 <div class="row mb-4">
@@ -20,21 +23,12 @@
 </div>
 
 <% 
-    // LÓGICA DE AGRUPAMENTO
     const grupos = {};
-    
     if (typeof malharias !== 'undefined' && malharias.length > 0) {
         malharias.forEach(m => {
-            // Se tiver unidade, usamos o ID para agrupar, senão grupo '0'
             const uId = m.unidade ? m.unidade.id : '0';
-            
             if (!grupos[uId]) {
-                grupos[uId] = {
-                    dadosUnidade: m.unidade, // Objeto completo da unidade
-                    lista: [],
-                    totalMaquinas: 0,
-                    totalInternos: 0
-                };
+                grupos[uId] = { dadosUnidade: m.unidade, lista: [], totalMaquinas: 0, totalInternos: 0 };
             }
             grupos[uId].lista.push(m);
             grupos[uId].totalMaquinas += (m.itens ? m.itens.length : 0);
@@ -47,16 +41,14 @@
     <% if (Object.keys(grupos).length === 0) { %>
         <div class="alert alert-light text-center border border-dashed py-5">
             <i class="bi bi-shop fs-1 text-muted"></i>
-            <p class="mt-3">Nenhuma malharia cadastrada.</p>
+            <p class="mt-3">Nenhuma malharia encontrada.</p>
         </div>
     <% } else { %>
-        
         <% Object.keys(grupos).forEach(key => { 
             const grupo = grupos[key];
             const u = grupo.dadosUnidade;
         %>
             <div class="secao-unidade mb-5">
-                
                 <div class="card border-0 shadow-sm mb-3 overflow-hidden">
                     <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
@@ -136,6 +128,8 @@
                                                         Resp: <%= m.responsavel || 'N/A' %>
                                                     </small>
                                                 </div>
+                                                
+                                                <% if (user.nivel >= 3) { %>
                                                 <div class="dropdown">
                                                     <button class="btn btn-link text-secondary p-0" type="button" data-bs-toggle="dropdown">
                                                         <i class="bi bi-three-dots-vertical"></i>
@@ -146,6 +140,7 @@
                                                         <li><a class="dropdown-item text-danger" href="#" onclick="confirmarExclusao('<%= m.id %>', '<%= m.nome %>')"><i class="bi bi-trash me-2"></i> Excluir</a></li>
                                                     </ul>
                                                 </div>
+                                                <% } %>
                                             </div>
 
                                             <div class="d-flex justify-content-between align-items-center mt-2 mb-3 bg-light rounded p-2">
@@ -161,9 +156,10 @@
 
                                             <div class="mt-auto">
                                                 <a href="/malharias/<%= m.id %>/edit" class="btn btn-sm btn-outline-primary w-100">
-                                                    Gerenciar
+                                                    <%= user.nivel >= 3 ? 'Gerenciar' : 'Ver / Editar Máquinas' %>
                                                 </a>
                                             </div>
+
                                         </div>
                                     </div>
                                 </div>
@@ -171,7 +167,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         <% }) %>
     <% } %>
@@ -191,6 +186,7 @@
     </div>
 </div>
 
+<% if (user.nivel >= 3) { %>
 <div class="modal fade" id="modalExclusao" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -210,6 +206,7 @@
         </div>
     </div>
 </div>
+<% } %>
 
 <style>
     .ls-1 { letter-spacing: 1px; }
@@ -218,22 +215,18 @@
 </style>
 
 <script>
-    // --- MAPA ---
     let map = null;
     function abrirMapaUnidade(lat, lon, nome) {
         const modalEl = document.getElementById('modalMapaUnidade');
         document.getElementById('tituloMapa').innerText = 'Unidade: ' + nome;
         const modal = new bootstrap.Modal(modalEl);
         modal.show();
-
         modalEl.addEventListener('shown.bs.modal', () => {
             if (!map) {
                 map = L.map('mapaView');
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
             }
             setTimeout(() => map.invalidateSize(), 100);
-            
-            // Limpa e adiciona marcador
             map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
             const latNum = parseFloat(lat);
             const lonNum = parseFloat(lon);
@@ -242,27 +235,25 @@
         });
     }
 
-    // --- EXCLUSÃO ---
+    <% if (user.nivel >= 3) { %>
     function confirmarExclusao(id, nome) {
         document.getElementById('nomeExclusao').innerText = nome;
         document.getElementById('formExclusao').action = `/malharias/${id}/delete`;
         new bootstrap.Modal(document.getElementById('modalExclusao')).show();
     }
+    <% } %>
 
-    // --- BUSCA ---
     document.getElementById('searchInput').addEventListener('keyup', function() {
         const termo = this.value.toLowerCase();
         document.querySelectorAll('.secao-unidade').forEach(secao => {
             const cards = secao.querySelectorAll('.card-malharia-wrapper');
             let visiveis = 0;
-            
-            // Verifica também se o nome da unidade bate com a busca
             const textoUnidade = secao.innerText.toLowerCase(); 
             const unidadeMatch = textoUnidade.includes(termo);
 
             cards.forEach(card => {
                 const textoCard = card.innerText.toLowerCase();
-                if (textoCard.includes(termo) || unidadeMatch) { // Se a unidade der match, mostra todas as malharias dela
+                if (textoCard.includes(termo) || unidadeMatch) {
                     card.style.display = '';
                     visiveis++;
                 } else {

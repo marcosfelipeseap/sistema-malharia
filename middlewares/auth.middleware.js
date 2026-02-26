@@ -1,19 +1,63 @@
-/**
- * VERSÃO SEM LOGIN (BYPASS)
- * Este middleware simula um usuário logado para testes.
- */
+const jwt = require('jsonwebtoken');
+const supabase = require('../config/supabaseClient');
 
-exports.requireAuth = async (req, res, next) => {
-    // Simula um usuário fictício
-    req.user = {
-        id: null, // Define como null para não dar erro de chave estrangeira (se a coluna permitir)
-        email: 'modo_dev@teste.com'
-    };
-
-    // Passa direto sem verificar cookies ou Supabase
-    next();
+const roleLevels = {
+    'monitor': 1,
+    'coordenador': 2,
+    'gestor': 3,
+    'admin': 4
 };
 
-exports.requireAdmin = async (req, res, next) => {
-    next();
+exports.requireAuth = async (req, res, next) => {
+    const token = req.cookies.access_token;
+
+    if (!token) return res.redirect('/auth/login');
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Busca o usuário no schema malharia
+        const { data: user, error } = await supabase.schema('malharia')
+            .from('usuarios')
+            .select('id, nome, username, cargo, status')
+            .eq('id', decoded.id)
+            .single();
+
+        if (error || !user || user.status !== 'aprovado') {
+            res.clearCookie('access_token');
+            return res.redirect('/auth/login?error=Conta inativa ou pendente de aprovação.');
+        }
+
+        req.user = user;
+        req.user.nivel = roleLevels[user.cargo];
+
+        // Se for monitor, precisamos carregar quais malharias ele tem acesso
+        if (user.cargo === 'monitor') {
+            const { data: vinculos } = await supabase.schema('malharia')
+                .from('usuario_malharia')
+                .select('malharia_id')
+                .eq('usuario_id', user.id);
+            req.user.malharias_permitidas = vinculos ? vinculos.map(v => v.malharia_id) : [];
+        }
+
+        // Disponibiliza as informações para todas as views EJS
+        res.locals.user = req.user;
+        next();
+    } catch (err) {
+        res.clearCookie('access_token');
+        res.redirect('/auth/login');
+    }
+};
+
+exports.requireRole = (minRole) => {
+    return (req, res, next) => {
+        if (!req.user) return res.redirect('/auth/login');
+        
+        const minLevel = roleLevels[minRole];
+        if (req.user.nivel < minLevel) {
+            // Acesso negado sem alert, renderizamos a home limpa ou redirecionamos
+            return res.redirect('/'); 
+        }
+        next();
+    };
 };

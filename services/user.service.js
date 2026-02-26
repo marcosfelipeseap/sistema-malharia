@@ -1,30 +1,45 @@
 const supabase = require('../config/supabaseClient');
+const bcrypt = require('bcryptjs');
 
-/**
- * Serviço responsável pela lógica de autenticação de usuários
- */
-exports.authenticateUser = async (email, password) => {
-    try {
-        // Tenta realizar o login usando a API de Auth do Supabase
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password,
-        });
+exports.register = async (nome, username, senha) => {
+    // Verifica se username já existe
+    const { data: existente } = await supabase.schema('malharia')
+        .from('usuarios')
+        .select('id')
+        .eq('username', username)
+        .single();
 
-        if (error) throw error;
+    if (existente) return { error: 'Nome de usuário já está em uso.' };
 
-        return { session: data.session, user: data.user, error: null };
-    } catch (error) {
-        console.error('Erro no serviço de autenticação:', error.message);
-        return { session: null, user: null, error: error.message };
-    }
+    const salt = await bcrypt.genSalt(10);
+    const hashSenha = await bcrypt.hash(senha, salt);
+
+    const { data, error } = await supabase.schema('malharia')
+        .from('usuarios')
+        .insert([{
+            nome,
+            username,
+            senha: hashSenha,
+            status: 'pendente' // Aguardando aprovação
+        }])
+        .select()
+        .single();
+
+    return { user: data, error: error?.message };
 };
 
-exports.signOut = async () => {
-    try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-    } catch (error) {
-        console.error('Erro ao deslogar:', error.message);
-    }
+exports.authenticate = async (username, senha) => {
+    const { data: user, error } = await supabase.schema('malharia')
+        .from('usuarios')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+    if (error || !user) return { error: 'Usuário não encontrado.' };
+    if (user.status !== 'aprovado') return { error: 'Sua conta ainda não foi aprovada por um Gestor ou Admin.' };
+
+    const isMatch = await bcrypt.compare(senha, user.senha);
+    if (!isMatch) return { error: 'Senha incorreta.' };
+
+    return { user };
 };

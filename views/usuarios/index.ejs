@@ -1,0 +1,43 @@
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestão de Usuários</h2>
+    </div>
+
+    <div class="table-responsive bg-white shadow rounded">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nome</th>
+                    <th>Usuário</th>
+                    <th>Cargo</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% usuarios.forEach(u => { %>
+                    <tr>
+                        <td><%= u.nome %></td>
+                        <td><%= u.username %></td>
+                        <td><span class="badge bg-secondary"><%= u.cargo ? u.cargo.toUpperCase() : 'NÃO DEFINIDO' %></span></td>
+                        <td>
+                            <% if (u.status === 'aprovado') { %>
+                                <span class="badge bg-success">Aprovado</span>
+                            <% } else { %>
+                                <span class="badge bg-warning text-dark">Pendente</span>
+                            <% } %>
+                        </td>
+                        <td>
+                            <a href="/usuarios/<%= u.id %>/editar" class="btn btn-sm btn-primary">Editar / Aprovar</a>
+                            <% if (u.id !== user.id) { %>
+                                <form action="/usuarios/<%= u.id %>/excluir" method="POST" class="d-inline" onsubmit="return confirm('Deseja realmente excluir este usuário?');">
+                                    <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</div>

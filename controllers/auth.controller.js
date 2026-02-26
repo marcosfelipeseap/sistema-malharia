@@ -1,72 +1,79 @@
 const userService = require('../services/user.service');
+const jwt = require('jsonwebtoken');
 
-/**
- * Renderiza a página de login
- */
 exports.getLoginPage = (req, res) => {
-    // Verifica se já existe um cookie válido, se sim, redireciona para dashboard
-    if (req.cookies.access_token) {
-        return res.redirect('/');
-    }
-    
-    // Renderiza a view de login usando um layout limpo (sem navbar/sidebar padrão)
+    if (req.cookies.access_token) return res.redirect('/');
     res.render('auth/login', { 
-        layout: false, // Define false para não usar o layout main.ejs
+        layout: false, 
+        error: req.query.error || null,
+        success: null
+    });
+};
+
+exports.getRegisterPage = (req, res) => {
+    if (req.cookies.access_token) return res.redirect('/');
+    res.render('auth/register', { 
+        layout: false, 
         error: null 
     });
 };
 
-/**
- * Processa o login do usuário
- */
 exports.login = async (req, res) => {
     try {
-        const { email, password } = req.body;
-
-        // Chama o serviço para autenticar no Supabase
-        const { session, user, error } = await userService.authenticateUser(email, password);
+        const { username, password } = req.body;
+        
+        const { user, error } = await userService.authenticate(username, password);
 
         if (error) {
-            return res.render('auth/login', { 
-                layout: false,
-                error: 'Credenciais inválidas. Tente novamente.' 
-            });
+            return res.render('auth/login', { layout: false, error, success: null });
         }
 
-        // Define o cookie de acesso (HttpOnly para segurança)
-        // O tempo de expiração segue a sessão do Supabase (ex: 1 semana ou 1 hora)
-        res.cookie('access_token', session.access_token, {
+        const token = jwt.sign(
+            { id: user.id, username: user.username }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '12h' }
+        );
+
+        res.cookie('access_token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Apenas HTTPS em produção
-            maxAge: session.expires_in * 1000 // Converte segundos para ms
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 12 * 60 * 60 * 1000 // 12 horas
         });
 
-        // Login com sucesso, redireciona para a home
         res.redirect('/');
-
     } catch (err) {
         console.error('Erro no login:', err);
-        res.render('auth/login', { 
-            layout: false,
-            error: 'Ocorreu um erro interno. Tente mais tarde.' 
-        });
+        res.render('auth/login', { layout: false, error: 'Erro interno.', success: null });
     }
 };
 
-/**
- * Realiza o logout do usuário
- */
-exports.logout = async (req, res) => {
+exports.register = async (req, res) => {
     try {
-        // Chama o serviço para invalidar a sessão no Supabase (opcional, mas recomendado)
-        await userService.signOut();
-        
-        // Limpa o cookie do navegador
-        res.clearCookie('access_token');
-        res.redirect('/auth/login');
+        const { nome, username, password } = req.body;
+
+        // Validação back-end para o username
+        const usernameRegex = /^[a-zA-Z0-9_]+$/;
+        if (!usernameRegex.test(username)) {
+            return res.render('auth/register', { layout: false, error: 'Usuário inválido. Use apenas letras, números e underline.' });
+        }
+
+        const { error } = await userService.register(nome, username, password);
+
+        if (error) {
+            return res.render('auth/register', { layout: false, error });
+        }
+
+        res.render('auth/login', { 
+            layout: false, 
+            success: 'Cadastro realizado! Aguarde um Gestor ou Administrador aprovar e definir seu cargo para acessar o sistema.',
+            error: null
+        });
     } catch (err) {
-        console.error('Erro ao fazer logout:', err);
-        res.clearCookie('access_token');
-        res.redirect('/auth/login');
+        res.render('auth/register', { layout: false, error: 'Erro ao registrar.' });
     }
+};
+
+exports.logout = (req, res) => {
+    res.clearCookie('access_token');
+    res.redirect('/auth/login');
 };

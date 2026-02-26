@@ -1,19 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/itens.controller');
+const itensController = require('../controllers/itens.controller');
+const { requireRole } = require('../middlewares/auth.middleware');
 
-// 1. Rota de API (Para criação rápida via modal em outras telas)
-// Deve vir antes das rotas com :id para não confundir
-router.post('/api', controller.apiStore);
+router.get('/', itensController.index);
 
-// 2. Rotas Principais (CRUD)
-router.get('/', controller.index);           // Lista itens
-router.get('/create', controller.create);    // Formulário de criação
-router.post('/', controller.store);          // Salva novo item
-
-// 3. Rotas com ID (Edição e Exclusão)
-router.get('/:id/edit', controller.edit);    // Formulário de edição
-router.post('/:id/update', controller.update); // Salva alterações
-router.post('/:id/delete', controller.destroy); // Exclui item
+// Apenas Gestor e Admin podem aceder aos métodos abaixo
+router.use(requireRole('gestor'));
+router.get('/create', itensController.create);
+router.post('/', itensController.store);
+router.post('/api', itensController.apiStore);
+router.get('/:id/edit', itensController.edit);
+router.post('/:id/update', itensController.update);
+router.post('/:id/delete', itensController.destroy);
 
 module.exports = router;

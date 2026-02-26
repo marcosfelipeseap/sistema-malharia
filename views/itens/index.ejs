@@ -1,8 +1,11 @@
 <div class="d-flex justify-content-between pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Itens / Produtos</h1>
+    <h1 class="h2"><%= user.nivel >= 3 ? 'Itens / Produtos' : 'Itens Disponíveis' %></h1>
+    
+    <% if (user.nivel >= 3) { %>
     <a href="/itens/create" class="btn btn-primary btn-sm">
         <i class="bi bi-plus-lg"></i> Novo Item
     </a>
+    <% } %>
 </div>
 
 <% if (typeof error !== 'undefined' && error) { %>
@@ -30,12 +33,14 @@
                     <th>Nome do Produto</th>
                     <th class="text-center" style="width: 150px;">Meta / Maq.</th>
                     <th>Máquinas Habilitadas</th>
-                    <th class="text-end" style="width: 150px;">Ações</th>
+                    <% if (user.nivel >= 3) { %>
+                        <th class="text-end" style="width: 150px;">Ações</th>
+                    <% } %>
                 </tr>
             </thead>
             <tbody id="tabelaItens">
                 <% if (itens.length === 0) { %>
-                    <tr><td colspan="4" class="text-center text-muted py-3">Nenhum item cadastrado.</td></tr>
+                    <tr><td colspan="<%= user.nivel >= 3 ? '4' : '3' %>" class="text-center text-muted py-3">Nenhum item cadastrado.</td></tr>
                 <% } else { %>
                     <% itens.forEach(item => { %>
                         <tr>
@@ -60,6 +65,7 @@
                                     <span class="text-muted small fst-italic">Nenhuma vinculada</span>
                                 <% } %>
                             </td>
+                            <% if (user.nivel >= 3) { %>
                             <td class="text-end">
                                 <a href="/itens/<%= item.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
                                 <button type="button" class="btn btn-sm btn-outline-danger" 
@@ -67,6 +73,7 @@
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>
+                            <% } %>
                         </tr>
                     <% }) %>
                 <% } %>
@@ -75,6 +82,7 @@
     </div>
 </div>
 
+<% if (user.nivel >= 3) { %>
 <div class="modal fade" id="modalExcluirItem" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-danger">
@@ -96,9 +104,10 @@
         </div>
     </div>
 </div>
+<% } %>
 
 <script>
-    // 1. Lógica da Pesquisa Instantânea
+    const userNivel = <%= user.nivel %>;
     let timeout = null;
     const inputBusca = document.getElementById('inputBusca');
     const tabela = document.getElementById('tabelaItens');
@@ -107,7 +116,6 @@
         const termo = this.value;
         clearTimeout(timeout);
         
-        // Aguarda 300ms após parar de digitar
         timeout = setTimeout(async () => {
             try {
                 const res = await fetch(`/itens?busca=${encodeURIComponent(termo)}`, {
@@ -126,12 +134,11 @@
 
     function atualizarTabela(lista) {
         if (!lista || lista.length === 0) {
-            tabela.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Nenhum item encontrado.</td></tr>';
+            tabela.innerHTML = `<tr><td colspan="${userNivel >= 3 ? '4' : '3'}" class="text-center text-muted py-3">Nenhum item encontrado.</td></tr>`;
             return;
         }
 
         const html = lista.map(item => {
-            // Gera HTML das máquinas vinculadas
             let maquinasHtml = '<span class="text-muted small fst-italic">Nenhuma vinculada</span>';
             if (item.maquinas && item.maquinas.length > 0) {
                 maquinasHtml = '<div class="d-flex flex-wrap gap-1">' + 
@@ -141,6 +148,18 @@
                         </span>
                     `).join('') + 
                     '</div>';
+            }
+
+            let acoesHtml = '';
+            if (userNivel >= 3) {
+                acoesHtml = `
+                <td class="text-end">
+                    <a href="/itens/${item.id}/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="abrirModalExclusao('${item.id}', '${item.nome}')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>`;
             }
 
             return `
@@ -154,13 +173,7 @@
                         <div class="small text-muted">unid/dia</div>
                     </td>
                     <td>${maquinasHtml}</td>
-                    <td class="text-end">
-                        <a href="/itens/${item.id}/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                onclick="abrirModalExclusao('${item.id}', '${item.nome}')">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </td>
+                    ${acoesHtml}
                 </tr>
             `;
         }).join('');
@@ -168,7 +181,7 @@
         tabela.innerHTML = html;
     }
 
-    // 2. Lógica do Modal de Exclusão
+    <% if (user.nivel >= 3) { %>
     function abrirModalExclusao(id, nome) {
         const modalEl = document.getElementById('modalExcluirItem');
         const nomeEl = document.getElementById('nomeItemExcluir');
@@ -179,4 +192,5 @@
 
         new bootstrap.Modal(modalEl).show();
     }
+    <% } %>
 </script>

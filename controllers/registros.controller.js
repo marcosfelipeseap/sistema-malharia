@@ -3,13 +3,30 @@ const processosService = require('../services/processos.service');
 const malhariasService = require('../services/malharias.service');
 const itensService = require('../services/itens.service');
 
+// Função para validar se a data enviada corresponde ao dia atual no fuso de Brasília
+function validarHorarioBrasilia(dataEnviada) {
+    const brTime = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const [dataParte] = brTime.split(','); 
+    const [dia, mes, ano] = dataParte.trim().split('/');
+    const hojeBr = `${ano}-${mes}-${dia}`;
+    return dataEnviada === hojeBr;
+}
+
 exports.index = async (req, res) => {
     try {
-        const dataBusca = req.query.data || new Date().toISOString().split('T')[0];
-        const registros = await registrosService.getRegistrosByData(dataBusca);
-        const todasMalharias = await malhariasService.getAllMalharias();
-        const totalMalharias = todasMalharias.length;
+        const dataBusca = req.query.data || new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }).split(',')[0].split('/').reverse().join('-');
+        
+        let registros = await registrosService.getRegistrosByData(dataBusca);
+        let todasMalharias = await malhariasService.getAllMalharias();
 
+        // Filtra malharias para Monitores
+        if (req.user.cargo === 'monitor') {
+            const permitidas = req.user.malharias_permitidas || [];
+            todasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
+            registros = registros.filter(r => permitidas.includes(r.malharia_id));
+        }
+
+        const totalMalharias = todasMalharias.length;
         const malhariasComRegistroIds = registros.map(r => r.malharia_id);
         const malhariasPendentes = todasMalharias.filter(m => !malhariasComRegistroIds.includes(m.id));
 
@@ -32,48 +49,57 @@ exports.index = async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.render('partials/alerts', { message: 'Erro ao carregar registros', type: 'danger' });
+        res.redirect('/');
     }
 };
 
-exports.storeFeriado = async (req, res) => {
+exports.create = async (req, res) => {
     try {
-        const { data_feriado, descricao, malharia_id } = req.body;
+        const processos = await processosService.getAllProcessos();
+        let malharias = await malhariasService.getAllMalharias();
         
-        // Se malharia_id vier vazio ou indefinido, é GLOBAL (Todas)
-        if (!malharia_id) {
-            await registrosService.createFeriado({
-                data_feriado,
-                malharia_id: null,
-                descricao
-            });
-        } else {
-            // Se vier apenas 1 id será string, se vierem vários será um Array. Transformamos sempre em Array para facilitar.
-            const idsMalharias = Array.isArray(malharia_id) ? malharia_id : [malharia_id];
-            
-            // Grava um registo de feriado para cada malharia selecionada
-            for (const id of idsMalharias) {
-                await registrosService.createFeriado({
-                    data_feriado,
-                    malharia_id: parseInt(id),
-                    descricao
-                });
+        if (req.user.cargo === 'monitor') {
+            const permitidas = req.user.malharias_permitidas || [];
+            malharias = malharias.filter(m => permitidas.includes(m.id));
+        }
+
+        const justificativas = await registrosService.getTiposJustificativa();
+        const todosItens = await itensService.getAllItens(); 
+        
+        res.render('registros/create', { 
+            title: 'Novo Apontamento', processos, malharias, justificativas, todosItensJSON: JSON.stringify(todosItens) 
+        });
+    } catch (error) {
+        res.redirect('/registros');
+    }
+};
+
+exports.store = async (req, res) => {
+    try {
+        const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, itens_ids, qtds_produzidas } = req.body;
+        
+        // Bloqueio de data para Monitor e Coordenador
+        if (req.user.nivel < 3) {
+            if (!validarHorarioBrasilia(data_registro)) {
+                return res.redirect('/registros'); 
             }
         }
-        res.redirect('/registros');
-    } catch (error) {
-        console.error(error);
-        res.redirect('/registros?error=true');
-    }
-};
 
-exports.destroyFeriado = async (req, res) => {
-    try {
-        await registrosService.deleteFeriado(req.params.id);
+        const dadosRegistro = { data_registro: data_registro || new Date(), malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id: justificativa_id || null, observacao, criado_por: req.user.id };
+
+        let itensProduzidos = [];
+        if (Array.isArray(processos_ids)) {
+            for(let i=0; i < processos_ids.length; i++){
+                itensProduzidos.push({ processo_id: processos_ids[i], item_id: itens_ids[i], qtd_produzida: qtds_produzidas[i] });
+            }
+        } else if (processos_ids) {
+            itensProduzidos.push({ processo_id: processos_ids, item_id: itens_ids, qtd_produzida: qtds_produzidas });
+        }
+
+        await registrosService.createRegistroComItens(dadosRegistro, itensProduzidos);
         res.redirect('/registros');
     } catch (error) {
-        console.error(error);
-        res.redirect('/registros?error=true');
+        res.redirect('/registros'); 
     }
 };
 
@@ -82,9 +108,15 @@ exports.edit = async (req, res) => {
         const { id } = req.params;
         const registro = await registrosService.getRegistroById(id);
         const processos = await processosService.getAllProcessos();
-        const malharias = await malhariasService.getAllMalharias();
+        let malharias = await malhariasService.getAllMalharias();
+        
+        if (req.user.cargo === 'monitor') {
+            const permitidas = req.user.malharias_permitidas || [];
+            malharias = malharias.filter(m => permitidas.includes(m.id));
+        }
+
         const justificativas = await registrosService.getTiposJustificativa();
-        const todosItens = await require('../services/itens.service').getAllItens(); 
+        const todosItens = await itensService.getAllItens(); 
         
         res.render('registros/edit', { 
             title: 'Editar Apontamento', registro, processos, malharias, justificativas,
@@ -101,6 +133,12 @@ exports.update = async (req, res) => {
         const { id } = req.params;
         const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, itens_ids, qtds_produzidas } = req.body;
 
+        if (req.user.nivel < 3) {
+            if (!validarHorarioBrasilia(data_registro)) {
+                return res.redirect('/registros'); 
+            }
+        }
+
         const dadosRegistro = { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id: justificativa_id || null, observacao };
 
         let itensProduzidos = [];
@@ -116,40 +154,42 @@ exports.update = async (req, res) => {
         res.redirect(`/registros?data=${data_registro}`);
     } catch (error) {
         console.error(error);
-        res.redirect(`/registros/${req.params.id}/edit?error=true`); 
+        res.redirect(`/registros`); 
     }
 };
 
-exports.create = async (req, res) => {
+exports.destroy = async (req, res) => {
     try {
-        const processos = await processosService.getAllProcessos();
-        const malharias = await malhariasService.getAllMalharias();
-        const justificativas = await registrosService.getTiposJustificativa();
-        const todosItens = await itensService.getAllItens(); 
-        res.render('registros/create', { title: 'Novo Apontamento', processos, malharias, justificativas, todosItensJSON: JSON.stringify(todosItens) });
+        await registrosService.deleteRegistro(req.params.id);
+        res.redirect('/registros');
     } catch (error) {
         res.redirect('/registros');
     }
 };
 
-exports.store = async (req, res) => {
+exports.storeFeriado = async (req, res) => {
     try {
-        const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, itens_ids, qtds_produzidas } = req.body;
-        const dadosRegistro = { data_registro: data_registro || new Date(), malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id: justificativa_id || null, observacao, criado_por: req.user ? req.user.id : null };
-
-        let itensProduzidos = [];
-        if (Array.isArray(processos_ids)) {
-            for(let i=0; i < processos_ids.length; i++){
-                itensProduzidos.push({ processo_id: processos_ids[i], item_id: itens_ids[i], qtd_produzida: qtds_produzidas[i] });
+        const { data_feriado, descricao, malharia_id } = req.body;
+        if (!malharia_id) {
+            await registrosService.createFeriado({ data_feriado, malharia_id: null, descricao });
+        } else {
+            const idsMalharias = Array.isArray(malharia_id) ? malharia_id : [malharia_id];
+            for (const id of idsMalharias) {
+                await registrosService.createFeriado({ data_feriado, malharia_id: parseInt(id), descricao });
             }
-        } else if (processos_ids) {
-            itensProduzidos.push({ processo_id: processos_ids, item_id: itens_ids, qtd_produzida: qtds_produzidas });
         }
-
-        await registrosService.createRegistroComItens(dadosRegistro, itensProduzidos);
         res.redirect('/registros');
     } catch (error) {
-        res.redirect('/registros/create?error=true'); 
+        res.redirect('/registros');
+    }
+};
+
+exports.destroyFeriado = async (req, res) => {
+    try {
+        await registrosService.deleteFeriado(req.params.id);
+        res.redirect('/registros');
+    } catch (error) {
+        res.redirect('/registros');
     }
 };
 
@@ -159,14 +199,5 @@ exports.getMalhariaInfo = async (req, res) => {
         res.json(malharia);
     } catch (error) {
         res.status(500).json({ error: error.message });
-    }
-};
-
-exports.destroy = async (req, res) => {
-    try {
-        await registrosService.deleteRegistro(req.params.id);
-        res.redirect('/registros');
-    } catch (error) {
-        res.redirect('/registros?error=true');
     }
 };

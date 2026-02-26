@@ -22,20 +22,23 @@ app.use(express.json()); // Parser para JSON
 app.use(express.urlencoded({ extended: true })); // Parser para dados de formulário
 app.use(cookieParser()); // Parser para cookies (auth)
 
-// Importação das Rotas Principais
+// Importação das Rotas
 const indexRoutes = require('./routes/index.routes');
+const authRoutes = require('./routes/auth.routes');         // <--- NOVA ROTA DE LOGIN
+const usuariosRoutes = require('./routes/usuarios.routes'); // <--- NOVA ROTA DE USUÁRIOS
 
-// Definição das Rotas
+// Definição das Rotas (A ORDEM AQUI IMPORTA)
+app.use('/auth', authRoutes);
+app.use('/usuarios', usuariosRoutes);
 app.use('/', indexRoutes);
 
 // Tratamento de Erro 404 (Página não encontrada)
 app.use((req, res, next) => {
     res.status(404).render('partials/alerts', {
-        layout: false, // Renderiza sem layout completo ou redireciona
+        layout: false, // Renderiza sem layout completo
         message: 'Página não encontrada',
         type: 'danger'
     });
-    // Alternativamente, poderia renderizar uma view específica 404.ejs
 });
 
 // Exporta o app para ser usado no server.js

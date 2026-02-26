@@ -1,5 +1,7 @@
 <div class="d-flex justify-content-between pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Maquinários</h1>
+    
+    <% if (user.nivel >= 3) { %>
     <div>
         <a href="/maquinarios/tipos" class="btn btn-outline-secondary btn-sm me-2">
             <i class="bi bi-tags"></i> Gerenciar Tipos
@@ -8,6 +10,7 @@
             <i class="bi bi-plus-lg"></i> Novo Maquinário
         </a>
     </div>
+    <% } %>
 </div>
 
 <div class="row mb-3">
@@ -27,12 +30,18 @@
                 <tr>
                     <th>Nome da Máquina</th>
                     <th>Tipo</th>
-                    <th class="text-end" style="width: 150px;">Ações</th>
+                    <% if (user.nivel >= 3) { %>
+                        <th class="text-end" style="width: 150px;">Ações</th>
+                    <% } %>
                 </tr>
             </thead>
             <tbody id="tabelaMaquinas">
                 <% if (maquinas.length === 0) { %>
-                    <tr><td colspan="3" class="text-center text-muted py-3">Nenhuma máquina encontrada.</td></tr>
+                    <tr>
+                        <td colspan="<%= user.nivel >= 3 ? '3' : '2' %>" class="text-center text-muted py-3">
+                            Nenhuma máquina encontrada.
+                        </td>
+                    </tr>
                 <% } else { %>
                     <% maquinas.forEach(m => { %>
                         <tr>
@@ -44,13 +53,17 @@
                                     <span class="text-muted small">- Sem tipo -</span>
                                 <% } %>
                             </td>
+                            <% if (user.nivel >= 3) { %>
                             <td class="text-end">
-                                <a href="/maquinarios/<%= m.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                <a href="/maquinarios/<%= m.id %>/edit" class="btn btn-sm btn-outline-primary" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
                                 <button type="button" class="btn btn-sm btn-outline-danger" 
                                         onclick="abrirModalExclusao('<%= m.id %>', '<%= m.nome %>')">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </td>
+                            <% } %>
                         </tr>
                     <% }) %>
                 <% } %>
@@ -59,6 +72,7 @@
     </div>
 </div>
 
+<% if (user.nivel >= 3) { %>
 <div class="modal fade" id="modalExcluirMaquina" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-danger">
@@ -69,7 +83,6 @@
             <div class="modal-body text-center">
                 <p class="mb-1">Tem certeza que deseja excluir a máquina:</p>
                 <h5 id="nomeMaquinaExcluir" class="fw-bold"></h5>
-                <p class="text-muted small mb-0">Esta ação não pode ser desfeita.</p>
             </div>
             <div class="modal-footer justify-content-center">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -80,9 +93,11 @@
         </div>
     </div>
 </div>
+<% } %>
 
 <script>
-    // 1. Lógica da Pesquisa (Mantida)
+    // Passa o nível do usuário para o JavaScript para controlar a busca dinâmica
+    const userNivel = <%= user.nivel %>;
     let timeout = null;
     const inputBusca = document.getElementById('inputBusca');
     const tabela = document.getElementById('tabelaMaquinas');
@@ -105,33 +120,32 @@
 
     function atualizarTabela(lista) {
         if (!lista || lista.length === 0) {
-            tabela.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Nenhuma máquina encontrada.</td></tr>';
+            tabela.innerHTML = `<tr><td colspan="${userNivel >= 3 ? '3' : '2'}" class="text-center text-muted py-3">Nenhuma máquina encontrada.</td></tr>`;
             return;
         }
         const html = lista.map(m => `
             <tr>
                 <td class="fw-bold">${m.nome}</td>
                 <td>${m.tipo ? `<span class="badge bg-secondary">${m.tipo.nome}</span>` : '<span class="text-muted small">- Sem tipo -</span>'}</td>
-                <td class="text-end">
-                    <a href="/maquinarios/${m.id}/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="abrirModalExclusao('${m.id}', '${m.nome}')">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
+                ${userNivel >= 3 ? `
+                    <td class="text-end">
+                        <a href="/maquinarios/${m.id}/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="abrirModalExclusao('${m.id}', '${m.nome}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                ` : ''}
             </tr>
         `).join('');
         tabela.innerHTML = html;
     }
 
-    // 2. Lógica do Modal de Exclusão (NOVO)
+    <% if (user.nivel >= 3) { %>
     function abrirModalExclusao(id, nome) {
         const modalEl = document.getElementById('modalExcluirMaquina');
-        const nomeEl = document.getElementById('nomeMaquinaExcluir');
-        const formEl = document.getElementById('formExcluirMaquina');
-
-        nomeEl.innerText = nome;
-        formEl.action = `/maquinarios/${id}/delete`;
-
+        document.getElementById('nomeMaquinaExcluir').innerText = nome;
+        document.getElementById('formExcluirMaquina').action = `/maquinarios/${id}/delete`;
         new bootstrap.Modal(modalEl).show();
     }
+    <% } %>
 </script>
