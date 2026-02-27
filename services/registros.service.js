@@ -2,16 +2,70 @@ const supabase = require('../config/supabaseClient');
 
 const TABLE_REGISTRO = 'registro_diario';
 const TABLE_ITENS = 'registro_diario_item';
-const TABLE_FERIADO = 'feriado'; // Tabela nova
+const TABLE_FERIADO = 'feriado'; 
+
+// Função auxiliar para "pescar" a descrição e o tamanho na tabela processo_item
+const enriquecerRegistros = (dados) => {
+    if (!dados) return dados;
+    
+    const processarRegistro = (reg) => {
+        if (reg.itens && Array.isArray(reg.itens)) {
+            reg.itens = reg.itens.map(it => {
+                let desc = null;
+                let tam = null;
+                
+                // Vai até o processo e procura os detalhes exatos deste item na tabela processo_item
+                if (it.processo && it.processo.processo_item && Array.isArray(it.processo.processo_item)) {
+                    const detalhe = it.processo.processo_item.find(pi => pi.item_id === it.item_id);
+                    if (detalhe) {
+                        desc = detalhe.descricao;
+                        tam = detalhe.tamanho;
+                    }
+                }
+                
+                // Injeta os dados encontrados de volta para o EJS conseguir ler
+                return {
+                    ...it,
+                    descricao: desc,
+                    tamanho: tam
+                };
+            });
+        }
+        return reg;
+    };
+
+    if (Array.isArray(dados)) {
+        return dados.map(processarRegistro);
+    } else {
+        return processarRegistro(dados);
+    }
+};
 
 exports.getAllRegistros = async () => {
     const { data, error } = await supabase
         .schema('malharia')
         .from(TABLE_REGISTRO)
-        .select(`*, malharia:malharia_id (nome), justificativa:justificativa_id (nome), itens:registro_diario_item(qtd_produzida, processo:processo_id(numero_processo), item:item_id(nome))`)
+        .select(`
+            *, 
+            malharia:malharia_id (nome), 
+            justificativa:justificativa_id (nome), 
+            itens:registro_diario_item(
+                processo_id,
+                item_id,
+                qtd_produzida, 
+                processo:processo_id(
+                    id, 
+                    numero_processo, 
+                    orgao,
+                    processo_item(item_id, descricao, tamanho)
+                ), 
+                item:item_id(id, nome)
+            )
+        `)
         .order('data_registro', { ascending: false });
+        
     if (error) throw error;
-    return data;
+    return enriquecerRegistros(data);
 };
 
 exports.getTiposJustificativa = async () => {
@@ -26,7 +80,10 @@ exports.createRegistroComItens = async (dadosRegistro, itensProduzidos) => {
 
     if (itensProduzidos && itensProduzidos.length > 0) {
         const itensParaSalvar = itensProduzidos.map(item => ({
-            registro_id: registro.id, processo_id: item.processo_id, item_id: item.item_id, qtd_produzida: item.qtd_produzida
+            registro_id: registro.id, 
+            processo_id: item.processo_id, 
+            item_id: item.item_id, 
+            qtd_produzida: item.qtd_produzida
         }));
         const { error: errItens } = await supabase.schema('malharia').from(TABLE_ITENS).insert(itensParaSalvar);
         if (errItens) throw errItens;
@@ -44,22 +101,56 @@ exports.getRegistrosByData = async (dataBusca) => {
     const { data, error } = await supabase
         .schema('malharia')
         .from(TABLE_REGISTRO)
-        .select(`*, malharia:malharia_id (id, nome, tipo), justificativa:justificativa_id (nome), itens:registro_diario_item(qtd_produzida, processo:processo_id(id, numero_processo, orgao), item:item_id(id, nome))`)
+        .select(`
+            *, 
+            malharia:malharia_id (id, nome, tipo), 
+            justificativa:justificativa_id (nome), 
+            itens:registro_diario_item(
+                processo_id,
+                item_id,
+                qtd_produzida, 
+                processo:processo_id(
+                    id, 
+                    numero_processo, 
+                    orgao,
+                    processo_item(item_id, descricao, tamanho)
+                ), 
+                item:item_id(id, nome)
+            )
+        `)
         .eq('data_registro', dataBusca)
         .order('criado_em', { ascending: false });
+        
     if (error) throw error;
-    return data;
+    return enriquecerRegistros(data);
 };
 
 exports.getRegistroById = async (id) => {
     const { data, error } = await supabase
         .schema('malharia')
         .from(TABLE_REGISTRO)
-        .select(`*, malharia:malharia_id (nome, num_internos), justificativa:justificativa_id (nome), itens:registro_diario_item(processo_id, item_id, qtd_produzida, processo:processo_id(numero_processo), item:item_id(nome))`)
+        .select(`
+            *, 
+            malharia:malharia_id (nome, num_internos), 
+            justificativa:justificativa_id (nome), 
+            itens:registro_diario_item(
+                processo_id, 
+                item_id, 
+                qtd_produzida, 
+                processo:processo_id(
+                    id, 
+                    numero_processo, 
+                    orgao,
+                    processo_item(item_id, descricao, tamanho)
+                ), 
+                item:item_id(id, nome)
+            )
+        `)
         .eq('id', id)
         .single();
+        
     if (error) throw error;
-    return data;
+    return enriquecerRegistros(data);
 };
 
 exports.updateRegistroComItens = async (id, dadosRegistro, itensProduzidos) => {
@@ -71,7 +162,10 @@ exports.updateRegistroComItens = async (id, dadosRegistro, itensProduzidos) => {
 
     if (itensProduzidos && itensProduzidos.length > 0) {
         const itensParaSalvar = itensProduzidos.map(item => ({
-            registro_id: id, processo_id: item.processo_id, item_id: item.item_id, qtd_produzida: item.qtd_produzida
+            registro_id: id, 
+            processo_id: item.processo_id, 
+            item_id: item.item_id, 
+            qtd_produzida: item.qtd_produzida
         }));
         const { error: errItens } = await supabase.schema('malharia').from('registro_diario_item').insert(itensParaSalvar);
         if (errItens) throw errItens;
@@ -85,7 +179,6 @@ exports.getResumoRegistros = async () => {
     return data || [];
 };
 
-// ================= NOVAS FUNÇÕES DE FERIADOS =================
 exports.getFeriados = async () => {
     const { data, error } = await supabase.schema('malharia').from(TABLE_FERIADO).select('*, malharia:malharia_id(nome)').order('data_feriado', { ascending: true });
     if (error) throw error;

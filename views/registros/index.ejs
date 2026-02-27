@@ -2,17 +2,13 @@
     .calendario-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
     .calendario-header { text-align: center; font-weight: bold; padding: 5px; background: #f8f9fa; border-radius: 4px; color: #495057;}
     .calendario-dia { 
-        border: 1px solid #e9ecef;
-        min-height: 80px; 
-        padding: 8px; 
-        cursor: pointer; 
-        border-radius: 6px; 
-        transition: all 0.2s ease-in-out; 
-        display:flex; 
-        flex-direction:column; 
-        background: #fff;
+        border: 1px solid #e9ecef; min-height: 80px; padding: 8px; border-radius: 6px; 
+        display:flex; flex-direction:column; background: #fff; transition: all 0.2s ease-in-out;
     }
-    .calendario-dia:hover { background-color: #f1f3f5; border-color: #dee2e6; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    
+    .calendario-dia.interativo { cursor: pointer; }
+    .calendario-dia.interativo:hover { background-color: #f1f3f5; border-color: #dee2e6; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    
     .calendario-dia.dia-ativo { border: 2px solid #0d6efd; background-color: #f0f7ff; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2); }
     .calendario-dia.outro-mes { background-color: #f8f9fa; color: #adb5bd; border-style: dashed; pointer-events: none; }
     .dia-numero { font-weight: 700; font-size: 1.1em; color: #343a40; }
@@ -24,15 +20,54 @@
         .badge-status { font-size: 0.6rem; padding: 2px; }
         .dia-numero { font-size: 0.9em; }
     }
+
+    .timer-aviso { font-size: 0.95rem; font-weight: 600; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 6px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 8px; }
+    .timer-aviso-leitura { background-color: #e2e3e5; color: #383d41; border-color: #d6d8db; }
 </style>
+
+<% 
+// Variável auxiliar para verificar se a data buscada é a de hoje (Brasília)
+const brTime = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+const [dataParte] = brTime.split(','); 
+const [diaHoje, mesHoje, anoHoje] = dataParte.trim().split('/');
+const dataHojeBRT = `${anoHoje}-${mesHoje}-${diaHoje}`;
+const isHoje = dataBusca === dataHojeBRT;
+%>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Controle Diário de Produção</h1>
     <div>
         <a href="/registros" class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Ir para Hoje</a>
-        <button class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalFeriados"><i class="bi bi-cup-hot"></i> Gerir Folgas/Feriados</button>
+        
+        <% if (user.nivel >= 3) { %>
+            <button class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalFeriados">
+                <i class="bi bi-cup-hot"></i> Gerenciar Folgas/Feriados
+            </button>
+        <% } %>
     </div>
 </div>
+
+<% if (user.nivel < 3) { %>
+    <div class="mb-4">
+        <% if (isHoje) { %>
+            <div class="timer-aviso w-100 shadow-sm">
+                <i class="bi bi-stopwatch fs-4 text-warning"></i>
+                <div>
+                    Atenção: Os registros apenas podem ser inseridos na data atual (<%= dataHojeBRT.split('-').reverse().join('/') %>).<br>
+                    Restam <span id="contadorTempoRestante" class="text-danger fw-bold">--:--:--</span> para enviar ou ajustar o relatório de hoje.
+                </div>
+            </div>
+        <% } else { %>
+            <div class="timer-aviso timer-aviso-leitura w-100 shadow-sm">
+                <i class="bi bi-info-circle fs-4 text-secondary"></i>
+                <div>
+                    <strong>Modo de Leitura Ativo</strong><br>
+                    Você está visualizando os registros do dia <%= dataBusca.split('-').reverse().join('/') %>. Não é possível alterar ou inserir apontamentos em datas passadas.
+                </div>
+            </div>
+        <% } %>
+    </div>
+<% } %>
 
 <div class="card shadow-sm mb-4 border-primary border-top border-3">
     <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
@@ -77,20 +112,34 @@
                             <div class="card-body pb-2">
                                 <div class="d-flex justify-content-between">
                                     <h5 class="card-title fw-bold text-dark mb-0"><%= reg.malharia ? reg.malharia.nome : 'N/A' %></h5>
-                                    <span class="badge bg-light text-dark border" title="Internos a trabalhar"><i class="bi bi-people-fill"></i> <%= reg.qtd_internos %></span>
+                                    <span class="badge bg-light text-dark border" title="Internos trabalhando"><i class="bi bi-people-fill"></i> <%= reg.qtd_internos %></span>
                                 </div>
                                 <hr class="my-2">
                                 
                                 <ul class="list-unstyled mb-2 small text-secondary" style="min-height: 50px;">
                                 <% reg.itens.slice(0, 3).forEach(function(item) { %>
                                     <li class="text-truncate">
-                                        <span class="badge bg-secondary opacity-75"><%= item.processo.numero_processo %></span> 
-                                        <%= item.item.nome %> 
+                                        <% if (user.nivel >= 3) { %>
+                                            <span class="badge bg-secondary opacity-75" title="Órgão: <%= item.processo ? item.processo.orgao : '-' %>">
+                                                <%= item.processo ? item.processo.numero_processo : '-' %>
+                                            </span>
+                                        <% } else { %>
+                                            <span class="badge bg-secondary opacity-75">
+                                                <%= item.processo && item.processo.orgao ? item.processo.orgao : 'S/ Órgão' %>
+                                            </span>
+                                        <% } %>
+                                        
+                                        <%= item.item ? item.item.nome : 'Desconhecido' %> 
+                                        
                                         <% if(item.tamanho || (item.item && item.item.tamanho)) { %>
                                             <span class="badge bg-info text-dark opacity-75" style="font-size: 0.7em;">Tam: <%= item.tamanho || item.item.tamanho %></span>
                                         <% } %>
+                                        
                                         <span class="text-muted small fst-italic">
-                                            <%= item.descricao || (item.item && item.item.descricao) ? '- ' + (item.descricao || item.item.descricao) : '' %>
+                                            <% 
+                                               let descResumo = item.descricao || (item.item ? item.item.descricao : '');
+                                               if (descResumo) { %> - <%= descResumo %> <% } 
+                                            %>
                                         </span>
                                         (<%= item.qtd_produzida %> un)
                                     </li>
@@ -112,12 +161,92 @@
                                     <div class="mt-2 text-danger small"><i class="bi bi-exclamation-triangle"></i> <%= reg.justificativa.nome %></div>
                                 <% } %>
                             </div>
+                            
                             <div class="card-footer bg-transparent d-flex justify-content-end gap-2 border-top-0 pt-0">
-                                <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
-                                <form action="/registros/<%= reg.id %>/delete" method="POST">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarExclusao(this, 'registro')"><i class="bi bi-trash"></i></button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="abrirModalDetalhes('<%= reg.id %>', '<%= reg.malharia ? encodeURIComponent(reg.malharia.nome) : 'N/A' %>')">
+                                    <i class="bi bi-card-list"></i> Detalhes
+                                </button>
+
+                                <% if (user.nivel >= 3 || isHoje) { %>
+                                    <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
+                                    <% if (user.nivel >= 3) { %> 
+                                    <form action="/registros/<%= reg.id %>/delete" method="POST">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarExclusao(this, 'registro')"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                    <% } %>
+                                <% } %>
                             </div>
+
+                            <div id="detalhes-html-<%= reg.id %>" class="d-none">
+                                <div class="row mb-3 bg-light p-3 rounded">
+                                    <div class="col-6">
+                                        <strong><i class="bi bi-people"></i> Internos:</strong> <%= reg.qtd_internos %><br>
+                                        <strong><i class="bi bi-bullseye"></i> Meta Diária:</strong> <%= Math.round(reg.meta_calculada) %> un
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <strong><i class="bi bi-check2-circle"></i> Produzido:</strong> <span class="text-success fw-bold"><%= totalProd %> un</span><br>
+                                        <strong><i class="bi bi-percent"></i> Concluído:</strong> <%= percentual %>%
+                                    </div>
+                                </div>
+                                
+                                <h6 class="fw-bold border-bottom pb-1 text-primary"><i class="bi bi-boxes"></i> Inventário Produzido</h6>
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm table-striped table-bordered align-middle text-center">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Processo / Órgão</th>
+                                                <th>Produto</th>
+                                                <th>Descrição</th>
+                                                <th>Tamanho</th>
+                                                <th>Qtd. Produzida</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% reg.itens.forEach(function(item) { %>
+                                                <tr>
+                                                    <td>
+                                                        <% if (user.nivel >= 3) { %>
+                                                            <span class="badge bg-secondary"><%= item.processo ? item.processo.numero_processo : '-' %></span>
+                                                            <div class="small text-muted mt-1" style="font-size: 0.75rem;"><%= item.processo && item.processo.orgao ? item.processo.orgao : '' %></div>
+                                                        <% } else { %>
+                                                            <span class="badge bg-secondary"><%= item.processo && item.processo.orgao ? item.processo.orgao : 'N/A' %></span>
+                                                        <% } %>
+                                                    </td>
+                                                    
+                                                    <td class="text-start fw-bold"><%= item.item ? item.item.nome : 'Desconhecido' %></td>
+                                                    
+                                                    <td class="text-muted small">
+                                                        <% 
+                                                           let descCompleta = item.descricao || (item.item ? item.item.descricao : '');
+                                                        %>
+                                                        <%= descCompleta ? descCompleta : '-' %>
+                                                    </td>
+                                                    
+                                                    <td><%= item.tamanho || (item.item && item.item.tamanho) || '-' %></td>
+                                                    <td class="fw-bold text-success fs-6"><%= item.qtd_produzida %></td>
+                                                </tr>
+                                            <% }); %>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <% if(reg.justificativa) { %>
+                                    <div class="mb-3">
+                                        <strong class="text-danger"><i class="bi bi-exclamation-triangle"></i> Justificativa de Quebra de Meta:</strong> 
+                                        <div class="border border-danger p-2 rounded bg-white mt-1 text-danger">
+                                            <%= reg.justificativa.nome %>
+                                        </div>
+                                    </div>
+                                <% } %>
+
+                                <% if(reg.observacao) { %>
+                                    <div class="mb-2">
+                                        <strong class="text-secondary"><i class="bi bi-chat-text"></i> Observações Adicionais:</strong>
+                                        <p class="text-muted small border p-2 rounded bg-white mt-1"><%= reg.observacao %></p>
+                                    </div>
+                                <% } %>
+                            </div>
+
                         </div>
                     </div>
                 <% }); %>
@@ -144,9 +273,14 @@
                             <h6 class="mb-0 text-dark fw-bold"><%= mal.nome %></h6>
                             <small class="text-muted"><%= mal.tipo || 'Setor Padrão' %></small>
                         </div>
+                        
+                        <% if (user.nivel >= 3 || isHoje) { %>
                         <a href="/registros/create?malharia=<%= mal.id %>&data=<%= dataBusca %>" class="btn btn-sm btn-primary rounded-pill shadow-sm" title="Criar apontamento">
                             <i class="bi bi-plus-lg"></i> Inserir
                         </a>
+                        <% } else { %>
+                            <span class="badge bg-secondary">Apenas Leitura</span>
+                        <% } %>
                     </div>
                 <% }); %>
             </div>
@@ -154,11 +288,28 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalDetalhesRegistro" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="detalhesModalTitle"><i class="bi bi-card-list"></i> Detalhes da Produção</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light" id="detalhesModalBody">
+                </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (user.nivel >= 3) { %>
 <div class="modal fade" id="modalFeriados" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
-                <h5 class="modal-title fw-bold"><i class="bi bi-cup-hot"></i> Gerir Folgas e Feriados</h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-cup-hot"></i> Gerenciar Folgas e Feriados</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body bg-light">
@@ -228,6 +379,7 @@
         </div>
     </div>
 </div>
+<% } %>
 
 <div class="modal fade" id="modalConfirmDelete" tabindex="-1" style="z-index: 1060;">
     <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -237,11 +389,11 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center p-3" id="textoConfirmDelete">
-                Tem a certeza que deseja apagar?
+                Tem certeza que deseja excluir?
             </div>
             <div class="modal-footer py-1 justify-content-center">
                 <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-sm btn-danger px-3" id="btnConfirmDelete">Apagar</button>
+                <button type="button" class="btn btn-sm btn-danger px-3" id="btnConfirmDelete">Excluir</button>
             </div>
         </div>
     </div>
@@ -250,7 +402,51 @@
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 
 <script>
-    // --- LÓGICA DO NOVO DROPDOWN COM CHECKBOXES ---
+    const userNivel = <%= user.nivel %>; 
+
+    // --- FUNÇÃO PARA ABRIR DETALHES NO MODAL ---
+    function abrirModalDetalhes(registroId, nomeMalhariaEncode) {
+        const nomeReal = decodeURIComponent(nomeMalhariaEncode);
+        document.getElementById('detalhesModalTitle').innerHTML = '<i class="bi bi-journal-text"></i> Relatório: ' + nomeReal;
+        
+        // Pega o HTML oculto do card clicado e insere no modal
+        const conteudoOriginal = document.getElementById('detalhes-html-' + registroId).innerHTML;
+        document.getElementById('detalhesModalBody').innerHTML = conteudoOriginal;
+        
+        new bootstrap.Modal(document.getElementById('modalDetalhesRegistro')).show();
+    }
+
+    // --- LÓGICA DO RELÓGIO DE CONTAGEM REGRESSIVA ---
+    if (userNivel < 3) {
+        const contadorEl = document.getElementById('contadorTempoRestante');
+        if (contadorEl) { 
+            function atualizarContagemRegressiva() {
+                const agora = new Date();
+                const fimDoDia = new Date();
+                fimDoDia.setHours(23, 59, 59, 999);
+
+                const diferenca = fimDoDia - agora;
+
+                if (diferenca > 0) {
+                    const horas = Math.floor((diferenca / (1000 * 60 * 60)) % 24);
+                    const minutos = Math.floor((diferenca / 1000 / 60) % 60);
+                    const segundos = Math.floor((diferenca / 1000) % 60);
+
+                    const horasStr = horas.toString().padStart(2, '0');
+                    const minutosStr = minutos.toString().padStart(2, '0');
+                    const segundosStr = segundos.toString().padStart(2, '0');
+
+                    contadorEl.innerText = `${horasStr}:${minutosStr}:${segundosStr}`;
+                } else {
+                    contadorEl.innerText = "Tempo Esgotado!";
+                }
+            }
+            setInterval(atualizarContagemRegressiva, 1000);
+            atualizarContagemRegressiva();
+        }
+    }
+
+    // --- LÓGICA DO DROPDOWN DE FERIADOS ---
     function filtrarMalhariasFeriado() {
         const termo = document.getElementById('buscaMalhariaFeriado').value.toLowerCase().trim();
         const itens = document.querySelectorAll('.item-malharia-feriado');
@@ -268,22 +464,20 @@
             textoBtn.innerText = 'Todas as Malharias (Global)';
             textoBtn.classList.add('text-muted');
         } else if (checks.length === 1) {
-            // Se só tem 1, mostra o nome dela
             const nomeUnico = checks[0].nextElementSibling.innerText;
             textoBtn.innerText = nomeUnico;
             textoBtn.classList.remove('text-muted');
         } else {
-            // Se tem mais, mostra a contagem
             textoBtn.innerText = checks.length + ' Malharias Selecionadas';
             textoBtn.classList.remove('text-muted');
         }
     }
 
-    // Modal de Confirmação
+    // Modal de Confirmação Exclusão
     let formToDelete = null;
     function confirmarExclusao(btn, tipo) {
         formToDelete = btn.closest('form');
-        const msg = tipo === 'feriado' ? 'Tem a certeza que deseja apagar este registro de Feriado/Folga?' : 'Tem a certeza que deseja apagar permanentemente este apontamento de produção?';
+        const msg = tipo === 'feriado' ? 'Tem certeza que deseja excluir este registro de Feriado/Folga?' : 'Tem certeza que deseja excluir permanentemente este apontamento de produção?';
         document.getElementById('textoConfirmDelete').innerText = msg;
         new bootstrap.Modal(document.getElementById('modalConfirmDelete')).show();
     }
@@ -292,12 +486,15 @@
         if(formToDelete) formToDelete.submit();
     });
 
-    // Lógica do Calendário 
+    // --- LÓGICA DO CALENDÁRIO COM CORREÇÃO DE CÁLCULO PARA MONITOR ---
     const resumoRegistros = <%- resumoGeralJSON || '[]' %>;
     const listaFeriados = <%- feriadosJSON || '[]' %>;
     const totalMalharias = parseInt("<%= totalMalharias || 0 %>");
     const dataBusca = "<%= dataBusca %>";
     const primeiraDataStr = "<%= primeiraData %>";
+    
+    // Lista de IDs permitidos para o cálculo preciso do calendário
+    const minhasMalhariasIds = <%- JSON.stringify(todasMalharias.map(m => m.id)) %>;
 
     let currentViewDate = new Date(dataBusca + "T12:00:00");
     const primeiraDataObj = new Date(primeiraDataStr + "T00:00:00");
@@ -306,14 +503,18 @@
 
     const registrosMap = {};
     resumoRegistros.forEach(r => {
-        if (!registrosMap[r.data_registro]) registrosMap[r.data_registro] = new Set();
-        registrosMap[r.data_registro].add(r.malharia_id);
+        if (minhasMalhariasIds.includes(r.malharia_id)) {
+            if (!registrosMap[r.data_registro]) registrosMap[r.data_registro] = new Set();
+            registrosMap[r.data_registro].add(r.malharia_id);
+        }
     });
 
     const feriadosMap = {};
     listaFeriados.forEach(f => {
-        if (!feriadosMap[f.data_feriado]) feriadosMap[f.data_feriado] = [];
-        feriadosMap[f.data_feriado].push(f);
+        if (!f.malharia_id || minhasMalhariasIds.includes(f.malharia_id)) {
+            if (!feriadosMap[f.data_feriado]) feriadosMap[f.data_feriado] = [];
+            feriadosMap[f.data_feriado].push(f);
+        }
     });
 
     function pad(n) { return n < 10 ? '0'+n : n; }
@@ -334,7 +535,6 @@
         const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
         
         document.getElementById('mesAnoAtual').innerText = `${monthNames[currentMonth]} ${currentYear}`;
-
         const grid = document.getElementById('calendarioGrid');
         grid.innerHTML = '';
         
@@ -361,6 +561,9 @@
             el.className = 'calendario-dia';
             
             if (loopDateStr === dataBusca) el.classList.add('dia-ativo');
+
+            // Habilita o clique em qualquer dia para todos os níveis
+            el.classList.add('interativo');
             el.onclick = () => { window.location.href = '/registros?data=' + loopDateStr; };
 
             let numDiv = document.createElement('div');
@@ -385,7 +588,7 @@
 
             let statusBadge = document.createElement('div');
             statusBadge.className = 'badge-status text-white mt-1 shadow-sm';
-
+            
             if (qtdRegistros === 0) {
                 if (expectedMalharias > 0 && loopDate >= primeiraDataObj && loopDate <= hojeObj) {
                     statusBadge.classList.add('bg-danger');
