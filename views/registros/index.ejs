@@ -27,7 +27,7 @@
 </style>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Controlo Diário de Produção</h1>
+    <h1 class="h2">Controle Diário de Produção</h1>
     <div>
         <a href="/registros" class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Ir para Hoje</a>
         <button class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalFeriados"><i class="bi bi-cup-hot"></i> Gerir Folgas/Feriados</button>
@@ -46,7 +46,7 @@
     <div class="card-footer bg-white py-2 small text-muted d-flex gap-4 justify-content-center flex-wrap">
         <span><i class="bi bi-square-fill text-success"></i> Completo / Prod. Extra</span>
         <span><i class="bi bi-square-fill text-warning"></i> Faltam Malharias</span>
-        <span><i class="bi bi-square-fill text-danger"></i> Nenhuma Registada (Pendente)</span>
+        <span><i class="bi bi-square-fill text-danger"></i> Nenhuma Registrada (Pendente)</span>
         <span><i class="bi bi-square-fill text-info"></i> Feriado/Folga</span>
         <span><i class="bi bi-square text-secondary"></i> Fim de Semana normal</span>
     </div>
@@ -61,7 +61,7 @@
         <% if (registros.length === 0) { %>
             <div class="alert alert-secondary text-center py-4 border-dashed">
                 <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
-                Nenhuma produção registada nesta data.
+                Nenhuma produção registrada nesta data.
             </div>
         <% } else { %>
             <div class="row g-3">
@@ -127,7 +127,7 @@
 
     <div class="col-md-4">
         <h4 class="text-secondary mb-3">
-            <i class="bi bi-clock-history"></i> Faltam Registar Hoje
+            <i class="bi bi-clock-history"></i> Faltam Registrar Hoje
             <span class="badge bg-secondary ms-2 fs-6"><%= malhariasPendentes.length %></span>
         </h4>
         
@@ -203,9 +203,9 @@
                     </div>
                 </form>
 
-                <h6 class="fw-bold text-secondary">Feriados e Folgas Registadas</h6>
+                <h6 class="fw-bold text-secondary">Feriados e Folgas Registradas</h6>
                 <% if(feriados.length === 0) { %>
-                    <p class="text-muted small">Nenhum feriado registado no sistema.</p>
+                    <p class="text-muted small">Nenhum feriado registrado no sistema.</p>
                 <% } else { %>
                     <ul class="list-group">
                         <% feriados.forEach(function(f) { %>
@@ -283,7 +283,7 @@
     let formToDelete = null;
     function confirmarExclusao(btn, tipo) {
         formToDelete = btn.closest('form');
-        const msg = tipo === 'feriado' ? 'Tem a certeza que deseja apagar este registo de Feriado/Folga?' : 'Tem a certeza que deseja apagar permanentemente este apontamento de produção?';
+        const msg = tipo === 'feriado' ? 'Tem a certeza que deseja apagar este registro de Feriado/Folga?' : 'Tem a certeza que deseja apagar permanentemente este apontamento de produção?';
         document.getElementById('textoConfirmDelete').innerText = msg;
         new bootstrap.Modal(document.getElementById('modalConfirmDelete')).show();
     }
