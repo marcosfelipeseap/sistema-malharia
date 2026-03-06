@@ -1,0 +1,246 @@
+<style>
+    /* Estilos para os Cards tipo "Pasta" (Malharias e Processos) */
+    .folder-card {
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        border: 2px solid transparent;
+    }
+    .folder-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1.5rem rgba(13, 110, 253, 0.15)!important;
+        border-color: #0d6efd;
+        background-color: #f8fbff !important;
+    }
+    
+    .folder-card-warning:hover {
+        box-shadow: 0 .5rem 1.5rem rgba(255, 193, 7, 0.15)!important;
+        border-color: #ffc107;
+        background-color: #fffdf5 !important;
+    }
+
+    /* Estilo dos Cards Quadrados dos Produtos */
+    .produto-card-quadrado {
+        aspect-ratio: 1 / 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.2s ease;
+        border: 2px solid #e9ecef;
+    }
+    .produto-card-quadrado:hover {
+        border-color: #198754;
+        background-color: #f8fff9 !important;
+        transform: scale(1.04);
+        box-shadow: 0 .5rem 1rem rgba(25, 135, 84, 0.15)!important;
+    }
+
+    .produto-qtde {
+        font-size: 2.8rem;
+        line-height: 1;
+    }
+    .produto-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+    
+    .search-box {
+        max-width: 350px;
+    }
+</style>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2"><i class="bi bi-boxes text-success"></i> Estoque Consolidado</h1>
+</div>
+
+<% if (estoque.length === 0) { %>
+    <div class="alert alert-warning text-center shadow-sm py-4">
+        <i class="bi bi-exclamation-triangle fs-1 text-warning d-block mb-2"></i>
+        <h5 class="fw-bold">Nenhuma malharia vinculada</h5>
+        <p class="mb-0 text-muted">Você não possui malharias atribuídas para visualizar o estoque.</p>
+    </div>
+<% } else { %>
+    
+    <div id="view-malharias" class="view-section">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h5 class="text-secondary m-0"><i class="bi bi-1-circle"></i> Selecione uma Oficina:</h5>
+            <div class="input-group search-box shadow-sm">
+                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar malharia..." onkeyup="pesquisarCards(this, 'lista-malharias')">
+            </div>
+        </div>
+
+        <div class="row g-4" id="lista-malharias">
+            <% estoque.forEach(function(malharia) { %>
+                <div class="col-sm-6 col-md-4 col-lg-3 item-pesquisavel" data-search="<%= malharia.nome.toLowerCase() %> <%= malharia.tipo ? malharia.tipo.toLowerCase() : '' %>">
+                    <div class="card h-100 shadow-sm folder-card bg-white" onclick="abrirProcessos('<%= malharia.id %>')">
+                        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center py-4">
+                            <i class="bi bi-shop display-4 text-primary mb-3"></i>
+                            <h5 class="fw-bold text-dark mb-1"><%= malharia.nome %></h5>
+                            <small class="text-muted mb-2"><%= malharia.tipo || 'Setor Padrão' %></small>
+                            
+                            <div class="mt-auto w-100">
+                                <hr class="my-2 border-primary border-opacity-25">
+                                <span class="text-success fw-bold fs-5"><%= malharia.total_geral %> <small class="text-muted fs-6">peças no total</small></span>
+                                <div class="small text-muted mt-1"><%= Object.keys(malharia.processos).length %> Processo(s)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+
+
+    <% estoque.forEach(function(malharia) { %>
+        <% const processos = Object.values(malharia.processos); %>
+
+        <div id="view-processos-<%= malharia.id %>" class="view-section d-none">
+            <div class="mb-4 d-flex justify-content-between align-items-center border-bottom pb-3 flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-outline-secondary shadow-sm" onclick="mostrarMalharias()">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </button>
+                    <h4 class="m-0 fw-bold text-dark">
+                        <i class="bi bi-shop text-primary me-1"></i> <%= malharia.nome %> 
+                        <span class="text-muted fw-normal fs-5 mx-2">/</span> 
+                        <span class="text-secondary"><i class="bi bi-2-circle"></i> Processos</span>
+                    </h4>
+                </div>
+                
+                <% if (processos.length > 0) { %>
+                <div class="input-group search-box shadow-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar processo ou órgão..." onkeyup="pesquisarCards(this, 'lista-processos-<%= malharia.id %>')">
+                </div>
+                <% } %>
+            </div>
+
+            <% if (processos.length === 0) { %>
+                <div class="alert alert-secondary text-center py-5 border-dashed bg-light">
+                    <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                    <h5 class="text-secondary">Nenhum processo com produção nesta malharia.</h5>
+                </div>
+            <% } else { %>
+                <div class="row g-4" id="lista-processos-<%= malharia.id %>">
+                    <% processos.forEach(function(proc) { %>
+                        <% 
+                            let somaTotal = 0;
+                            Object.values(proc.itens).forEach(i => somaTotal += i.total_produzido);
+                            let searchData = `${proc.numero_processo || ''} ${proc.orgao || ''}`.toLowerCase();
+                        %>
+                        <div class="col-sm-6 col-md-4 col-lg-3 item-pesquisavel" data-search="<%= searchData %>">
+                            <div class="card h-100 shadow-sm folder-card folder-card-warning bg-white border-warning border-opacity-50" onclick="abrirProdutos('<%= malharia.id %>', '<%= proc.id %>')">
+                                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center py-4">
+                                    <i class="bi bi-folder2-open display-4 text-warning mb-3"></i>
+                                    <h5 class="fw-bold text-dark text-uppercase mb-1"><%= proc.numero_processo || 'S/N' %></h5>
+                                    <small class="text-muted mb-3"><i class="bi bi-building"></i> <%= proc.orgao || 'Órgão não informado' %></small>
+                                    
+                                    <div class="mt-auto w-100">
+                                        <hr class="my-2 border-warning border-opacity-25">
+                                        <span class="text-success fw-bold fs-5"><%= somaTotal %> <small class="text-muted fs-6">peças</small></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %>
+        </div>
+
+        <% processos.forEach(function(proc) { %>
+            <div id="view-produtos-<%= malharia.id %>-<%= proc.id %>" class="view-section d-none">
+                
+                <div class="mb-4 d-flex justify-content-between align-items-center border-bottom pb-3 flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-outline-secondary shadow-sm" onclick="abrirProcessos('<%= malharia.id %>')">
+                            <i class="bi bi-arrow-left"></i> Voltar
+                        </button>
+                        <h4 class="m-0 fw-bold text-dark">
+                            <i class="bi bi-shop text-primary me-1"></i> <%= malharia.nome %> 
+                            <span class="text-muted fw-normal fs-5 mx-2">/</span> 
+                            <i class="bi bi-folder2-open text-warning me-1"></i> <%= proc.numero_processo || 'S/N' %>
+                        </h4>
+                    </div>
+
+                    <div class="input-group search-box shadow-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar produto..." onkeyup="pesquisarCards(this, 'lista-produtos-<%= malharia.id %>-<%= proc.id %>')">
+                    </div>
+                </div>
+
+                <div class="row g-3" id="lista-produtos-<%= malharia.id %>-<%= proc.id %>">
+                    <% Object.values(proc.itens).forEach(function(item) { %>
+                        <% let searchData = `${item.nome || ''} ${item.descricao || ''} ${item.tamanho || ''}`.toLowerCase(); %>
+                        <div class="col-6 col-sm-4 col-md-3 col-xl-2 item-pesquisavel" data-search="<%= searchData %>">
+                            <div class="card h-100 shadow-sm produto-card-quadrado bg-white">
+                                <div class="card-body d-flex flex-column text-center p-2 w-100 justify-content-between">
+                                    <div class="mb-2 mt-2">
+                                        <h6 class="fw-bold text-primary mb-1" style="font-size: 0.95rem; line-height: 1.2;"><%= item.nome %></h6>
+                                        <div class="text-muted produto-desc small" title="<%= item.descricao || 'Sem descrição' %>">
+                                            <%= item.descricao || 'Sem descrição' %>
+                                        </div>
+                                    </div>
+                                    <div class="mt-auto pb-2">
+                                        <% if(item.tamanho && item.tamanho !== '-') { %>
+                                            <span class="badge bg-secondary mb-1" style="font-size: 0.75rem;">Tam: <%= item.tamanho %></span>
+                                        <% } %>
+                                        <div class="produto-qtde fw-bold text-success mt-1"><%= item.total_produzido %></div>
+                                        <span class="text-muted small text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">Totais</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+
+            </div>
+        <% }); %>
+
+    <% }); %>
+
+<% } %>
+
+<script>
+    function ocultarTodasAsTelas() {
+        document.querySelectorAll('.view-section').forEach(el => {
+            el.classList.add('d-none');
+        });
+        document.querySelectorAll('.search-box input').forEach(input => {
+            input.value = '';
+        });
+        document.querySelectorAll('.item-pesquisavel').forEach(el => el.style.display = '');
+    }
+
+    function mostrarMalharias() {
+        ocultarTodasAsTelas();
+        document.getElementById('view-malharias').classList.remove('d-none');
+    }
+
+    function abrirProcessos(malhariaId) {
+        ocultarTodasAsTelas();
+        document.getElementById('view-processos-' + malhariaId).classList.remove('d-none');
+    }
+
+    function abrirProdutos(malhariaId, processoId) {
+        ocultarTodasAsTelas();
+        document.getElementById('view-produtos-' + malhariaId + '-' + processoId).classList.remove('d-none');
+    }
+
+    function pesquisarCards(inputElement, containerId) {
+        const termo = inputElement.value.toLowerCase().trim();
+        const container = document.getElementById(containerId);
+        const cards = container.querySelectorAll('.item-pesquisavel');
+
+        cards.forEach(card => {
+            const conteudo = card.getAttribute('data-search');
+            if (conteudo.includes(termo)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>

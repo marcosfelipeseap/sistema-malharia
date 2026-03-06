@@ -1,13 +1,19 @@
 <div class="position-sticky pt-3">
     <ul class="nav flex-column">
-        <li class="nav-item">
-            <a class="nav-link" href="/registros">
-                <i class="bi bi-clipboard-check"></i>
-                Registros Diários
-            </a>
-        </li>
-
+        
         <% if (user.nivel >= 3) { %>
+            <li class="nav-item">
+                <a class="nav-link" href="/registros">
+                    <i class="bi bi-clipboard-check"></i>
+                    Registros Gerais
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-success fw-bold" href="/estoque">
+                    <i class="bi bi-boxes"></i>
+                    Estoque de Produção
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" href="/processos">
                     <i class="bi bi-file-earmark-text"></i>
@@ -47,6 +53,24 @@
 
         <% } else { %>
             <li class="nav-item">
+                <a class="nav-link text-primary fw-bold" href="/registros/painel">
+                    <i class="bi bi-ui-checks-grid"></i>
+                    Meu Painel Diário
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/registros/historico">
+                    <i class="bi bi-calendar-range"></i>
+                    Registros Anteriores
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-success fw-bold" href="/estoque">
+                    <i class="bi bi-boxes"></i>
+                    Estoque da Oficina
+                </a>
+            </li>
+            <li class="nav-item mt-3">
                 <a class="nav-link" href="/malharias">
                     <i class="bi bi-shop"></i>
                     Minhas Malharias

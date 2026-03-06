@@ -1,0 +1,188 @@
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><i class="bi bi-ui-checks-grid text-primary"></i> Painel de Operações Diárias</h1>
+    <span class="badge bg-secondary fs-6"><i class="bi bi-calendar-event"></i> Hoje: <%= dataHoje.split('-').reverse().join('/') %></span>
+</div>
+
+<div class="row">
+    <div class="col-md-5">
+        <h4 class="text-danger mb-3 border-bottom pb-2">
+            <i class="bi bi-exclamation-circle"></i> Passo 1: Planejamento
+            <small class="text-muted fs-6">(Faltam: <%= malhariasPendentes.length %>)</small>
+        </h4>
+        
+        <% if (malhariasPendentes.length === 0) { %>
+            <div class="alert alert-success text-center py-4">
+                <i class="bi bi-check-circle fs-1"></i><br>
+                Todas as metas já foram definidas hoje!
+            </div>
+        <% } else { %>
+            <div class="row g-3">
+                <% malhariasPendentes.forEach(function(mal) { %>
+                    <% const limite = mal.horario_limite_planejamento || '10:00:00'; %>
+                    
+                    <div class="col-12 card-planejamento" data-limite="<%= limite %>">
+                        <div class="card shadow-sm border-start border-danger border-4 h-100 bg-light">
+                            <div class="card-body py-3">
+                                <h5 class="fw-bold text-dark"><%= mal.nome %></h5>
+                                <p class="small text-muted mb-2"><%= mal.tipo || 'Setor Padrão' %></p>
+                                
+                                <div class="alert-bloqueio alert alert-danger py-2 small mb-3 text-center d-none">
+                                    <i class="bi bi-lock-fill"></i> <b>Horário de planejamento encerrado.</b><br>
+                                    Contate um Gestor para exceções.
+                                </div>
+                                
+                                <div class="timer-planejamento text-danger small fw-bold mb-3 d-flex align-items-center gap-1 bg-white p-2 border rounded">
+                                    <i class="bi bi-stopwatch fs-5"></i> 
+                                    <span>Tempo restante para iniciar: <span class="contador fs-6 ms-1">--:--:--</span></span>
+                                </div>
+
+                                <a href="/registros/planejar/<%= mal.id %>" class="btn btn-danger w-100 fw-bold shadow-sm btn-iniciar">
+                                    <i class="bi bi-bullseye"></i> Iniciar Planejamento
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+
+    <div class="col-md-7">
+        <h4 class="text-primary mb-3 border-bottom pb-2">
+            <i class="bi bi-gear-wide-connected"></i> Passo 2: Produção em Andamento
+        </h4>
+        
+        <% if (registrosEmAndamento.length === 0) { %>
+            <div class="alert alert-secondary text-center py-4">
+                <i class="bi bi-inbox fs-1"></i><br>
+                Nenhuma produção iniciada ainda. Defina a meta no Passo 1.
+            </div>
+        <% } else { %>
+            <div class="row g-3">
+                <% registrosEmAndamento.forEach(function(reg) { %>
+                    <% 
+                        let totalProd = 0;
+                        if(reg.itens) reg.itens.forEach(i => totalProd += i.qtd_produzida);
+                        let percentual = reg.meta_calculada > 0 ? Math.round((totalProd / reg.meta_calculada) * 100) : 0;
+                    %>
+                    <div class="col-md-6">
+                        <div class="card shadow-sm border-start border-primary border-4 h-100">
+                            <div class="card-body pb-2">
+                                <h5 class="fw-bold mb-1"><%= reg.malharia ? reg.malharia.nome : 'N/A' %></h5>
+                                <p class="small text-muted mb-2"><i class="bi bi-people-fill"></i> <%= reg.qtd_internos %> Internos Mapeados</p>
+                                
+                                <div class="small text-muted mt-1 mb-2 border-bottom pb-2">
+                                    <i class="bi bi-person-circle text-primary"></i> <span class="fw-bold"><%= reg.usuario ? reg.usuario.nome : 'Desconhecido' %></span> registrou
+                                </div>
+
+                                <% if (reg.aviso_sistema) { %>
+                                    <div class="alert alert-danger py-1 px-2 small mt-2 mb-2 border-danger border-start border-4">
+                                        <strong><i class="bi bi-exclamation-octagon-fill"></i> Aviso:</strong> <%= reg.aviso_sistema %>
+                                    </div>
+                                <% } %>
+                                
+                                <div class="text-primary small fw-bold mb-2 mt-2 bg-light p-1 rounded text-center timer-fim-dia">
+                                    <i class="bi bi-clock-history"></i> Fim do expediente em: <span class="contador-fim text-danger">--:--:--</span>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <% if (reg.justificativa && totalProd === 0) { %>
+                                        <div class="alert alert-warning py-1 px-2 small mb-0 mt-2">
+                                            <strong><i class="bi bi-exclamation-triangle"></i> Sem Produção:</strong> <%= reg.justificativa.nome %>
+                                        </div>
+                                    <% } else { %>
+                                        <div class="d-flex justify-content-between small fw-bold mb-1">
+                                            <span>Progresso</span>
+                                            <span class="<%= percentual >= 100 ? 'text-success' : 'text-primary' %>"><%= totalProd %> / <%= Math.round(reg.meta_calculada) %> peças</span>
+                                        </div>
+                                        <div class="progress" style="height: 10px;">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated <%= percentual >= 100 ? 'bg-success' : 'bg-primary' %>" 
+                                                 role="progressbar" style="width: <%= percentual %>%"></div>
+                                        </div>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white border-0 pt-0">
+                                <a href="/registros/<%= reg.id %>/edit" class="btn btn-outline-primary w-100 mt-2 shadow-sm fw-bold">
+                                    <i class="bi bi-pencil-square"></i> Editar / Atualizar Qtd.
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Exibe alertas caso tenha sido barrado pelo back-end ao tentar pular o bloqueio via URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const erro = urlParams.get('erro');
+        const limiteURL = urlParams.get('limite');
+        
+        if (erro === 'horario' || erro === 'horario_salvar') {
+            const horaFormatada = limiteURL ? limiteURL.substring(0, 5) : '10:00';
+            alert(`⛔ ACESSO BLOQUEADO!\n\nO horário limite (${horaFormatada}) para enviar o planejamento desta oficina já encerrou por hoje.\n\nContate o Gestor.`);
+            window.history.replaceState(null, null, window.location.pathname);
+        }
+
+        // ==========================================
+        // LÓGICA DOS CONTADORES REGRESSIVOS
+        // ==========================================
+        function atualizarContadores() {
+            const agora = new Date();
+
+            // 1. Contador para o fim do expediente (Fim do dia)
+            const fimDoDia = new Date();
+            fimDoDia.setHours(23, 59, 59, 999);
+            const diffFim = fimDoDia - agora;
+            
+            let strFim = "Encerrado";
+            if (diffFim > 0) {
+                const h = Math.floor(diffFim / 3600000).toString().padStart(2, '0');
+                const m = Math.floor((diffFim % 3600000) / 60000).toString().padStart(2, '0');
+                const s = Math.floor((diffFim % 60000) / 1000).toString().padStart(2, '0');
+                strFim = `${h}:${m}:${s}`;
+            }
+
+            document.querySelectorAll('.contador-fim').forEach(el => {
+                el.innerText = strFim;
+            });
+
+            // 2. Contador de Limite de Planejamento (Passo 1)
+            document.querySelectorAll('.card-planejamento').forEach(card => {
+                const limiteStr = card.getAttribute('data-limite'); // Ex: "10:00:00"
+                const [lh, lm, ls] = limiteStr.split(':').map(Number);
+                
+                const dataLimite = new Date();
+                dataLimite.setHours(lh, lm, ls || 0, 0);
+
+                const diffPlan = dataLimite - agora;
+                
+                const btnIniciar = card.querySelector('.btn-iniciar');
+                const timerDiv = card.querySelector('.timer-planejamento');
+                const alertBloqueio = card.querySelector('.alert-bloqueio');
+                const contadorEl = card.querySelector('.contador');
+
+                if (diffPlan <= 0) {
+                    // O tempo acabou! Oculta botão e cronômetro, mostra o alerta vermelho
+                    if(btnIniciar) btnIniciar.classList.add('d-none');
+                    if(timerDiv) timerDiv.classList.add('d-none');
+                    if(alertBloqueio) alertBloqueio.classList.remove('d-none');
+                } else {
+                    // Ainda tem tempo! Atualiza o cronômetro
+                    const h = Math.floor(diffPlan / 3600000).toString().padStart(2, '0');
+                    const m = Math.floor((diffPlan % 3600000) / 60000).toString().padStart(2, '0');
+                    const s = Math.floor((diffPlan % 60000) / 1000).toString().padStart(2, '0');
+                    if(contadorEl) contadorEl.innerText = `${h}:${m}:${s}`;
+                }
+            });
+        }
+
+        // Executa a função imediatamente e depois atualiza a cada 1 segundo (1000ms)
+        atualizarContadores();
+        setInterval(atualizarContadores, 1000);
+    });
+</script>

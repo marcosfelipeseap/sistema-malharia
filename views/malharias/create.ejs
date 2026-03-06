@@ -28,20 +28,24 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label for="responsavel" class="form-label">Responsável da Malharia</label>
                             <input type="text" class="form-control" id="responsavel" name="responsavel" placeholder="Nome do encarregado">
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label for="num_internos" class="form-label">Nº Total de Internos</label>
                             <input type="number" class="form-control" id="num_internos" name="num_internos" min="0" value="0" onchange="validarInternos()">
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <label for="num_internos_remunerados" class="form-label">Nº Internos Remunerados</label>
                             <input type="number" class="form-control" id="num_internos_remunerados" name="num_internos_remunerados" min="0" value="0" onchange="validarInternos()">
                             <div id="erroRemunerados" class="form-text text-danger" style="display:none;">
-                                Não pode ser maior que o total de internos.
+                                Não pode ser maior que o total.
                             </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-danger"><i class="bi bi-clock-history"></i> Limite (Planejamento)</label>
+                            <input type="time" class="form-control border-danger fw-bold text-danger" name="horario_limite_planejamento" value="10:00" required>
                         </div>
                     </div>
                 </div>
@@ -100,13 +104,11 @@
 
 <script>
     let itens = [];
-
-    // VALIDAÇÃO DOS INTERNOS
+    
     function validarInternos() {
         const total = parseInt(document.getElementById('num_internos').value) || 0;
         const rem = parseInt(document.getElementById('num_internos_remunerados').value) || 0;
         const msg = document.getElementById('erroRemunerados');
-        
         if (rem > total) {
             msg.style.display = 'block';
             return false;
@@ -125,14 +127,12 @@
         return true;
     }
 
-    // --- FUNÇÕES DE INVENTÁRIO (Mesmas da versão anterior) ---
     function adicionarLote() {
         const select = document.getElementById('selMaquinario');
         const qtdInput = document.getElementById('qtdMaquinario');
         const id = select.value;
         const nome = select.options[select.selectedIndex]?.dataset.nome;
         const qtd = parseInt(qtdInput.value) || 1;
-
         if (!id) { alert('Selecione um maquinário.'); return; }
 
         for (let i = 0; i < qtd; i++) {

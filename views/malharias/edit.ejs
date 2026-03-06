@@ -29,18 +29,23 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Responsável da Malharia</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Responsável</label>
                             <input type="text" class="form-control" name="responsavel" value="<%= malharia.responsavel || '' %>" <%= isRestrito ? 'readonly' : '' %>>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Nº Total de Internos</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Nº Total Internos</label>
                             <input type="number" class="form-control" id="num_internos" name="num_internos" value="<%= malharia.num_internos || 0 %>" <%= isRestrito ? 'readonly' : 'onchange="validarInternos()"' %>>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Nº Internos Remunerados</label>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">Nº Remunerados</label>
                             <input type="number" class="form-control" id="num_internos_remunerados" name="num_internos_remunerados" value="<%= malharia.num_internos_remunerados || 0 %>" <%= isRestrito ? 'readonly' : 'onchange="validarInternos()"' %>>
-                            <div id="erroRemunerados" class="form-text text-danger" style="display:none;">Não pode ser maior que o total de internos.</div>
+                            <div id="erroRemunerados" class="form-text text-danger" style="display:none;">Não pode ser maior que o total.</div>
+                        </div>
+                        
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold text-danger"><i class="bi bi-clock-history"></i> Limite (Planejamento)</label>
+                            <input type="time" class="form-control border-danger fw-bold text-danger" name="horario_limite_planejamento" value="<%= malharia.horario_limite_planejamento || '10:00' %>" <%= isRestrito ? 'readonly' : 'required' %>>
                         </div>
                     </div>
                 </div>
@@ -91,7 +96,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100 btn-lg mb-5">Salvar Modelo e Séries</button>
+            <button type="submit" class="btn btn-primary w-100 btn-lg mb-5">Salvar Atualizações</button>
         </form>
     </div>
 </div>
@@ -100,7 +105,7 @@
     const userNivel = <%= user.nivel %>;
     const isRestrito = userNivel < 3;
     const dadosIniciais = <%- JSON.stringify(malharia.itens || []) %>;
-    
+
     let itens = dadosIniciais.map(i => {
         let nomeDisplay = 'Desconhecido';
         if (i.maquinario) {

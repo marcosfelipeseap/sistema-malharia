@@ -48,12 +48,41 @@ exports.updatePerfil = async (req, res) => {
 // ==========================================
 
 exports.index = async (req, res) => {
-    const { data: usuarios, error } = await supabase.schema('malharia')
-        .from('usuarios')
-        .select('*')
-        .order('criado_em', { ascending: false });
+    try {
+        // 1. Busca todos os usuários
+        const { data: usuarios, error: errUser } = await supabase.schema('malharia')
+            .from('usuarios')
+            .select('*')
+            .order('criado_em', { ascending: false });
+        if (errUser) throw errUser;
 
-    res.render('usuarios/index', { usuarios });
+        // 2. Busca todas as malharias para sabermos os nomes
+        const { data: malharias, error: errMal } = await supabase.schema('malharia')
+            .from('malharia')
+            .select('id, nome');
+        if (errMal) throw errMal;
+
+        // 3. Busca a tabela de vínculos (quem pode ver o quê)
+        const { data: vinculos, error: errVinc } = await supabase.schema('malharia')
+            .from('usuario_malharia')
+            .select('usuario_id, malharia_id');
+        if (errVinc) throw errVinc;
+
+        // 4. Junta as informações: Adiciona os IDs das malharias dentro de cada usuário monitor
+        const usuariosMapeados = usuarios.map(usuario => {
+            if (usuario.cargo === 'monitor') {
+                const vinculosDoUsuario = vinculos.filter(v => v.usuario_id === usuario.id);
+                usuario.malharias_permitidas = vinculosDoUsuario.map(v => v.malharia_id);
+            }
+            return usuario;
+        });
+
+        // 5. Envia para a tela
+        res.render('usuarios/index', { usuarios: usuariosMapeados, malharias });
+    } catch (error) {
+        console.error("Erro ao listar usuários:", error);
+        res.redirect('/');
+    }
 };
 
 exports.edit = async (req, res) => {

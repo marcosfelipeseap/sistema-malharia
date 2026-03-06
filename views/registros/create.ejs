@@ -8,116 +8,102 @@
 
 <div class="row">
     <div class="col-md-10 offset-md-1">
-        <div class="card shadow-sm">
+        <div class="card shadow-sm border-primary border-top border-3">
             <div class="card-body">
                 <form action="/registros" method="POST" id="formRegistro" onsubmit="return validarFormulario(event)">
                  
+                    <div class="form-check form-switch mb-4 bg-light p-3 rounded border">
+                        <input class="form-check-input ms-0 me-2" type="checkbox" id="sem_producao" name="sem_producao" value="1" onchange="toggleSemProducao()" style="width: 40px; height: 20px;">
+                        <label class="form-check-label fw-bold text-danger pt-1 fs-6 ms-2" for="sem_producao">Não houve produção nesta oficina</label>
+                    </div>
+
                     <h5 class="card-title text-primary border-bottom pb-2">Dados Gerais</h5>
                     <div class="row mb-4">
                         <div class="col-md-3 mb-3">
-                           
                             <label class="form-label fw-bold">Data do Apontamento</label>
                             <input type="date" class="form-control" name="data_registro" value="<%= new Date().toISOString().split('T')[0] %>" required>
                         </div>
                         <div class="col-md-6 mb-3">
-         
                             <label class="form-label fw-bold">Malharia / Setor</label>
                             <select class="form-select" id="malharia_id" name="malharia_id" required onchange="carregarDadosMalharia()">
                                 <option value="" disabled selected>Selecione a malharia...</option>
-       
                                 <% malharias.forEach(function(mal) { %>
                                     <option value="<%= mal.id %>" data-internos="<%= mal.num_internos || 0 %>"><%= mal.nome %></option>
                                 <% }); %>
                             </select>
                         </div>
-           
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Internos Trabalhando</label>
                             <input type="number" class="form-control" id="qtd_internos" name="qtd_internos" min="1" required disabled oninput="validarInternos()">
-                  
                             <small class="text-danger" id="avisoInternos"></small>
                         </div>
                     </div>
 
-                    <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
-               
-                    <div class="row bg-light p-3 rounded mb-3 border align-items-center">
-                        <div class="col-md-8">
-                            <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
-            
-                            <small class="text-muted">
-                                Selecione os produtos que serão trabalhados hoje. Você pode colocar quantidade 0 agora e preencher no fim do dia editando o registo.
-                                <br><b class="text-danger">Atenção:</b> Caso não tenha havido nenhuma produção no dia, não adicione nenhum produto na lista e apenas preencha a justificativa abaixo.
-                            </small>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <button type="button" class="btn btn-success" onclick="abrirModalBusca()">
-    
-                                <i class="bi bi-search"></i> Buscar Produtos
-                            </button>
-                        </div>
-                
-                    </div>
-
-                    <table class="table table-bordered table-sm" id="tabelaProducao">
-                        <thead class="table-dark">
-                            <tr>
-                   
-                                <th>Órgão</th>
-                                <th>Produto</th>
-                                <th>Descrição</th>
-                       
-                                <th style="width: 150px;" class="text-center">Qtd Produzida</th>
-                                <th class="text-center" style="width: 80px;">Ações</th>
-                            </tr>
-                        </thead>
-            
-                        <tbody>
-                            <tr id="linhaVazia"><td colspan="5" class="text-center text-muted">Nenhum produto selecionado.</td></tr>
-                        </tbody>
-                        <tfoot class="table-light">
-     
-                            <tr>
-                                <td colspan="3" class="text-end fw-bold align-middle">Meta Calculada:</td>
-                                <td colspan="2" class="align-middle">
-      
-                                    <span id="displayMeta" class="badge bg-primary fs-5" style="cursor:help;" onclick="mostrarExplicacaoMeta()">0</span>
-                                    <span class="ms-2 text-muted" style="font-size: 0.8em; cursor:help;" onclick="mostrarExplicacaoMeta()">(Clique para entender)</span>
-                                    <input type="hidden" name="meta_calculada" id="meta_calculada" value="0">
-                                    <input type="hidden" name="explicacao_meta" id="explicacao_meta">
-                   
-                                </td>
-                            </tr>
-                            <tr>
-                               
-                                <td colspan="3" class="text-end fw-bold align-middle">Total Produzido Hoje:</td>
-                                <td colspan="2" class="align-middle"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
-                            </tr>
-                        </tfoot>
-   
-                    </table>
-
                     <div id="boxJustificativa" class="mb-3 p-3 border rounded" style="display: none;">
                         <label id="justificativaLabel" class="form-label fw-bold"></label>
                         <select class="form-select" name="justificativa_id" id="justificativa_id">
-  
                             <option value="">Selecione a Justificativa...</option>
                             <% justificativas.forEach(function(just) { %>
                                 <option value="<%= just.id %>"><%= just.nome %></option>
-   
                             <% }); %>
                         </select>
                     </div>
 
+                    <div id="blocoProducao">
+                        <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
+                        <div class="row bg-light p-3 rounded mb-3 border align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
+                                <small class="text-muted">
+                                    Selecione os produtos que foram trabalhados.
+                                    <br><b class="text-danger">Atenção:</b> Caso não tenha havido nenhuma produção, ative o botão "Não houve produção" no topo.
+                                </small>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button type="button" class="btn btn-success" onclick="abrirModalBusca()">
+                                    <i class="bi bi-search"></i> Buscar Produtos
+                                </button>
+                            </div>
+                        </div>
+
+                        <table class="table table-bordered table-sm" id="tabelaProducao">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Órgão</th>
+                                    <th>Produto</th>
+                                    <th>Descrição</th>
+                                    <th style="width: 150px;" class="text-center">Qtd Produzida</th>
+                                    <th class="text-center" style="width: 80px;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr id="linhaVazia"><td colspan="5" class="text-center text-muted">Nenhum produto selecionado.</td></tr>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold align-middle">Meta Calculada:</td>
+                                    <td colspan="2" class="align-middle">
+                                        <span id="displayMeta" class="badge bg-primary fs-5" style="cursor:help;" onclick="mostrarExplicacaoMeta()">0</span>
+                                        <span class="ms-2 text-muted" style="font-size: 0.8em; cursor:help;" onclick="mostrarExplicacaoMeta()">(Clique para entender)</span>
+                                        <input type="hidden" name="meta_calculada" id="meta_calculada" value="0">
+                                        <input type="hidden" name="explicacao_meta" id="explicacao_meta">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold align-middle">Total Produzido Hoje:</td>
+                                    <td colspan="2" class="align-middle"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Observações Adicionais</label>
-        
                         <textarea class="form-control" name="observacao" rows="2"></textarea>
                     </div>
 
                     <div class="text-end">
-                        <button type="submit" class="btn btn-primary btn-lg px-5">Salvar Apontamento</button>
-          
+                        <button type="submit" class="btn btn-primary btn-lg px-5 shadow fw-bold">Salvar Apontamento</button>
                     </div>
                 </form>
             </div>
@@ -144,32 +130,26 @@
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title"><i class="bi bi-search"></i> Selecionar Produtos para Produção</h5>
-               
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
                     <input type="text" id="inputBuscaProduto" class="form-control form-control-lg" placeholder="Buscar por órgão, nome ou descrição do produto..." onkeyup="filtrarModalProdutos()">
                 </div>
-    
                 <div class="table-responsive">
                     <table class="table table-hover table-sm border" id="tabelaModalProdutos">
                         <thead class="table-light">
                             <tr>
-         
                                 <th style="width: 50px;" class="text-center">
                                     <input type="checkbox" class="form-check-input" id="checkAllModal" onclick="toggleAllModal(this)">
                                 </th>
-  
                                 <th>Órgão</th>
                                 <th>Produto</th>
                                 <th>Descrição</th>
-      
                             </tr>
                         </thead>
                         <tbody id="tbodyModalProdutos">
                         </tbody>
-     
                     </table>
                 </div>
             </div>
@@ -186,7 +166,6 @@
         <div class="modal-content border-warning">
             <div class="modal-header bg-warning text-dark py-2">
                 <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle"></i> Atenção</h6>
-              
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body text-center p-3" id="textoAviso"></div>
@@ -206,29 +185,48 @@
     
     let maquinasDaMalharia = [];
     let maxInternos = 0;
-    let listaProducao = []; 
+    let listaProducao = [];
     let combinacoesDisponiveis = [];
 
-    // Função para mostrar aviso elegante
+    function toggleSemProducao() {
+        const isSemProducao = document.getElementById('sem_producao').checked;
+        const blocoProducao = document.getElementById('blocoProducao');
+        const boxJustificativa = document.getElementById('boxJustificativa');
+        const selectJust = document.getElementById('justificativa_id');
+        const labelJust = document.getElementById('justificativaLabel');
+
+        if (isSemProducao) {
+            blocoProducao.style.display = 'none';
+            boxJustificativa.style.display = 'block';
+            selectJust.required = true;
+            
+            listaProducao = [];
+            atualizarTabela(); 
+            
+            document.getElementById('qtd_internos').min = "0";
+            
+            labelJust.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Sem Produção hoje. Informe o motivo obrigatório:';
+            boxJustificativa.className = 'mb-3 p-3 bg-danger bg-opacity-10 border border-danger rounded';
+            labelJust.className = 'form-label fw-bold text-danger-emphasis';
+        } else {
+            blocoProducao.style.display = 'block';
+            document.getElementById('qtd_internos').min = "1";
+            verificarJustificativa(); // volta a validação comum
+        }
+    }
+
     function exibirAviso(msg) {
         document.getElementById('textoAviso').innerText = msg;
         new bootstrap.Modal(document.getElementById('modalAviso')).show();
     }
 
-    // Função para evitar que aspas e caracteres especiais quebrem o HTML
     function escapeHTML(str) {
         if (!str || str.trim() === '') return '-';
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
     $(document).ready(function() {
         $('#malharia_id, #justificativa_id').select2({ theme: 'bootstrap-5', width: '100%' });
-        
         const params = new URLSearchParams(window.location.search);
         if(params.has('malharia')) $('#malharia_id').val(params.get('malharia')).trigger('change');
         if(params.has('data')) $('input[name="data_registro"]').val(params.get('data'));
@@ -299,22 +297,16 @@
         
         renderizarModalProdutos();
         $('#modalBuscaProdutos').modal('show');
-        
         if (filtroInicial) {
-            setTimeout(() => {
-                $('#inputBuscaProduto').val(filtroInicial);
-                filtrarModalProdutos();
-            }, 300);
+            setTimeout(() => { $('#inputBuscaProduto').val(filtroInicial); filtrarModalProdutos(); }, 300);
         } else {
-            $('#inputBuscaProduto').val('');
-            filtrarModalProdutos();
+            $('#inputBuscaProduto').val(''); filtrarModalProdutos();
         }
     }
 
     function renderizarModalProdutos() {
         const tbody = $('#tbodyModalProdutos');
         tbody.empty();
-        
         if(combinacoesDisponiveis.length === 0) {
             tbody.append('<tr><td colspan="4" class="text-center text-muted py-3">Nenhum produto pendente encontrado.</td></tr>');
             return;
@@ -349,7 +341,6 @@
     function filtrarModalProdutos() {
         const buscaTexto = $('#inputBuscaProduto').val().toLowerCase().trim();
         const palavras = buscaTexto === '' ? [] : buscaTexto.split(/\s+/);
-        
         $('#tbodyModalProdutos tr').each(function() {
             const textoLinha = $(this).find('.busca-texto').text().toLowerCase();
             const corresponde = palavras.every(palavra => textoLinha.includes(palavra));
@@ -363,16 +354,11 @@
 
     function adicionarProdutosSelecionados() {
         const selecionados = $('.check-produto:checked');
-        
-        if(selecionados.length === 0) {
-            exibirAviso("Selecione pelo menos um produto.");
-            return;
-        }
+        if(selecionados.length === 0) { exibirAviso("Selecione pelo menos um produto."); return; }
         
         selecionados.each(function() {
             const idUnicoSelecionado = $(this).val();
             const comb = combinacoesDisponiveis.find(c => c.id_unico === idUnicoSelecionado);
-            
             if (comb) {
                 listaProducao.push({
                     id_unico: comb.id_unico,
@@ -386,7 +372,6 @@
                 });
             }
         });
-        
         atualizarTabela();
         $('#modalBuscaProdutos').modal('hide');
     }
@@ -398,7 +383,6 @@
 
     function atualizarTabela() {
         const tbody = document.querySelector('#tabelaProducao tbody');
-        
         if(listaProducao.length === 0) {
             tbody.innerHTML = '<tr id="linhaVazia"><td colspan="5" class="text-center text-muted">Nenhum produto selecionado.</td></tr>';
             document.getElementById('displayTotalProduzido').innerText = 0;
@@ -434,7 +418,6 @@
                 </tr>
             `;
         });
-        
         document.getElementById('displayTotalProduzido').innerText = totalProduzido;
         recalcularMeta();
     }
@@ -459,19 +442,15 @@
         }
 
         let explicacao = "CÁLCULO DE META AUTOMÁTICO:\n==============================================\n\n";
-        
         if (maquinasDaMalharia.length === 0) {
             explicacao += "AVISO: A malharia selecionada NÃO possui máquinas no sistema.\nA meta calculada será 0.";
-            displayMeta.innerText = "0"; 
-            inputMeta.value = 0; 
+            displayMeta.innerText = "0"; inputMeta.value = 0; 
             document.getElementById('textoExplicacaoMeta').innerText = explicacao; 
-            verificarJustificativa(); 
-            return;
+            verificarJustificativa(); return;
         }
 
         const produtosUnicosIds = [...new Set(listaProducao.map(p => String(p.item_id)))];
-        let usoMaquinario = {};
-        let alertas = [];
+        let usoMaquinario = {}; let alertas = [];
 
         produtosUnicosIds.forEach(itemId => {
             const dadosItem = todosItens.find(i => String(i.id) === itemId);
@@ -484,15 +463,11 @@
                             usoMaquinario[idMaq].push({ nome: dadosItem.nome, meta: parseFloat(dadosItem.meta_diaria) || 100 });
                         }
                     });
-                } else {
-                    alertas.push(`O produto '${dadosItem.nome}' NÃO tem máquinas exigidas no cadastro.`);
-                }
+                } else { alertas.push(`O produto '${dadosItem.nome}' NÃO tem máquinas exigidas no cadastro.`); }
             }
         });
         
-        let contagemMalharia = {};
-        let nomesMaquinas = {};
-        
+        let contagemMalharia = {}; let nomesMaquinas = {};
         maquinasDaMalharia.forEach(maqFisica => {
             if(maqFisica.status !== 'indisponivel') {
                 const idMaq = String(maqFisica.maquinario_id || (maqFisica.maquinario && maqFisica.maquinario.id));
@@ -502,9 +477,8 @@
                 }
             }
         });
-        
-        let metaTotalGeral = 0;
-        let maquinasCompativeisEncontradas = 0;
+
+        let metaTotalGeral = 0; let maquinasCompativeisEncontradas = 0;
 
         for (const [maqId, qtdFisica] of Object.entries(contagemMalharia)) {
             if (usoMaquinario[maqId]) {
@@ -516,16 +490,11 @@
                 metaTotalGeral += subtotal;
 
                 const nomeDaMaquina = nomesMaquinas[maqId] || `Máquina ID ${maqId}`;
-                explicacao += `>> ${nomeDaMaquina.toUpperCase()}\n`;
-                explicacao += `   - Quantidade Física na Oficina: ${qtdFisica} un.\n`;
-                explicacao += `   - Produtos que a utilizam: ${produtosQueUsam.map(p => p.nome).join(' e ')}\n`;
-                explicacao += `   - Média de Produção: ${mediaMetaPorMaquina.toFixed(2)} por máquina/dia\n`;
-                explicacao += `   - Subtotal Gerado (${mediaMetaPorMaquina.toFixed(2)} x ${qtdFisica}): ${subtotal.toFixed(2)}\n\n`;
+                explicacao += `>> ${nomeDaMaquina.toUpperCase()}\n   - Quantidade Física na Oficina: ${qtdFisica} un.\n   - Produtos que a utilizam: ${produtosQueUsam.map(p => p.nome).join(' e ')}\n   - Média de Produção: ${mediaMetaPorMaquina.toFixed(2)} por máquina/dia\n   - Subtotal Gerado (${mediaMetaPorMaquina.toFixed(2)} x ${qtdFisica}): ${subtotal.toFixed(2)}\n\n`;
             }
         }
 
         if (maquinasCompativeisEncontradas === 0) alertas.push("A malharia NÃO possui nenhuma máquina compatível para fazer os produtos da tabela.");
-        
         if (alertas.length > 0) {
             explicacao += "AVISOS DO SISTEMA:\n";
             alertas.forEach(a => explicacao += `- ${a}\n`);
@@ -542,6 +511,9 @@
     }
 
     function verificarJustificativa() {
+        const isSemProducao = document.getElementById('sem_producao') && document.getElementById('sem_producao').checked;
+        if (isSemProducao) return; // Se for sem produção, a lógica já foi feita no toggleSemProducao
+
         const meta = parseFloat(document.getElementById('meta_calculada').value) || 0;
         const totalProduzido = parseInt(document.getElementById('displayTotalProduzido').innerText) || 0;
         const box = document.getElementById('boxJustificativa');
@@ -549,13 +521,9 @@
         const labelJust = document.getElementById('justificativaLabel');
 
         if(listaProducao.length === 0) {
-            box.style.display = 'block';
-            selectJust.required = true;
-            labelJust.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Nenhuma produção registrada. Informe o motivo obrigatório:';
-            box.className = 'mb-3 p-3 bg-danger bg-opacity-10 border border-danger rounded';
-            labelJust.className = 'form-label fw-bold text-danger-emphasis';
-        }
-        else if(listaProducao.length > 0 && totalProduzido < meta) {
+            box.style.display = 'none';
+            selectJust.required = false;
+        } else if(listaProducao.length > 0 && totalProduzido < meta) {
             box.style.display = 'block';
             if(totalProduzido === 0) {
                 selectJust.required = false;
@@ -572,18 +540,20 @@
             box.style.display = 'none';
             selectJust.required = false; 
             if (typeof isCarregamentoInicial !== 'undefined') {
-                if (!isCarregamentoInicial) {
-                    $(selectJust).val('').trigger('change');
-                }
-            } else {
-                $(selectJust).val('').trigger('change');
-            }
+                if (!isCarregamentoInicial) { $(selectJust).val('').trigger('change'); }
+            } else { $(selectJust).val('').trigger('change'); }
         }
     }
 
     function mostrarExplicacaoMeta() { new bootstrap.Modal(document.getElementById('modalMeta')).show(); }
 
     function validarFormulario(e) {
+        const isSemProducao = document.getElementById('sem_producao').checked;
+        if(!isSemProducao && listaProducao.length === 0) {
+            e.preventDefault(); 
+            exibirAviso("Adicione pelo menos um produto na tabela ou marque o botão de 'Não houve produção' no topo da tela."); 
+            return false;
+        }
         return true;
     }
 </script>

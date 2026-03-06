@@ -1,43 +1,98 @@
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestão de Usuários</h2>
-    </div>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Gerenciar Usuários</h1>
+</div>
 
-    <div class="table-responsive bg-white shadow rounded">
-        <table class="table table-hover mb-0">
-            <thead class="table-dark">
-                <tr>
-                    <th>Nome</th>
-                    <th>Usuário</th>
-                    <th>Cargo</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% usuarios.forEach(u => { %>
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Login (Username)</th>
+                <th>Cargo</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% if (usuarios && usuarios.length > 0) { %>
+                <% usuarios.forEach(function(usuario) { %>
                     <tr>
-                        <td><%= u.nome %></td>
-                        <td><%= u.username %></td>
-                        <td><span class="badge bg-secondary"><%= u.cargo ? u.cargo.toUpperCase() : 'NÃO DEFINIDO' %></span></td>
+                        <td><%= usuario.nome %></td>
+                        <td class="text-muted"><%= usuario.username %></td>
+                        
                         <td>
-                            <% if (u.status === 'aprovado') { %>
-                                <span class="badge bg-success">Aprovado</span>
+                            <% if (usuario.cargo === 'monitor') { %>
+                                <% 
+                                    let nomesMalharias = [];
+                                    if (usuario.malharias_permitidas && usuario.malharias_permitidas.length > 0) {
+                                        nomesMalharias = usuario.malharias_permitidas.map(id => {
+                                            const mal = malharias.find(m => String(m.id) === String(id));
+                                            return mal ? mal.nome : `Oficina ID: ${id}`;
+                                        });
+                                    }
+                                %>
+                                <button type="button" class="btn btn-sm btn-outline-primary fw-bold rounded-pill" onclick="verMalhariasMonitor('<%= usuario.nome %>', '<%= nomesMalharias.join('||') %>')">
+                                    Monitor <i class="bi bi-info-circle"></i>
+                                </button>
                             <% } else { %>
-                                <span class="badge bg-warning text-dark">Pendente</span>
+                                <span class="text-uppercase"><%= usuario.cargo %></span>
                             <% } %>
                         </td>
+
+                        <td><%= usuario.status %></td>
+                        
                         <td>
-                            <a href="/usuarios/<%= u.id %>/editar" class="btn btn-sm btn-primary">Editar / Aprovar</a>
-                            <% if (u.id !== user.id) { %>
-                                <form action="/usuarios/<%= u.id %>/excluir" method="POST" class="d-inline" onsubmit="return confirm('Deseja realmente excluir este usuário?');">
-                                    <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
-                                </form>
-                            <% } %>
+                            <a href="/usuarios/<%= usuario.id %>/editar" class="btn btn-sm btn-primary">Editar</a>
+                            
+                            <form action="/usuarios/<%= usuario.id %>/excluir" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir o usuário <%= usuario.nome %>?');">
+                                <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                            </form>
                         </td>
                     </tr>
-                <% }) %>
-            </tbody>
-        </table>
+                <% }); %>
+            <% } else { %>
+                <tr>
+                    <td colspan="5" class="text-center py-4">Nenhum usuário cadastrado.</td>
+                </tr>
+            <% } %>
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="modalMalhariasMonitor" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h6 class="modal-title fw-bold">Oficinas do Monitor</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small mb-2">Oficinas vinculadas a <b id="nomeMonitorModal"></b>:</p>
+                <ul class="list-group list-group-flush border rounded" id="listaMalhariasModal">
+                    </ul>
+            </div>
+            <div class="modal-footer py-1 justify-content-center">
+                <button type="button" class="btn btn-sm btn-secondary px-4" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
     </div>
 </div>
+
+<script>
+    function verMalhariasMonitor(nomeUsuario, malhariasString) {
+        document.getElementById('nomeMonitorModal').innerText = nomeUsuario;
+        const lista = document.getElementById('listaMalhariasModal');
+        lista.innerHTML = '';
+
+        if (!malhariasString || malhariasString.trim() === '') {
+            lista.innerHTML = '<li class="list-group-item text-danger small text-center">Nenhuma oficina vinculada.</li>';
+        } else {
+            const listaArray = malhariasString.split('||');
+            listaArray.forEach(m => {
+                lista.innerHTML += `<li class="list-group-item small text-dark"><i class="bi bi-check2 text-success me-1"></i> ${m}</li>`;
+            });
+        }
+
+        new bootstrap.Modal(document.getElementById('modalMalhariasMonitor')).show();
+    }
+</script>

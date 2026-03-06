@@ -26,7 +26,6 @@
 </style>
 
 <% 
-// Variável auxiliar para verificar se a data buscada é a de hoje (Brasília)
 const brTime = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 const [dataParte] = brTime.split(','); 
 const [diaHoje, mesHoje, anoHoje] = dataParte.trim().split('/');
@@ -35,9 +34,9 @@ const isHoje = dataBusca === dataHojeBRT;
 %>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Controle Diário de Produção</h1>
+    <h1 class="h2"><%= typeof isHistoricoPainel !== 'undefined' && isHistoricoPainel ? 'Histórico de Produção' : 'Controle Diário Geral' %></h1>
     <div>
-        <a href="/registros" class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Ir para Hoje</a>
+        <a href="<%= typeof isHistoricoPainel !== 'undefined' && isHistoricoPainel ? '/registros/historico' : '/registros' %>" class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Ir para Hoje</a>
         
         <% if (user.nivel >= 3) { %>
             <button class="btn btn-outline-info btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#modalFeriados">
@@ -53,7 +52,7 @@ const isHoje = dataBusca === dataHojeBRT;
             <div class="timer-aviso w-100 shadow-sm">
                 <i class="bi bi-stopwatch fs-4 text-warning"></i>
                 <div>
-                    Atenção: Os registros apenas podem ser inseridos na data atual (<%= dataHojeBRT.split('-').reverse().join('/') %>).<br>
+                    Atenção: Os registros devem ser inseridos através do <b>Meu Painel Diário</b>.<br>
                     Restam <span id="contadorTempoRestante" class="text-danger fw-bold">--:--:--</span> para enviar ou ajustar o relatório de hoje.
                 </div>
             </div>
@@ -62,7 +61,8 @@ const isHoje = dataBusca === dataHojeBRT;
                 <i class="bi bi-info-circle fs-4 text-secondary"></i>
                 <div>
                     <strong>Modo de Leitura Ativo</strong><br>
-                    Você está visualizando os registros do dia <%= dataBusca.split('-').reverse().join('/') %>. Não é possível alterar ou inserir apontamentos em datas passadas.
+                    Você está visualizando os registros do dia <%= dataBusca.split('-').reverse().join('/') %>.
+                    Não é possível alterar ou inserir apontamentos em datas passadas.
                 </div>
             </div>
         <% } %>
@@ -103,7 +103,7 @@ const isHoje = dataBusca === dataHojeBRT;
                 <% registros.forEach(function(reg) { %>
                     <% 
                         let totalProd = 0;
-                        reg.itens.forEach(i => totalProd += i.qtd_produzida);
+                        if(reg.itens) reg.itens.forEach(i => totalProd += i.qtd_produzida);
                         let percentual = reg.meta_calculada > 0 ? Math.round((totalProd / reg.meta_calculada) * 100) : 0;
                         let corBarra = percentual >= 100 ? 'bg-success' : (percentual >= 70 ? 'bg-warning' : 'bg-danger');
                     %>
@@ -114,10 +114,21 @@ const isHoje = dataBusca === dataHojeBRT;
                                     <h5 class="card-title fw-bold text-dark mb-0"><%= reg.malharia ? reg.malharia.nome : 'N/A' %></h5>
                                     <span class="badge bg-light text-dark border" title="Internos trabalhando"><i class="bi bi-people-fill"></i> <%= reg.qtd_internos %></span>
                                 </div>
+                                
+                                <div class="small text-muted mt-1 mb-2">
+                                    <i class="bi bi-person-circle text-primary"></i> <span class="fw-bold"><%= reg.usuario ? reg.usuario.nome : 'Desconhecido' %></span> registrou/atualizou
+                                </div>
+
+                                <% if (reg.aviso_sistema) { %>
+                                    <div class="alert alert-danger py-1 px-2 small mt-2 mb-2 border-danger border-start border-4">
+                                        <strong><i class="bi bi-exclamation-octagon-fill"></i> Aviso:</strong> <%= reg.aviso_sistema %>
+                                    </div>
+                                <% } %>
+                                
                                 <hr class="my-2">
                                 
                                 <ul class="list-unstyled mb-2 small text-secondary" style="min-height: 50px;">
-                                <% reg.itens.slice(0, 3).forEach(function(item) { %>
+                                <% if(reg.itens) { reg.itens.slice(0, 3).forEach(function(item) { %>
                                     <li class="text-truncate">
                                         <% if (user.nivel >= 3) { %>
                                             <span class="badge bg-secondary opacity-75" title="Órgão: <%= item.processo ? item.processo.orgao : '-' %>">
@@ -144,7 +155,7 @@ const isHoje = dataBusca === dataHojeBRT;
                                         (<%= item.qtd_produzida %> un)
                                     </li>
                                 <% }); %>
-                                <% if(reg.itens.length > 3) { %> <li><small class="text-muted fst-italic">+ <%= reg.itens.length - 3 %> outros...</small></li> <% } %>
+                                <% if(reg.itens.length > 3) { %> <li><small class="text-muted fst-italic">+ <%= reg.itens.length - 3 %> outros...</small></li> <% } } %>
                                 </ul>
 
                                 <div class="mt-2">
@@ -157,7 +168,9 @@ const isHoje = dataBusca === dataHojeBRT;
                                     </div>
                                 </div>
                                 
-                                <% if(reg.justificativa) { %>
+                                <% if(reg.justificativa && totalProd === 0) { %>
+                                    <div class="mt-2 text-warning small fw-bold"><i class="bi bi-exclamation-triangle"></i> Sem Produção: <%= reg.justificativa.nome %></div>
+                                <% } else if(reg.justificativa) { %>
                                     <div class="mt-2 text-danger small"><i class="bi bi-exclamation-triangle"></i> <%= reg.justificativa.nome %></div>
                                 <% } %>
                             </div>
@@ -202,7 +215,7 @@ const isHoje = dataBusca === dataHojeBRT;
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <% reg.itens.forEach(function(item) { %>
+                                            <% if(reg.itens) { reg.itens.forEach(function(item) { %>
                                                 <tr>
                                                     <td>
                                                         <% if (user.nivel >= 3) { %>
@@ -212,28 +225,23 @@ const isHoje = dataBusca === dataHojeBRT;
                                                             <span class="badge bg-secondary"><%= item.processo && item.processo.orgao ? item.processo.orgao : 'N/A' %></span>
                                                         <% } %>
                                                     </td>
-                                                    
                                                     <td class="text-start fw-bold"><%= item.item ? item.item.nome : 'Desconhecido' %></td>
-                                                    
                                                     <td class="text-muted small">
-                                                        <% 
-                                                           let descCompleta = item.descricao || (item.item ? item.item.descricao : '');
-                                                        %>
+                                                        <% let descCompleta = item.descricao || (item.item ? item.item.descricao : ''); %>
                                                         <%= descCompleta ? descCompleta : '-' %>
                                                     </td>
-                                                    
                                                     <td><%= item.tamanho || (item.item && item.item.tamanho) || '-' %></td>
                                                     <td class="fw-bold text-success fs-6"><%= item.qtd_produzida %></td>
                                                 </tr>
-                                            <% }); %>
+                                            <% }); } %>
                                         </tbody>
                                     </table>
                                 </div>
 
                                 <% if(reg.justificativa) { %>
                                     <div class="mb-3">
-                                        <strong class="text-danger"><i class="bi bi-exclamation-triangle"></i> Justificativa de Quebra de Meta:</strong> 
-                                        <div class="border border-danger p-2 rounded bg-white mt-1 text-danger">
+                                        <strong class="<%= totalProd === 0 ? 'text-warning' : 'text-danger' %>"><i class="bi bi-exclamation-triangle"></i> <%= totalProd === 0 ? 'Motivo da Falta de Produção:' : 'Justificativa de Quebra de Meta:' %></strong> 
+                                        <div class="border <%= totalProd === 0 ? 'border-warning text-warning-emphasis bg-warning bg-opacity-10' : 'border-danger text-danger' %> p-2 rounded mt-1">
                                             <%= reg.justificativa.nome %>
                                         </div>
                                     </div>
@@ -242,7 +250,14 @@ const isHoje = dataBusca === dataHojeBRT;
                                 <% if(reg.observacao) { %>
                                     <div class="mb-2">
                                         <strong class="text-secondary"><i class="bi bi-chat-text"></i> Observações Adicionais:</strong>
-                                        <p class="text-muted small border p-2 rounded bg-white mt-1"><%= reg.observacao %></p>
+                                        <p class="text-muted small border p-2 rounded bg-white mt-1" style="white-space: pre-wrap;"><%= reg.observacao %></p>
+                                    </div>
+                                <% } %>
+
+                                <% if(reg.aviso_sistema) { %>
+                                    <div class="mb-3 mt-3">
+                                        <strong class="text-danger"><i class="bi bi-exclamation-octagon-fill"></i> Alerta do Sistema:</strong>
+                                        <p class="text-danger small border border-danger p-2 rounded bg-danger bg-opacity-10 mt-1 mb-0"><%= reg.aviso_sistema %></p>
                                     </div>
                                 <% } %>
                             </div>
@@ -256,7 +271,7 @@ const isHoje = dataBusca === dataHojeBRT;
 
     <div class="col-md-4">
         <h4 class="text-secondary mb-3">
-            <i class="bi bi-clock-history"></i> Faltam Registrar Hoje
+            <i class="bi bi-clock-history"></i> Faltam Registrar
             <span class="badge bg-secondary ms-2 fs-6"><%= malhariasPendentes.length %></span>
         </h4>
         
@@ -274,10 +289,14 @@ const isHoje = dataBusca === dataHojeBRT;
                             <small class="text-muted"><%= mal.tipo || 'Setor Padrão' %></small>
                         </div>
                         
-                        <% if (user.nivel >= 3 || isHoje) { %>
-                        <a href="/registros/create?malharia=<%= mal.id %>&data=<%= dataBusca %>" class="btn btn-sm btn-primary rounded-pill shadow-sm" title="Criar apontamento">
-                            <i class="bi bi-plus-lg"></i> Inserir
-                        </a>
+                        <% if (user.nivel >= 3) { %>
+                            <a href="/registros/create?malharia=<%= mal.id %>&data=<%= dataBusca %>" class="btn btn-sm btn-primary rounded-pill shadow-sm" title="Criar apontamento">
+                                <i class="bi bi-plus-lg"></i> Inserir
+                            </a>
+                        <% } else if (isHoje) { %>
+                            <a href="/registros/painel" class="btn btn-sm btn-danger rounded-pill shadow-sm" title="Ir para Painel Diário">
+                                <i class="bi bi-arrow-right-circle"></i> Ir ao Painel
+                            </a>
                         <% } else { %>
                             <span class="badge bg-secondary">Apenas Leitura</span>
                         <% } %>
@@ -295,8 +314,7 @@ const isHoje = dataBusca === dataHojeBRT;
                 <h5 class="modal-title fw-bold" id="detalhesModalTitle"><i class="bi bi-card-list"></i> Detalhes da Produção</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body bg-light" id="detalhesModalBody">
-                </div>
+            <div class="modal-body bg-light" id="detalhesModalBody"></div>
             <div class="modal-footer py-2">
                 <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Fechar</button>
             </div>
@@ -402,21 +420,19 @@ const isHoje = dataBusca === dataHojeBRT;
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 
 <script>
-    const userNivel = <%= user.nivel %>; 
-
-    // --- FUNÇÃO PARA ABRIR DETALHES NO MODAL ---
+    const userNivel = <%= user.nivel %>;
+    const baseUrl = "<%= typeof isHistoricoPainel !== 'undefined' && isHistoricoPainel ? '/registros/historico' : '/registros' %>";
+    
     function abrirModalDetalhes(registroId, nomeMalhariaEncode) {
         const nomeReal = decodeURIComponent(nomeMalhariaEncode);
         document.getElementById('detalhesModalTitle').innerHTML = '<i class="bi bi-journal-text"></i> Relatório: ' + nomeReal;
         
-        // Pega o HTML oculto do card clicado e insere no modal
         const conteudoOriginal = document.getElementById('detalhes-html-' + registroId).innerHTML;
         document.getElementById('detalhesModalBody').innerHTML = conteudoOriginal;
         
         new bootstrap.Modal(document.getElementById('modalDetalhesRegistro')).show();
     }
 
-    // --- LÓGICA DO RELÓGIO DE CONTAGEM REGRESSIVA ---
     if (userNivel < 3) {
         const contadorEl = document.getElementById('contadorTempoRestante');
         if (contadorEl) { 
@@ -426,12 +442,10 @@ const isHoje = dataBusca === dataHojeBRT;
                 fimDoDia.setHours(23, 59, 59, 999);
 
                 const diferenca = fimDoDia - agora;
-
                 if (diferenca > 0) {
                     const horas = Math.floor((diferenca / (1000 * 60 * 60)) % 24);
                     const minutos = Math.floor((diferenca / 1000 / 60) % 60);
                     const segundos = Math.floor((diferenca / 1000) % 60);
-
                     const horasStr = horas.toString().padStart(2, '0');
                     const minutosStr = minutos.toString().padStart(2, '0');
                     const segundosStr = segundos.toString().padStart(2, '0');
@@ -446,7 +460,6 @@ const isHoje = dataBusca === dataHojeBRT;
         }
     }
 
-    // --- LÓGICA DO DROPDOWN DE FERIADOS ---
     function filtrarMalhariasFeriado() {
         const termo = document.getElementById('buscaMalhariaFeriado').value.toLowerCase().trim();
         const itens = document.querySelectorAll('.item-malharia-feriado');
@@ -473,7 +486,6 @@ const isHoje = dataBusca === dataHojeBRT;
         }
     }
 
-    // Modal de Confirmação Exclusão
     let formToDelete = null;
     function confirmarExclusao(btn, tipo) {
         formToDelete = btn.closest('form');
@@ -486,21 +498,18 @@ const isHoje = dataBusca === dataHojeBRT;
         if(formToDelete) formToDelete.submit();
     });
 
-    // --- LÓGICA DO CALENDÁRIO COM CORREÇÃO DE CÁLCULO PARA MONITOR ---
     const resumoRegistros = <%- resumoGeralJSON || '[]' %>;
     const listaFeriados = <%- feriadosJSON || '[]' %>;
     const totalMalharias = parseInt("<%= totalMalharias || 0 %>");
     const dataBusca = "<%= dataBusca %>";
     const primeiraDataStr = "<%= primeiraData %>";
-    
-    // Lista de IDs permitidos para o cálculo preciso do calendário
     const minhasMalhariasIds = <%- JSON.stringify(todasMalharias.map(m => m.id)) %>;
-
+    
     let currentViewDate = new Date(dataBusca + "T12:00:00");
     const primeiraDataObj = new Date(primeiraDataStr + "T00:00:00");
     const hojeObj = new Date(); 
-    hojeObj.setHours(23,59,59,999); 
-
+    hojeObj.setHours(23,59,59,999);
+    
     const registrosMap = {};
     resumoRegistros.forEach(r => {
         if (minhasMalhariasIds.includes(r.malharia_id)) {
@@ -508,7 +517,7 @@ const isHoje = dataBusca === dataHojeBRT;
             registrosMap[r.data_registro].add(r.malharia_id);
         }
     });
-
+    
     const feriadosMap = {};
     listaFeriados.forEach(f => {
         if (!f.malharia_id || minhasMalhariasIds.includes(f.malharia_id)) {
@@ -545,7 +554,7 @@ const isHoje = dataBusca === dataHojeBRT;
             el.innerText = d;
             grid.appendChild(el);
         });
-
+        
         let startDayWeek = firstDay.getDay(); 
         for(let i = 0; i < startDayWeek; i++) {
             let el = document.createElement('div');
@@ -561,10 +570,8 @@ const isHoje = dataBusca === dataHojeBRT;
             el.className = 'calendario-dia';
             
             if (loopDateStr === dataBusca) el.classList.add('dia-ativo');
-
-            // Habilita o clique em qualquer dia para todos os níveis
             el.classList.add('interativo');
-            el.onclick = () => { window.location.href = '/registros?data=' + loopDateStr; };
+            el.onclick = () => { window.location.href = baseUrl + '?data=' + loopDateStr; };
 
             let numDiv = document.createElement('div');
             numDiv.className = 'dia-numero';
@@ -585,7 +592,7 @@ const isHoje = dataBusca === dataHojeBRT;
                 expectedMalharias -= malhariasDeFolga.size;
             }
             if(expectedMalharias < 0) expectedMalharias = 0;
-
+            
             let statusBadge = document.createElement('div');
             statusBadge.className = 'badge-status text-white mt-1 shadow-sm';
             
