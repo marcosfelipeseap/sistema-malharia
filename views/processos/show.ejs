@@ -29,8 +29,15 @@
                     <dt class="col-sm-4">Situação:</dt>
                     <dd class="col-sm-8"><%= processo.situacao || '-' %></dd>
 
-                    <dt class="col-sm-4">Observações:</dt>
-                    <dd class="col-sm-8"><%= processo.observacao || '-' %></dd>
+                    <dt class="col-sm-4 mt-2">Total Fabricado:</dt>
+                    <dd class="col-sm-8 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-success shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalFabricado" title="Ver detalhes de produção">
+                            <i class="bi bi-tools me-1"></i> <%= processo.total_fabricado || 0 %> un <i class="bi bi-box-arrow-in-up-right ms-1"></i>
+                        </button>
+                    </dd>
+
+                    <dt class="col-sm-4 mt-2">Observações:</dt>
+                    <dd class="col-sm-8 mt-2"><%= processo.observacao || '-' %></dd>
                 </dl>
             </div>
         </div>
@@ -84,7 +91,7 @@
 
 <h4 class="mb-3">Produtos do Processo</h4>
 <div class="table-responsive mb-5">
-    <table class="table table-bordered table-striped shadow-sm">
+    <table class="table table-bordered table-striped shadow-sm align-middle">
         <thead class="table-dark">
             <tr>
                 <th>Item</th>
@@ -103,12 +110,18 @@
             <% } else { %>
                 <% processo.itens.forEach(item => { %>
                     <tr>
-                        <td><%= item.item ? item.item.nome : 'Item removido' %></td>
-                        <td><%= item.descricao || '-' %></td>
+                        <td class="fw-bold"><%= item.item ? item.item.nome : 'Item removido' %></td>
+                        <td class="small text-muted"><%= item.descricao || '-' %></td>
                         <td class="text-center"><%= item.tamanho || '-' %></td> 
                         <td class="text-center"><%= item.qtd_solicitada %></td>
                         <td class="text-center"><%= item.qtd_autorizada %></td>
-                        <td class="text-center"><%= item.qtd_entregue %></td>
+                        
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-light border border-secondary shadow-sm text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalHistorico-<%= item.id %>" title="Ver Origem das Entradas">
+                                <%= item.qtd_entregue %> <i class="bi bi-box-arrow-in-right ms-1"></i>
+                            </button>
+                        </td>
+
                         <td class="text-center fw-bold text-danger"><%= item.qtd_faltante %></td>
                         <td class="text-center"><%= item.data_prazo ? new Date(item.data_prazo).toLocaleDateString('pt-BR') : '-' %></td>
                     </tr>
@@ -123,3 +136,114 @@
         <button type="submit" class="btn btn-outline-danger btn-sm">Excluir Processo Permanentemente</button>
     </form>
 </div>
+
+<div class="modal fade" id="modalFabricado" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-tools me-2"></i> Relatório de Fabricação</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="p-3 bg-light border-bottom text-center">
+                    <span class="text-muted small d-block mb-1 text-uppercase fw-bold">Total Geral Produzido</span>
+                    <h2 class="text-success fw-bold mb-0"><%= processo.total_fabricado || 0 %> peças</h2>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <% if (!processo.detalhesMalharias || Object.keys(processo.detalhesMalharias).length === 0) { %>
+                        <li class="list-group-item text-center py-5 text-muted bg-white">
+                            <i class="bi bi-clock-history display-4 opacity-25 d-block mb-3"></i>
+                            Nenhuma produção diária registrada para este processo ainda.
+                        </li>
+                    <% } else { %>
+                        <% Object.entries(processo.detalhesMalharias).forEach(([malharia, qtd]) => { %>
+                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 bg-white">
+                                <span class="fw-bold text-secondary"><i class="bi bi-shop me-2 text-success"></i> <%= malharia %></span>
+                                <span class="badge bg-success rounded-pill fs-6 shadow-sm"><%= qtd %> un</span>
+                            </li>
+                        <% }) %>
+                    <% } %>
+                </ul>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar Relatório</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% processo.itens.forEach(item => { %>
+    <div class="modal fade" id="modalHistorico-<%= item.id %>" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title text-dark fw-bold">
+                        <i class="bi bi-search text-primary me-2"></i> Origem das Entregas
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 border-bottom bg-white d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0 text-primary fw-bold"><%= item.item ? item.item.nome : 'Item Desconhecido' %> <%= item.tamanho ? `(${item.tamanho})` : '' %></h6>
+                            <small class="text-muted">Total contabilizado no processo</small>
+                        </div>
+                        <span class="badge bg-primary fs-5 shadow-sm"><%= item.qtd_entregue %> un</span>
+                    </div>
+
+                    <ul class="list-group list-group-flush">
+                        
+                        <% if (item.qtd_manual > 0) { %>
+                            <li class="list-group-item bg-warning bg-opacity-10 py-3 border-bottom">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-dark fw-bold">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning me-2 fs-5"></i>
+                                        Inserção Direta (Edição Manual)
+                                    </span>
+                                    <span class="badge bg-warning text-dark fs-6 rounded-pill shadow-sm"><%= item.qtd_manual %> un</span>
+                                </div>
+                                <div class="small text-muted ms-4 ps-2">
+                                    Esta quantidade foi colocada editando o processo <b>sem realizar a baixa/transferência</b> pelo fluxo de Estoque.
+                                </div>
+                            </li>
+                        <% } %>
+
+                        <% if (item.historico_entregas && item.historico_entregas.length > 0) { %>
+                            <% item.historico_entregas.forEach(hist => { %>
+                                <li class="list-group-item py-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold text-secondary mb-1">
+                                                <i class="bi bi-truck text-success me-2"></i> 
+                                                Recebido de: <span class="text-dark"><%= hist.origem %></span>
+                                            </div>
+                                            <small class="text-muted ms-4 ps-1">
+                                                <i class="bi bi-calendar-check"></i> <%= new Date(hist.data).toLocaleDateString('pt-BR') %> às <%= new Date(hist.data).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) %>
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-success fs-6 rounded-pill shadow-sm"><%= hist.quantidade %> un</span>
+                                    </div>
+                                </li>
+                            <% }) %>
+                        <% } %>
+
+                        <% if (item.qtd_entregue === 0) { %>
+                            <li class="list-group-item text-center text-muted py-5 bg-light">
+                                <i class="bi bi-inbox display-4 opacity-25 d-block mb-3"></i>
+                                Nenhuma entrada ou entrega foi registrada ainda.
+                            </li>
+                        <% } else if (item.qtd_manual === 0 && (!item.historico_entregas || item.historico_entregas.length === 0)) { %>
+                            <li class="list-group-item text-center text-muted py-4">
+                                Registro legado. A origem não pôde ser detalhada.
+                            </li>
+                        <% } %>
+
+                    </ul>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar Relatório</button>
+                </div>
+            </div>
+        </div>
+    </div>
+<% }) %>
