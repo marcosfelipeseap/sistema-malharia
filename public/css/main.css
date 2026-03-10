@@ -1,5 +1,5 @@
 :root {
-    --header-height: 60px; /* Altura fixa para o topo */
+    --header-height: 135px; /* Altura aumentada para comportar o logo maior e o texto adicional */
 }
 
 /* 1. Ajuste do Corpo */
@@ -25,6 +25,7 @@ header.navbar {
     height: 100%; /* Ocupa toda a altura do header */
     display: flex;
     align-items: center;
+    justify-content: center;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
     background-color: rgba(0, 0, 0, 0.25); /* Fundo levemente diferente */
@@ -39,7 +40,7 @@ header.navbar {
     bottom: 0;
     left: 0;
     z-index: 100;
-    background-color: #212529;
+    background-color: #f8f9fa; /* Alterado para cinza padrão */
     padding-top: 20px; /* Espaço interno no topo da lista */
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
     overflow-y: auto; /* Permite rolar se o menu for muito longo */
@@ -48,7 +49,7 @@ header.navbar {
 /* Links da Sidebar */
 .sidebar .nav-link {
     font-weight: 500;
-    color: rgba(255, 255, 255, .70);
+    color: #495057; /* Texto cinza escuro para contrastar com o fundo claro */
     padding: 12px 24px;
     display: flex;
     align-items: center;
@@ -57,8 +58,8 @@ header.navbar {
 
 .sidebar .nav-link:hover,
 .sidebar .nav-link.active {
-    color: #fff;
-    background-color: rgba(255, 255, 255, .1);
+    color: #0d6efd; /* Azul principal do bootstrap para hover e ativo */
+    background-color: rgba(0, 0, 0, .05); /* Escurece levemente o fundo no hover */
     border-left: 4px solid #0d6efd;
 }
 
@@ -73,6 +74,7 @@ header.navbar {
         height: auto; /* Altura automática */
         position: static; /* Deixa de ser fixa */
         width: 100%; /* Ocupa largura total */
+        background-color: #f8f9fa;
     }
     
     body {
