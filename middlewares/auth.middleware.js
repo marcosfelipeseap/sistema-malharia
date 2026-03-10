@@ -16,10 +16,10 @@ exports.requireAuth = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        // Busca o usuário no schema malharia
+        // Busca o usuário no schema malharia (AGORA INCLUINDO O AVATAR)
         const { data: user, error } = await supabase.schema('malharia')
             .from('usuarios')
-            .select('id, nome, username, cargo, status')
+            .select('id, nome, username, cargo, status, avatar') // <--- AVATAR ADICIONADO AQUI
             .eq('id', decoded.id)
             .single();
 
@@ -40,7 +40,7 @@ exports.requireAuth = async (req, res, next) => {
             req.user.malharias_permitidas = vinculos ? vinculos.map(v => v.malharia_id) : [];
         }
 
-        // Disponibiliza as informações para todas as views EJS
+        // Disponibiliza as informações para todas as views EJS (incluindo o avatar)
         res.locals.user = req.user;
         next();
     } catch (err) {

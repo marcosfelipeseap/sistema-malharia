@@ -96,14 +96,17 @@
     </h6>
     <ul class="nav flex-column mb-2">
         <li class="nav-item">
-            <a class="nav-link" href="/usuarios/perfil">
-                <i class="bi bi-person-circle"></i>
+            <a class="nav-link d-flex align-items-center gap-2" href="/usuarios/perfil">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center border shadow-sm" 
+                     style="width: 26px; height: 26px; min-width: 26px; font-size: 0.85rem; font-weight: bold; background-size: cover; background-position: center; <%= typeof user !== 'undefined' && user.avatar ? `background-image: url('${user.avatar}'); color: transparent !important;` : '' %>">
+                    <%= typeof user !== 'undefined' && user.nome ? user.nome.charAt(0).toUpperCase() : 'U' %>
+                </div>
                 Meu Perfil
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-danger" href="/auth/logout">
-                <i class="bi bi-box-arrow-right"></i>
+            <a class="nav-link text-danger d-flex align-items-center gap-2" href="/auth/logout">
+                <i class="bi bi-box-arrow-right" style="font-size: 1.2rem; margin-left: 2px;"></i>
                 Sair
             </a>
         </li>

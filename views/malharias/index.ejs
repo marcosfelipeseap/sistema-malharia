@@ -120,13 +120,32 @@
                                         <div class="card-body p-3 d-flex flex-column">
                                             
                                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                                <div class="text-truncate">
+                                                <div class="text-truncate w-100 pe-2">
                                                     <h6 class="card-title fw-bold text-dark mb-0 text-truncate" title="<%= m.nome %>">
                                                         <%= m.nome %>
                                                     </h6>
-                                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                                    <small class="text-muted d-block" style="font-size: 0.75rem;">
                                                         Resp: <%= m.responsavel || 'N/A' %>
                                                     </small>
+
+                                                    <div class="mt-2 d-flex flex-wrap gap-1 align-items-center">
+                                                        <small class="text-muted me-1" style="font-size: 0.70rem;">Monitores:</small>
+                                                        <% if (m.monitores && m.monitores.length > 0) { %>
+                                                            <% m.monitores.forEach(mon => { %>
+                                                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-white" 
+                                                                     style="width: 28px; height: 28px; font-size: 0.75rem; font-weight: bold; cursor: pointer; transition: transform 0.2s; background-size: cover; background-position: center; <%= mon.avatar ? `background-image: url('${mon.avatar}'); color: transparent !important;` : '' %>"
+                                                                     title="Ver contato de <%= mon.nome %>"
+                                                                     onmouseover="this.style.transform='scale(1.15)'"
+                                                                     onmouseout="this.style.transform='scale(1)'"
+                                                                     onclick="verMonitorInfo('<%= mon.nome %>', '<%= mon.username %>', '<%= mon.email || '' %>', '<%= mon.telefone || '' %>', '<%= mon.avatar || '' %>')">
+                                                                    <%= !mon.avatar ? mon.nome.charAt(0).toUpperCase() : '' %>
+                                                                </div>
+                                                            <% }); %>
+                                                        <% } else { %>
+                                                            <span class="badge bg-light text-muted border fw-normal" style="font-size: 0.65rem;">Sem vinculação</span>
+                                                        <% } %>
+                                                    </div>
+
                                                 </div>
                                                 
                                                 <% if (user.nivel >= 3) { %>
@@ -172,6 +191,53 @@
     <% } %>
 </div>
 
+<div class="modal fade" id="modalInfoMonitor" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3 border-0">
+                <h6 class="modal-title fw-bold">Contato do Monitor</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                
+                <div class="bg-light text-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center border shadow-sm" 
+                     id="infoAvatarMonitor" 
+                     style="width: 75px; height: 75px; font-size: 2rem; font-weight: bold; background-size: cover; background-position: center; transition: transform 0.2s;">
+                    A
+                </div>
+                
+                <h5 class="fw-bold text-dark mb-0 text-truncate" id="infoNomeMonitor">Nome</h5>
+                <p class="text-muted small mb-3">@<span id="infoUserMonitor"></span></p>
+                
+                <div class="text-start bg-light border rounded-3 p-3 small text-muted">
+                    <div class="mb-2 text-truncate" id="infoEmailBox">
+                        <i class="bi bi-envelope-fill me-2 text-secondary"></i><span id="infoEmailMonitor"></span>
+                    </div>
+                    <div class="text-truncate" id="infoTelBox">
+                        <i class="bi bi-telephone-fill me-2 text-secondary"></i><span id="infoTelMonitor"></span>
+                    </div>
+                    <div id="infoNenhumContato" class="text-center text-danger" style="display: none;">
+                        <i class="bi bi-x-circle me-1"></i> Sem contatos cadastrados
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAmpliarFoto" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-header border-0 p-2 justify-content-end position-absolute top-0 end-0 z-3">
+                <button type="button" class="btn-close btn-close-white bg-dark p-2 opacity-75 rounded-circle shadow" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-0 position-relative">
+                <img id="imgFotoAmpliadaMalharia" src="" alt="Foto do Monitor" class="img-fluid rounded-4 shadow-lg border border-3 border-white" style="max-height: 80vh; max-width: 100%; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="modal fade" id="modalMapaUnidade" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -215,6 +281,77 @@
 </style>
 
 <script>
+    // Função para Ampliar a Foto
+    function ampliarFoto(base64Image) {
+        document.getElementById('imgFotoAmpliadaMalharia').src = base64Image;
+        new bootstrap.Modal(document.getElementById('modalAmpliarFoto')).show();
+    }
+
+    // Função para exibir os contatos do Monitor (Agora suporta a Foto)
+    function verMonitorInfo(nome, username, email, telefone, avatarBase64) {
+        document.getElementById('infoNomeMonitor').innerText = nome;
+        document.getElementById('infoUserMonitor').innerText = username;
+        
+        const avatarDiv = document.getElementById('infoAvatarMonitor');
+        
+        // Verifica se há foto
+        if (avatarBase64 && avatarBase64.trim() !== '') {
+            avatarDiv.style.backgroundImage = `url('${avatarBase64}')`;
+            avatarDiv.style.color = 'transparent';
+            avatarDiv.innerHTML = '';
+            
+            // Ativa o clique para ampliar
+            avatarDiv.style.cursor = 'pointer';
+            avatarDiv.onclick = function() { ampliarFoto(avatarBase64); };
+            avatarDiv.title = 'Clique para ampliar a foto';
+            avatarDiv.onmouseover = function() { this.style.transform = 'scale(1.05)'; };
+            avatarDiv.onmouseout = function() { this.style.transform = 'scale(1)'; };
+        } else {
+            avatarDiv.style.backgroundImage = 'none';
+            avatarDiv.style.color = '#0d6efd'; // text-primary
+            avatarDiv.innerHTML = nome.charAt(0).toUpperCase();
+            
+            // Desativa o clique
+            avatarDiv.style.cursor = 'default';
+            avatarDiv.onclick = null;
+            avatarDiv.title = '';
+            avatarDiv.onmouseover = null;
+            avatarDiv.onmouseout = null;
+            avatarDiv.style.transform = 'scale(1)';
+        }
+        
+        const emailBox = document.getElementById('infoEmailBox');
+        const telBox = document.getElementById('infoTelBox');
+        const semContato = document.getElementById('infoNenhumContato');
+        
+        let temAlgum = false;
+
+        if (email && email.trim() !== '') {
+            emailBox.style.display = 'block';
+            document.getElementById('infoEmailMonitor').innerText = email;
+            temAlgum = true;
+        } else {
+            emailBox.style.display = 'none';
+        }
+        
+        if (telefone && telefone.trim() !== '') {
+            telBox.style.display = 'block';
+            document.getElementById('infoTelMonitor').innerText = telefone;
+            temAlgum = true;
+        } else {
+            telBox.style.display = 'none';
+        }
+
+        if (temAlgum) {
+            semContato.style.display = 'none';
+        } else {
+            semContato.style.display = 'block';
+        }
+        
+        new bootstrap.Modal(document.getElementById('modalInfoMonitor')).show();
+    }
+
+    // Mapa e Outras funções
     let map = null;
     function abrirMapaUnidade(lat, lon, nome) {
         const modalEl = document.getElementById('modalMapaUnidade');

@@ -18,14 +18,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Middlewares Essenciais
 app.use(morgan('dev')); // Log de requisições
-app.use(express.json()); // Parser para JSON
-app.use(express.urlencoded({ extended: true })); // Parser para dados de formulário
+
+// 👇 AQUI ESTÁ A CORREÇÃO: Limites aumentados para 10mb para permitir fotos Base64
+app.use(express.json({ limit: '10mb' })); 
+app.use(express.urlencoded({ limit: '10mb', extended: true })); 
+
 app.use(cookieParser()); // Parser para cookies (auth)
 
 // Importação das Rotas
 const indexRoutes = require('./routes/index.routes');
-const authRoutes = require('./routes/auth.routes');         // <--- NOVA ROTA DE LOGIN
-const usuariosRoutes = require('./routes/usuarios.routes'); // <--- NOVA ROTA DE USUÁRIOS
+const authRoutes = require('./routes/auth.routes');         
+const usuariosRoutes = require('./routes/usuarios.routes'); 
 
 // Definição das Rotas (A ORDEM AQUI IMPORTA)
 app.use('/auth', authRoutes);
@@ -35,7 +38,7 @@ app.use('/', indexRoutes);
 // Tratamento de Erro 404 (Página não encontrada)
 app.use((req, res, next) => {
     res.status(404).render('partials/alerts', {
-        layout: false, // Renderiza sem layout completo
+        layout: false, 
         message: 'Página não encontrada',
         type: 'danger'
     });

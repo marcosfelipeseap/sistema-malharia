@@ -1,10 +1,35 @@
 const malhariasService = require('../services/malharias.service');
 const unidadesService = require('../services/unidades.service');
 const maquinariosService = require('../services/maquinarios.service');
+const supabase = require('../config/supabaseClient'); 
 
 exports.index = async (req, res) => {
     try {
         let malharias = await malhariasService.getAllMalharias();
+
+        // 1. Busca todos os monitores e vínculos (Agora trazendo também o AVATAR)
+        const { data: monitores } = await supabase.schema('malharia')
+            .from('usuarios')
+            .select('id, nome, username, email, telefone, avatar')
+            .eq('cargo', 'monitor');
+            
+        const { data: vinculos } = await supabase.schema('malharia')
+            .from('usuario_malharia')
+            .select('usuario_id, malharia_id');
+
+        // 2. Anexa os monitores a cada malharia
+        malharias = malharias.map(m => {
+            const mId = String(m.id);
+            const idsMonitores = vinculos 
+                ? vinculos.filter(v => String(v.malharia_id) === mId).map(v => String(v.usuario_id)) 
+                : [];
+                
+            m.monitores = monitores 
+                ? monitores.filter(mon => idsMonitores.includes(String(mon.id))) 
+                : [];
+                
+            return m;
+        });
 
         if (req.user.cargo === 'monitor') {
             const permitidas = req.user.malharias_permitidas || [];
