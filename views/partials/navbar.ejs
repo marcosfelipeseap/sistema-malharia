@@ -71,11 +71,6 @@
                         <i class="bi bi-building"></i> Unidades
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/usuarios">
-                        <i class="bi bi-people"></i> Usuários
-                    </a>
-                </li>
             <% } else if (typeof user !== 'undefined') { %>
                 <li class="nav-item">
                     <a class="nav-link text-primary fw-bold" href="/registros/painel">
@@ -125,6 +120,16 @@
                 Meu Perfil
             </a>
         </li>
+
+        <% if (typeof user !== 'undefined' && user.nivel >= 3) { %>
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center gap-2" href="/usuarios<%= isInsumosMenu ? '?env=insumos' : '' %>">
+                <i class="bi bi-people" style="font-size: 1.2rem; margin-left: 2px;"></i>
+                Gestão de Usuários
+            </a>
+        </li>
+        <% } %>
+
         <li class="nav-item">
             <a class="nav-link text-danger d-flex align-items-center gap-2" href="/auth/logout">
                 <i class="bi bi-box-arrow-right" style="font-size: 1.2rem; margin-left: 2px;"></i>
