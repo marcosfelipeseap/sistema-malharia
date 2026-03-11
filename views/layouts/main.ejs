@@ -12,14 +12,40 @@
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 d-flex flex-column align-items-center text-center" href="/">
             <img src="/img/logo.png" alt="Logo" style="max-height: 90px; margin-bottom: 5px;">
             <span class="fw-bold">Sistema Malharia</span>
-            <span style="font-size: 0.70rem; font-weight: normal; margin-top: 3px; white-space: normal; line-height: 1.2;">SCP - UGTR - SATRE - SEAP</span>
+            <span style="font-size: 0.70rem; font-weight: normal; margin-top: 3px; white-space: normal; line-height: 1.2;">SCP / UGTR / SEAP</span>
         </a>
         
-        <div class="navbar-nav w-100 d-flex flex-row justify-content-end px-4 text-light d-none d-md-flex">
-            <span id="relogio-brasilia" style="font-size: 0.95rem;"></span>
+        <% 
+            const envAtual = typeof currentEnv !== 'undefined' ? currentEnv : 'malharia';
+            const isInsumos = (envAtual === 'insumos') || (typeof user !== 'undefined' && user && user.cargo === 'controlador'); 
+        %>
+
+        <div class="mx-auto w-100 d-none d-md-block"></div>
+
+        <div class="navbar-nav d-flex flex-column justify-content-center align-items-end px-4 text-light d-none d-md-flex" style="min-width: 260px; padding-top: 8px; padding-bottom: 8px;">
+            
+            <% if (typeof user !== 'undefined' && user && user.cargo !== 'monitor' && user.cargo !== 'controlador') { %>
+                <% if (isInsumos) { %>
+                    <a href="/" class="text-decoration-none text-light d-flex align-items-center px-3 py-1 mb-1 rounded-pill shadow" 
+                       style="font-size: 0.85rem; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s ease-in-out;"
+                       onmouseover="this.style.transform='translateY(-1px)'; this.style.filter='brightness(1.1)';"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.filter='brightness(1)';">
+                        <i class="bi bi-shop me-2"></i> Alternar para Malharias
+                    </a>
+                <% } else { %>
+                    <a href="/insumos" class="text-decoration-none text-light d-flex align-items-center px-3 py-1 mb-1 rounded-pill shadow" 
+                       style="font-size: 0.85rem; background: linear-gradient(135deg, #198754, #20c997); border: 1px solid rgba(255,255,255,0.2); transition: all 0.2s ease-in-out;"
+                       onmouseover="this.style.transform='translateY(-1px)'; this.style.filter='brightness(1.1)';"
+                       onmouseout="this.style.transform='translateY(0)'; this.style.filter='brightness(1)';">
+                        <i class="bi bi-boxes me-2"></i> Alternar para Insumos
+                    </a>
+                <% } %>
+            <% } %>
+
+            <span id="relogio-brasilia" class="text-white-50 mt-1" style="font-size: 0.85rem; letter-spacing: 0.5px;"></span>
         </div>
 
-        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+        <button class="navbar-toggler position-absolute d-md-none collapsed end-0 me-3" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </header>
@@ -48,7 +74,6 @@
     <script>
         function atualizarRelogio() {
             const data = new Date();
-            // Define o fuso horário para Brasília
             const opcoes = { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit', second: '2-digit' };
             const horaBrasilia = data.toLocaleTimeString('pt-BR', opcoes);
             
@@ -58,9 +83,8 @@
             }
         }
         
-        // Atualiza a cada 1 segundo (1000 ms)
         setInterval(atualizarRelogio, 1000);
-        atualizarRelogio(); // Executa imediatamente para não haver atraso na primeira renderização
+        atualizarRelogio(); 
     </script>
 </body>
 </html>

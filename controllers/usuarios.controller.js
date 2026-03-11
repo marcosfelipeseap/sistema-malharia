@@ -137,22 +137,39 @@ exports.edit = async (req, res) => {
 };
 
 exports.update = async (req, res) => {
-    const { id } = req.params;
-    const { cargo, status, malharias } = req.body; 
-    
-    await supabase.schema('malharia').from('usuarios').update({ cargo, status }).eq('id', id);
+    try {
+        const { id } = req.params;
+        const { cargo, status, malharias } = req.body; 
+        
+        // Tentamos atualizar e capturamos o erro, se houver
+        const { error } = await supabase.schema('malharia')
+            .from('usuarios')
+            .update({ cargo, status })
+            .eq('id', id);
 
-    if (cargo === 'monitor') {
-        await supabase.schema('malharia').from('usuario_malharia').delete().eq('usuario_id', id);
-        if (malharias) {
-            const idsMalharias = Array.isArray(malharias) ? malharias : [malharias];
-            const inserts = idsMalharias.map(m_id => ({ usuario_id: id, malharia_id: parseInt(m_id) }));
-            await supabase.schema('malharia').from('usuario_malharia').insert(inserts);
+        // SE O SUPABASE BLOQUEAR, AVISAMOS AQUI:
+        if (error) {
+            console.error("❌ Erro do Supabase ao salvar cargo:", error.message);
+            return res.status(400).send(`Erro ao salvar no banco de dados: ${error.message}. Verifique as restrições da coluna 'cargo' no Supabase.`);
         }
-    } else {
-        await supabase.schema('malharia').from('usuario_malharia').delete().eq('usuario_id', id);
+
+        if (cargo === 'monitor') {
+            await supabase.schema('malharia').from('usuario_malharia').delete().eq('usuario_id', id);
+            if (malharias) {
+                const idsMalharias = Array.isArray(malharias) ? malharias : [malharias];
+                const inserts = idsMalharias.map(m_id => ({ usuario_id: id, malharia_id: parseInt(m_id) }));
+                await supabase.schema('malharia').from('usuario_malharia').insert(inserts);
+            }
+        } else {
+            await supabase.schema('malharia').from('usuario_malharia').delete().eq('usuario_id', id);
+        }
+        
+        res.redirect('/usuarios');
+        
+    } catch (err) {
+        console.error("Erro interno ao atualizar usuário:", err);
+        res.redirect('/usuarios');
     }
-    res.redirect('/usuarios');
 };
 
 exports.delete = async (req, res) => {

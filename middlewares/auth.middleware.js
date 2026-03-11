@@ -3,6 +3,7 @@ const supabase = require('../config/supabaseClient');
 
 const roleLevels = {
     'monitor': 1,
+    'controlador': 1, // <--- NOVO CARGO: Nível 1, mas isolado
     'coordenador': 2,
     'gestor': 3,
     'admin': 4
@@ -16,10 +17,10 @@ exports.requireAuth = async (req, res, next) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        // Busca o usuário no schema malharia (AGORA INCLUINDO O AVATAR)
+        // Busca o usuário no schema malharia (INCLUINDO O AVATAR)
         const { data: user, error } = await supabase.schema('malharia')
             .from('usuarios')
-            .select('id, nome, username, cargo, status, avatar') // <--- AVATAR ADICIONADO AQUI
+            .select('id, nome, username, cargo, status, avatar') 
             .eq('id', decoded.id)
             .single();
 
@@ -40,7 +41,7 @@ exports.requireAuth = async (req, res, next) => {
             req.user.malharias_permitidas = vinculos ? vinculos.map(v => v.malharia_id) : [];
         }
 
-        // Disponibiliza as informações para todas as views EJS (incluindo o avatar)
+        // Disponibiliza as informações para todas as views EJS
         res.locals.user = req.user;
         next();
     } catch (err) {
@@ -55,9 +56,32 @@ exports.requireRole = (minRole) => {
         
         const minLevel = roleLevels[minRole];
         if (req.user.nivel < minLevel) {
-            // Acesso negado sem alert, renderizamos a home limpa ou redirecionamos
             return res.redirect('/'); 
         }
         next();
     };
+};
+
+// ====================================================
+// NOVOS MIDDLEWARES DE ISOLAMENTO DE AMBIENTE
+// ====================================================
+
+exports.requireMalhariaAccess = (req, res, next) => {
+    if (!req.user) return res.redirect('/auth/login');
+    
+    // O Controlador SÓ tem acesso aos insumos, barramos ele aqui
+    if (req.user.cargo === 'controlador') {
+        return res.redirect('/insumos');
+    }
+    next();
+};
+
+exports.requireInsumosAccess = (req, res, next) => {
+    if (!req.user) return res.redirect('/auth/login');
+    
+    // O Monitor SÓ tem acesso a malharia, barramos ele aqui
+    if (req.user.cargo === 'monitor') {
+        return res.redirect('/');
+    }
+    next();
 };

@@ -19,20 +19,37 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Middlewares Essenciais
 app.use(morgan('dev')); // Log de requisições
 
-// 👇 AQUI ESTÁ A CORREÇÃO: Limites aumentados para 10mb para permitir fotos Base64
+// Limites aumentados para 10mb para permitir fotos Base64
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true })); 
 
 app.use(cookieParser()); // Parser para cookies (auth)
 
+// Middleware global: Memória do ambiente atual
+app.use((req, res, next) => {
+    res.locals.currentPath = req.path;
+    res.locals.query = req.query; 
+    
+    // Determina e trava o ambiente atual baseado na URL
+    if (req.path.startsWith('/insumos') || (req.query && req.query.env === 'insumos')) {
+        res.locals.currentEnv = 'insumos';
+    } else {
+        res.locals.currentEnv = 'malharia';
+    }
+    
+    next();
+});
+
 // Importação das Rotas
 const indexRoutes = require('./routes/index.routes');
 const authRoutes = require('./routes/auth.routes');         
 const usuariosRoutes = require('./routes/usuarios.routes'); 
+const insumosRoutes = require('./routes/insumos.routes');
 
 // Definição das Rotas (A ORDEM AQUI IMPORTA)
 app.use('/auth', authRoutes);
 app.use('/usuarios', usuariosRoutes);
+app.use('/insumos', insumosRoutes);
 app.use('/', indexRoutes);
 
 // Tratamento de Erro 404 (Página não encontrada)

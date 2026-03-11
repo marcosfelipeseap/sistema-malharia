@@ -17,6 +17,9 @@
                 <select name="cargo" id="cargoSelect" class="form-select" required onchange="toggleMalharias()">
                     <option value="" disabled <%= !usuario.cargo ? 'selected' : '' %>>Selecione um cargo</option>
                     <option value="monitor" <%= usuario.cargo === 'monitor' ? 'selected' : '' %>>Monitor</option>
+                    
+                    <option value="controlador" <%= usuario.cargo === 'controlador' ? 'selected' : '' %>>Controlador de Insumos</option>
+                    
                     <option value="coordenador" <%= usuario.cargo === 'coordenador' ? 'selected' : '' %>>Coordenador</option>
                     <option value="gestor" <%= usuario.cargo === 'gestor' ? 'selected' : '' %>>Gestor</option>
                     <option value="admin" <%= usuario.cargo === 'admin' ? 'selected' : '' %>>Admin</option>

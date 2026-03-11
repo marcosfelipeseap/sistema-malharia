@@ -1,104 +1,125 @@
+<% 
+    // Usa a variável com verificação de segurança
+    const envAtualMenu = typeof currentEnv !== 'undefined' ? currentEnv : 'malharia';
+    const isInsumosMenu = (envAtualMenu === 'insumos') || (typeof user !== 'undefined' && user && user.cargo === 'controlador'); 
+%>
 <div class="position-sticky pt-3">
-    <ul class="nav flex-column">
-        
-        <% if (user.nivel >= 3) { %>
+    
+    <% if (isInsumosMenu) { %>
+        <ul class="nav flex-column mb-auto">
             <li class="nav-item">
-                <a class="nav-link" href="/registros">
-                    <i class="bi bi-clipboard-check"></i>
-                    Registros Gerais
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-success fw-bold" href="/estoque">
-                    <i class="bi bi-boxes"></i>
-                    Estoque de Produção
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/processos">
-                    <i class="bi bi-file-earmark-text"></i>
-                    Processos
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/maquinarios">
-                    <i class="bi bi-gear-wide-connected"></i> 
-                    Maquinários
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/itens">
-                    <i class="bi bi-box-seam"></i>
-                    Itens / Produtos
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/malharias">
-                    <i class="bi bi-shop"></i>
-                    Malharias
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/unidades">
-                    <i class="bi bi-building"></i>
-                    Unidades
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/usuarios">
-                    <i class="bi bi-people"></i>
-                    Usuários
-                </a>
-            </li>
-
-        <% } else { %>
-            <li class="nav-item">
-                <a class="nav-link text-primary fw-bold" href="/registros/painel">
+                <a class="nav-link <%= typeof currentPath !== 'undefined' && currentPath === '/insumos' ? 'active text-success fw-bold' : '' %>" href="/insumos">
                     <i class="bi bi-ui-checks-grid"></i>
-                    Meu Painel Diário
+                    Visão Geral (Insumos)
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/registros/historico">
-                    <i class="bi bi-calendar-range"></i>
-                    Registros Anteriores
+                <a class="nav-link" href="#">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    Entrada de Materiais
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link text-success fw-bold" href="/estoque">
-                    <i class="bi bi-boxes"></i>
-                    Estoque da Oficina
-                </a>
-            </li>
-            <li class="nav-item mt-3">
-                <a class="nav-link" href="/malharias">
-                    <i class="bi bi-shop"></i>
-                    Minhas Malharias
+                <a class="nav-link" href="#">
+                    <i class="bi bi-box-arrow-up-right"></i>
+                    Saída / Distribuição
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/maquinarios">
-                    <i class="bi bi-gear-wide-connected"></i> 
-                    Maquinários
+                <a class="nav-link" href="#">
+                    <i class="bi bi-card-checklist"></i>
+                    Relatórios de Insumos
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/itens">
-                    <i class="bi bi-box-seam"></i>
-                    Itens Disponíveis
-                </a>
-            </li>
-        <% } %>
-    </ul>
+        </ul>
+
+    <% } else { %>
+        <ul class="nav flex-column mb-auto">
+            <% if (typeof user !== 'undefined' && user.nivel >= 3) { %>
+                <li class="nav-item">
+                    <a class="nav-link" href="/registros">
+                        <i class="bi bi-clipboard-check"></i> Registros Gerais
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-primary fw-bold" href="/estoque">
+                        <i class="bi bi-boxes"></i> Estoque de Produção
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/processos">
+                        <i class="bi bi-file-earmark-text"></i> Processos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maquinarios">
+                        <i class="bi bi-gear-wide-connected"></i> Maquinários
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/itens">
+                        <i class="bi bi-box-seam"></i> Itens / Produtos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/malharias">
+                        <i class="bi bi-shop"></i> Malharias
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/unidades">
+                        <i class="bi bi-building"></i> Unidades
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/usuarios">
+                        <i class="bi bi-people"></i> Usuários
+                    </a>
+                </li>
+            <% } else if (typeof user !== 'undefined') { %>
+                <li class="nav-item">
+                    <a class="nav-link text-primary fw-bold" href="/registros/painel">
+                        <i class="bi bi-ui-checks-grid"></i> Meu Painel Diário
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/registros/historico">
+                        <i class="bi bi-calendar-range"></i> Registros Anteriores
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-primary fw-bold" href="/estoque">
+                        <i class="bi bi-boxes"></i> Estoque da Oficina
+                    </a>
+                </li>
+                <li class="nav-item mt-3">
+                    <a class="nav-link" href="/malharias">
+                        <i class="bi bi-shop"></i> Minhas Malharias
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/maquinarios">
+                        <i class="bi bi-gear-wide-connected"></i> Maquinários
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/itens">
+                        <i class="bi bi-box-seam"></i> Itens Disponíveis
+                    </a>
+                </li>
+            <% } %>
+        </ul>
+    <% } %>
 
     <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-5 mb-1 text-muted text-uppercase">
-        <span style="font-size: 0.75rem;">Conta (<%= user.cargo %>)</span>
+        <span style="font-size: 0.75rem;">Conta (<%= typeof user !== 'undefined' ? user.cargo : 'Visitante' %>)</span>
     </h6>
     <ul class="nav flex-column mb-2">
         <li class="nav-item">
-            <a class="nav-link d-flex align-items-center gap-2" href="/usuarios/perfil">
+            <a class="nav-link d-flex align-items-center gap-2" href="/usuarios/perfil<%= isInsumosMenu ? '?env=insumos' : '' %>">
                 <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center border shadow-sm" 
-                     style="width: 26px; height: 26px; min-width: 26px; font-size: 0.85rem; font-weight: bold; background-size: cover; background-position: center; <%= typeof user !== 'undefined' && user.avatar ? `background-image: url('${user.avatar}'); color: transparent !important;` : '' %>">
+                     style="width: 26px; height: 26px; min-width: 26px; font-size: 0.85rem; font-weight: bold; background-size: cover; background-position: center;
+                     <%= typeof user !== 'undefined' && user.avatar ? `background-image: url('${user.avatar}'); color: transparent !important;` : '' %>">
                     <%= typeof user !== 'undefined' && user.nome ? user.nome.charAt(0).toUpperCase() : 'U' %>
                 </div>
                 Meu Perfil
