@@ -1,34 +1,15 @@
 <% 
     // Usa a variável com verificação de segurança
     const envAtualMenu = typeof currentEnv !== 'undefined' ? currentEnv : 'malharia';
-    const isInsumosMenu = (envAtualMenu === 'insumos') || (typeof user !== 'undefined' && user && user.cargo === 'controlador'); 
+    const isInsumosMenu = (envAtualMenu === 'insumos') || (typeof user !== 'undefined' && user && user.cargo === 'controlador');
 %>
 <div class="position-sticky pt-3">
     
     <% if (isInsumosMenu) { %>
         <ul class="nav flex-column mb-auto">
             <li class="nav-item">
-                <a class="nav-link <%= typeof currentPath !== 'undefined' && currentPath === '/insumos' ? 'active text-success fw-bold' : '' %>" href="/insumos">
-                    <i class="bi bi-ui-checks-grid"></i>
-                    Visão Geral (Insumos)
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    Entrada de Materiais
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-box-arrow-up-right"></i>
-                    Saída / Distribuição
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#">
-                    <i class="bi bi-card-checklist"></i>
-                    Relatórios de Insumos
+                <a class="nav-link text-primary fw-bold <%= typeof currentPath !== 'undefined' && currentPath === '/insumos' ? 'active' : '' %>" href="/insumos">
+                    <i class="bi bi-boxes"></i> Controle de Insumos
                 </a>
             </li>
         </ul>
@@ -84,7 +65,7 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link text-primary fw-bold" href="/estoque">
-                        <i class="bi bi-boxes"></i> Estoque da Oficina
+                         <i class="bi bi-boxes"></i> Estoque da Oficina
                     </a>
                 </li>
                 <li class="nav-item mt-3">
