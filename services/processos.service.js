@@ -2,6 +2,7 @@ const supabase = require('../config/supabaseClient');
 const TABLE = 'processo';
 const TABLE_TERMOS = 'termo_entrega';
 const BUCKET = 'termos';
+const BUCKET_IMG = 'processo_imagens';
 
 exports.getAllItensDisponiveis = async () => {
     const { data } = await supabase.schema('malharia').from('item').select('*').order('nome');
@@ -12,7 +13,7 @@ exports.getAllProcessos = async (busca = '') => {
     let query = supabase
         .schema('malharia')
         .from(TABLE)
-        .select('*, itens:processo_item(*)') 
+        .select('*, itens:processo_item(*), imagens:processo_imagem(*)') 
         .order('data_entrada', { ascending: false });
 
     if (busca) {
@@ -64,12 +65,10 @@ exports.getAllProcessos = async (busca = '') => {
         producaoDesteProcesso.forEach(regItem => {
             const qtd = regItem.qtd_produzida || 0;
             totalFabricado += qtd;
-
             let nomeMalharia = 'Malharia Desconhecida';
             if (regItem.registro && regItem.registro.malharia && regItem.registro.malharia.nome) {
                 nomeMalharia = regItem.registro.malharia.nome;
             }
-            
             if (detalhesMalharias[nomeMalharia]) {
                 detalhesMalharias[nomeMalharia] += qtd;
             } else {
@@ -77,7 +76,14 @@ exports.getAllProcessos = async (busca = '') => {
             }
         });
 
-        return { ...p, totais, totalFabricado, detalhesMalharias };
+        // Traz as URLs públicas para TODAS as imagens do processo (gerais e dos itens) para exibir no Dashboard
+        const imagensComUrl = (p.imagens || []).map(img => {
+            const { data: storageData } = supabase.storage.from(BUCKET_IMG).getPublicUrl(img.caminho_arquivo);
+            return { ...img, url_publica: storageData.publicUrl };
+        });
+        const temImagem = imagensComUrl.length > 0;
+
+        return { ...p, totais, totalFabricado, detalhesMalharias, temImagem, imagens: imagensComUrl };
     });
 
     return processosComTotais;
@@ -89,13 +95,26 @@ exports.getProcessoById = async (id) => {
 
     const { data: itens } = await supabase.schema('malharia').from('processo_item').select('*, item:item_id(nome)').eq('processo_id', id);
     const { data: termos } = await supabase.schema('malharia').from(TABLE_TERMOS).select('*').eq('processo_id', id).order('numero_termo', { ascending: true });
+    
+    // Consulta TODAS as imagens deste processo
+    const { data: imagens } = await supabase.schema('malharia').from('processo_imagem').select('*').eq('processo_id', id);
 
     const termosComUrl = (termos || []).map(t => {
         const { data } = supabase.storage.from(BUCKET).getPublicUrl(t.caminho_arquivo);
         return { ...t, url_publica: data.publicUrl };
     });
+    
+    // OBTEM A URL DAS IMAGENS
+    const imagensComUrl = (imagens || []).map(img => {
+        const { data } = supabase.storage.from(BUCKET_IMG).getPublicUrl(img.caminho_arquivo);
+        return { ...img, url_publica: data.publicUrl };
+    });
 
-    // 4. Busca total Produzido/Fabricado COM os Detalhes das Malharias para o Modal
+    // Separa imagens gerais (sem processo_item_id) das imagens de itens (com processo_item_id)
+    const imagensGerais = imagensComUrl.filter(img => !img.processo_item_id);
+    const imagensItens = imagensComUrl.filter(img => img.processo_item_id);
+
+    // 4. Busca total Produzido
     let totalFabricadoGeral = 0;
     const detalhesMalharias = {};
     
@@ -128,10 +147,10 @@ exports.getProcessoById = async (id) => {
             });
         }
     } catch(err) {
-        console.error('Erro ao buscar fabricado do processo:', err);
+        console.error('Erro ao buscar fabricado:', err);
     }
 
-    // 5. RASTREIO DE ENTREGAS (ESTOQUE VS MANUAL)
+    // 5. RASTREIO DE ENTREGAS
     let transferencias = [];
     try {
         const { data } = await supabase
@@ -144,7 +163,7 @@ exports.getProcessoById = async (id) => {
             .order('data_avaliacao', { ascending: false });
         transferencias = data || [];
     } catch(err) {
-        console.error('Erro ao buscar historico de estoque do processo:', err);
+        console.error('Erro ao buscar historico de estoque:', err);
     }
 
     const { data: malharias } = await supabase.schema('malharia').from('malharia').select('id, nome');
@@ -166,11 +185,15 @@ exports.getProcessoById = async (id) => {
         });
 
         const qtdManual = (item.qtd_entregue || 0) - qtdPeloEstoque;
+        
+        // Atrela as imagens que pertencem a este item específico
+        const imagensDesteItem = imagensItens.filter(img => String(img.processo_item_id) === String(item.id));
 
         return {
             ...item,
             historico_entregas: historicoFormatado,
-            qtd_manual: qtdManual > 0 ? qtdManual : 0
+            qtd_manual: qtdManual > 0 ? qtdManual : 0,
+            imagens: imagensDesteItem // Adicionado array de imagens dentro do item
         };
     });
 
@@ -178,17 +201,16 @@ exports.getProcessoById = async (id) => {
         ...processo, 
         itens: itensComHistorico, 
         termos: termosComUrl, 
+        imagens: imagensGerais, // A galeria principal recebe apenas as imagens que não têm um item específico vinculado
         total_fabricado: totalFabricadoGeral,
-        detalhesMalharias: detalhesMalharias // Retorna os detalhes para o Modal
+        detalhesMalharias: detalhesMalharias 
     };
 };
 
 async function verificarNumeroExistente(numero, ignorarId = null) {
     const numeroLimpo = String(numero).replace(/\./g, '');
     let query = supabase.schema('malharia').from(TABLE).select('id').eq('numero_processo', numeroLimpo);
-
     if (ignorarId) query = query.neq('id', ignorarId);
-
     const { data, error } = await query;
     if (error) throw error;
     return data.length > 0;
@@ -236,7 +258,6 @@ exports.deleteProcesso = async (id) => {
 exports.createTermo = async (processoId, numeroTermo, fileBuffer, fileName, mimeType) => {
     const path = `processos/${processoId}/${Date.now()}_${fileName}`;
     const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, fileBuffer, { contentType: mimeType, upsert: false });
-
     if (uploadError) throw new Error(`Erro no upload: ${uploadError.message}`);
 
     const { data, error: dbError } = await supabase.schema('malharia').from(TABLE_TERMOS).insert([{
@@ -251,7 +272,6 @@ exports.createTermo = async (processoId, numeroTermo, fileBuffer, fileName, mime
         await supabase.storage.from(BUCKET).remove([path]);
         throw dbError;
     }
-
     return data;
 };
 
@@ -282,4 +302,40 @@ exports.registrarEntregaDeEstoque = async (processoId, itemId, quantidadeAdicion
     await supabase.schema('malharia').from('processo_item')
         .update({ qtd_entregue: novaEntregue, qtd_faltante: novaFaltante })
         .eq('id', item.id);
+};
+
+// --- FUNÇÕES PARA IMAGENS ---
+exports.createImagem = async (processoId, itemId, fileBuffer, fileName, mimeType) => {
+    const path = `processos_imgs/${processoId}/${Date.now()}_${fileName}`;
+    
+    const { error: uploadError } = await supabase.storage.from(BUCKET_IMG).upload(path, fileBuffer, { contentType: mimeType, upsert: false });
+    if (uploadError) throw new Error(`Erro no upload da imagem: ${uploadError.message}`);
+
+    const { data, error: dbError } = await supabase.schema('malharia').from('processo_imagem').insert([{
+        processo_id: processoId,
+        processo_item_id: itemId || null, // Se tiver itemId, atrela ao produto; caso contrário, é null (geral)
+        nome_arquivo: fileName,
+        caminho_arquivo: path,
+        tipo_arquivo: mimeType
+    }]).select().single();
+
+    if (dbError) {
+        await supabase.storage.from(BUCKET_IMG).remove([path]);
+        throw dbError;
+    }
+
+    return data;
+};
+
+exports.deleteImagem = async (imagemId) => {
+    const { data: imagem, error: findError } = await supabase.schema('malharia').from('processo_imagem').select('*').eq('id', imagemId).single();
+    if (findError || !imagem) throw new Error("Imagem não encontrada");
+
+    const { error: storageError } = await supabase.storage.from(BUCKET_IMG).remove([imagem.caminho_arquivo]);
+    if (storageError) console.error("Aviso: Falha ao deletar imagem do storage", storageError);
+
+    const { error: dbError } = await supabase.schema('malharia').from('processo_imagem').delete().eq('id', imagemId);
+    if (dbError) throw dbError;
+    
+    return true;
 };

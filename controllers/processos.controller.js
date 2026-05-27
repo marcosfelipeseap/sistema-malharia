@@ -17,11 +17,31 @@ exports.getItensApi = async (req, res) => {
     }
 };
 
+// NOVA API: Retorna os produtos de um processo específico com suas imagens já anexadas
+exports.getProcessoItensComImagensApi = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const processoCompleto = await processosService.getProcessoById(id);
+        
+        if (!processoCompleto) {
+            return res.status(404).json({ error: 'Processo não encontrado' });
+        }
+        
+        res.json({
+            imagens_gerais: processoCompleto.imagens || [],
+            itens: processoCompleto.itens || []
+        });
+    } catch (error) {
+        console.error("Erro na API de itens com imagens:", error);
+        res.status(500).json({ error: 'Erro interno ao buscar dados do processo' });
+    }
+};
+
 exports.index = async (req, res) => {
     try {
         const busca = req.query.busca || '';
-        const processos = await processosService.getAllProcessos(busca);
-        res.render('processos/index', { title: 'Dashboard de Processos', processos, busca });
+        const windmills = await processosService.getAllProcessos(busca);
+        res.render('processos/index', { title: 'Dashboard de Processos', processos: windmills, busca });
     } catch (error) {
         console.error(error);
         res.render('partials/alerts', { message: 'Erro ao carregar processos', type: 'danger' });
@@ -44,12 +64,11 @@ exports.create = async (req, res) => {
     });
 };
 
-// Helper para tratar os dados do formulário
 const parseItensFromBody = (body) => {
     const toArray = (val) => (val === undefined || val === null) ? [] : (Array.isArray(val) ? val : [val]);
 
     const ids = toArray(body.item_id);
-    const descricoes = toArray(body.descricao); // <--- CAPTURA AS DESCRIÇÕES
+    const descricoes = toArray(body.descricao);
     const tamanhos = toArray(body.tamanho);
     const qSols = toArray(body.qtd_solicitada);
     const qAuts = toArray(body.qtd_autorizada);
@@ -59,7 +78,7 @@ const parseItensFromBody = (body) => {
 
     return ids.map((id, i) => ({
         item_id: parseInt(id),
-        descricao: descricoes[i] || null, // <--- SALVA A DESCRIÇÃO
+        descricao: descricoes[i] || null,
         tamanho: tamanhos[i] || null,
         qtd_solicitada: parseInt(qSols[i]) || 0,
         qtd_autorizada: parseInt(qAuts[i]) || 0,
@@ -73,7 +92,6 @@ exports.store = async (req, res) => {
     try {
         let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
         
-        // Remove todos os pontos do número de processo
         if (numero_processo) {
             numero_processo = String(numero_processo).replace(/\./g, '');
         }
@@ -112,7 +130,6 @@ exports.show = async (req, res) => {
     }
 };
 
-// --- NOVOS MÉTODOS DE TERMOS ---
 exports.storeTermo = async (req, res) => {
     const { id } = req.params;
     try {
@@ -141,7 +158,59 @@ exports.destroyTermo = async (req, res) => {
         res.redirect(`/processos/${id}`);
     }
 };
-// -------------------------------
+
+// MODIFICADO: Aceita tanto imagens quanto arquivos PDF de arte
+exports.storeImagem = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const file = req.file;
+
+        if (!file) throw new Error("Selecione um arquivo de imagem ou PDF.");
+        
+        const mimesAceitos = ['application/pdf'];
+        if (!file.mimetype.startsWith('image/') && !mimesAceitos.includes(file.mimetype)) {
+            throw new Error("Formato inválido. Envie uma Imagem ou arquivo PDF para a arte.");
+        }
+
+        await processosService.createImagem(id, null, file.buffer, file.originalname, file.mimetype);
+        res.redirect(`/processos/${id}`);
+    } catch (error) {
+        console.error("Erro ao adicionar arte/modelo:", error);
+        res.redirect(`/processos/${id}`);
+    }
+};
+
+// MODIFICADO: Aceita tanto imagens quanto arquivos PDF de arte por produto
+exports.storeItemImagem = async (req, res) => {
+    const { id, item_id } = req.params;
+    try {
+        const file = req.file;
+
+        if (!file) throw new Error("Selecione um arquivo de imagem ou PDF.");
+        
+        const mimesAceitos = ['application/pdf'];
+        if (!file.mimetype.startsWith('image/') && !mimesAceitos.includes(file.mimetype)) {
+            throw new Error("Formato inválido. Envie uma Imagem ou arquivo PDF para a arte do produto.");
+        }
+
+        await processosService.createImagem(id, item_id, file.buffer, file.originalname, file.mimetype);
+        res.redirect(`/processos/${id}`);
+    } catch (error) {
+        console.error("Erro ao adicionar arte ao produto:", error);
+        res.redirect(`/processos/${id}`);
+    }
+};
+
+exports.destroyImagem = async (req, res) => {
+    const { id, imagem_id } = req.params;
+    try {
+        await processosService.deleteImagem(imagem_id);
+        res.redirect(`/processos/${id}`);
+    } catch (error) {
+        console.error("Erro ao deletar imagem:", error);
+        res.redirect(`/processos/${id}`);
+    }
+};
 
 exports.edit = async (req, res) => {
     try {
@@ -163,7 +232,6 @@ exports.update = async (req, res) => {
         const { id } = req.params;
         let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
 
-        // Remove todos os pontos do número de processo
         if (numero_processo) {
             numero_processo = String(numero_processo).replace(/\./g, '');
         }

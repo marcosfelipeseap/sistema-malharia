@@ -154,16 +154,12 @@ exports.planejar = async (req, res) => {
             return res.redirect('/registros/painel');
         }
 
-        // ============================================
-        // TRAVA DE HORÁRIO: VERIFICAÇÃO ANTES DE ABRIR
-        // ============================================
         const horaAtualBR = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
         const limite = malharia.horario_limite_planejamento || '10:00:00';
         
         if (horaAtualBR > limite) {
             return res.redirect(`/registros/painel?erro=horario&limite=${limite}`);
         }
-        // ============================================
 
         const processos = await processosService.getAllProcessos();
         const todosItens = await itensService.getAllItens();
@@ -187,9 +183,6 @@ exports.storePlanejamento = async (req, res) => {
     try {
         const { malharia_id, qtd_internos, meta_calculada, processos_ids, itens_ids, sem_producao, justificativa_id, observacao } = req.body;
         
-        // ============================================
-        // TRAVA DE HORÁRIO: VERIFICAÇÃO ANTES DE SALVAR
-        // ============================================
         const malharia = await malhariasService.getMalhariaById(malharia_id);
         const horaAtualBR = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
         const limite = malharia.horario_limite_planejamento || '10:00:00';
@@ -197,7 +190,6 @@ exports.storePlanejamento = async (req, res) => {
         if (horaAtualBR > limite) {
             return res.redirect(`/registros/painel?erro=horario_salvar&limite=${limite}`);
         }
-        // ============================================
 
         const data_registro = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }).split(',')[0].split('/').reverse().join('-');
         
@@ -243,9 +235,6 @@ exports.store = async (req, res) => {
             }
         }
 
-        // ==========================================
-        // LÓGICA DO AVISO DE ATRASO (SALVO EM CAMPO SEPARADO)
-        // ==========================================
         let avisoSistema = null;
 
         if (req.user.nivel >= 3) {
@@ -262,14 +251,13 @@ exports.store = async (req, res) => {
                 avisoSistema = 'Planejamento inserido com atraso pelo Gestor (não foi informado pelo monitor no horário padrão).';
             }
         }
-        // ==========================================
 
         const dadosRegistro = { 
             data_registro: data_registro || new Date(), 
             malharia_id, qtd_internos, meta_calculada, explicacao_meta, 
             justificativa_id: sem_producao ? justificativa_id : (justificativa_id || null), 
             observacao, 
-            aviso_sistema: avisoSistema, // <- SALVA NO CAMPO NOVO
+            aviso_sistema: avisoSistema, 
             criado_por: req.user.id 
         };
 
@@ -350,6 +338,7 @@ exports.update = async (req, res) => {
     }
 };
 
+// Modificado de acordo com a assinatura usada na linha 283 do seu arquivo original
 exports.destroy = async (req, res) => {
     try {
         await registrosService.deleteRegistro(req.params.id);

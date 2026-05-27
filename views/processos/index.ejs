@@ -39,12 +39,21 @@
                             <span class="badge rounded-pill <%= processo.status === 'DEMANDA CONCLUÍDA' ? 'bg-success' : (processo.status === 'ENTREGA NÃO INICIADA' ? 'bg-danger' : 'bg-warning text-dark') %> mb-2">
                                 <%= processo.status %>
                             </span>
-                            <h5 class="card-title mb-0 fw-bold text-primary">
+                            <h5 class="card-title mb-0 fw-bold text-primary d-flex align-items-center">
                                 <a href="/processos/<%= processo.id %>" class="text-decoration-none text-primary stretched-link">
                                     Processo <%= processo.numero_processo %>
                                 </a>
+                                <% if (processo.temImagem && processo.imagens && processo.imagens.length > 0) { %>
+                                    <button type="button" class="btn btn-link p-0 ms-2 text-success shadow-none position-relative" 
+                                            style="z-index: 2;"
+                                            data-bs-toggle="modal" data-bs-target="#modalDashboardImg-<%= processo.id %>" 
+                                            title="Clique para ver o modelo">
+                                        <i class="bi bi-image fs-5"></i>
+                                    </button>
+                                <% } %>
                             </h5>
                         </div>
+                        
                         <div class="dropdown position-relative" style="z-index: 2;">
                             <button class="btn btn-light btn-sm rounded-circle" type="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-three-dots-vertical"></i>
@@ -66,7 +75,7 @@
                         <p class="card-text text-primary small mb-2 d-inline-block" 
                            style="cursor: pointer; position: relative; z-index: 2;" 
                            onclick="mostrarDetalhesFabricacao(this)" 
-                           data-detalhes='<%= JSON.stringify(processo.detalhesMalharias || {}) %>' 
+                           data-detalhes='<%= JSON.stringify(processo.detailsMalharias || processo.detalhesMalharias || {}) %>' 
                            data-numero="<%= processo.numero_processo %>"
                            title="Clique para ver detalhes de produção por malharia">
                             <i class="bi bi-box-seam me-1"></i> Fabricado: 
@@ -124,7 +133,7 @@
                     <strong class="text-dark fs-5" id="modalFabricacaoNumProcesso"></strong>
                 </div>
                 <ul class="list-group list-group-flush" id="listaDetalhesMalharias">
-                    </ul>
+                </ul>
             </div>
             <div class="modal-footer py-2 bg-light justify-content-between border-top-0">
                 <small class="text-muted fw-bold text-uppercase" style="font-size: 0.7rem;">Total Fabricado</small>
@@ -133,6 +142,41 @@
         </div>
     </div>
 </div>
+
+<% processos.forEach(processo => { %>
+    <% if (processo.temImagem && processo.imagens && processo.imagens.length > 0) { %>
+        <div class="modal fade" id="modalDashboardImg-<%= processo.id %>" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0">
+                    <div class="modal-header bg-dark text-white border-0">
+                        <h6 class="modal-title fw-bold"><i class="bi bi-images text-success"></i> Modelos - Processo <%= processo.numero_processo %></h6>
+                        <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body bg-light text-center">
+                        <div class="row g-3 justify-content-center">
+                            <% processo.imagens.forEach(img => { %>
+                                <div class="col-12 col-md-10 text-center border-bottom pb-3 mb-2">
+                                    <% if (img.tipo_arquivo === 'application/pdf' || img.nome_arquivo.toLowerCase().endsWith('.pdf')) { %>
+                                        <div class="p-4 border rounded bg-white shadow-sm d-flex flex-column align-items-center justify-content-center mx-auto" style="max-width: 420px;">
+                                            <i class="bi bi-file-earmark-pdf-fill text-danger display-3 mb-2"></i>
+                                            <h6 class="fw-bold text-dark text-truncate w-100 px-2"><%= img.nome_arquivo %></h6>
+                                            <a href="<%= img.url_publica %>" target="_blank" class="btn btn-danger btn-sm mt-2 fw-bold shadow-sm px-3">
+                                                <i class="bi bi-file-pdf"></i> Abrir Arte em Nova Aba
+                                            </a>
+                                        </div>
+                                    <% } else { %>
+                                        <img src="<%= img.url_publica %>" class="img-fluid rounded shadow-sm mb-1" alt="Modelo" style="max-height: 60vh; object-fit: contain;">
+                                        <small class="text-muted d-block mt-1"><%= img.nome_arquivo %></small>
+                                    <% } %>
+                                </div>
+                            <% }) %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+<% }) %>
 
 <style>
     .hover-shadow:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
@@ -143,7 +187,7 @@
     let timeout = null;
     const input = document.getElementById('buscaInput');
     const grid = document.getElementById('processosGrid');
-
+    
     if (input) {
         input.addEventListener('input', function(e) {
             const termo = e.target.value;
@@ -174,7 +218,6 @@
         });
     }
 
-    // Função para exibir o modal de detalhes de fabricação
     function mostrarDetalhesFabricacao(element) {
         const dadosJson = element.getAttribute('data-detalhes');
         const numProcesso = element.getAttribute('data-numero');
@@ -190,7 +233,7 @@
         document.getElementById('modalFabricacaoNumProcesso').innerText = numProcesso;
         const listaEl = document.getElementById('listaDetalhesMalharias');
         listaEl.innerHTML = '';
-
+        
         if (Object.keys(detalhes).length === 0) {
             listaEl.innerHTML = '<li class="list-group-item text-center text-muted py-4 border-0"><i class="bi bi-inbox d-block mb-2 fs-3 text-secondary"></i>Nenhuma produção registada.</li>';
         } else {
@@ -206,7 +249,6 @@
         }
 
         document.getElementById('modalFabricacaoTotal').innerText = total + " un";
-        
         const modal = new bootstrap.Modal(document.getElementById('modalDetalhesFabricacao'));
         modal.show();
     }

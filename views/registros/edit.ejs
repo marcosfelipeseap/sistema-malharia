@@ -21,11 +21,11 @@
                             <input type="date" class="form-control <%= user.nivel < 3 ? 'bg-light' : '' %>" <%= user.nivel < 3 ? 'disabled' : 'name="data_registro"' %> value="<%= new Date(registro.data_registro).toISOString().split('T')[0] %>" required>
                             <% if (user.nivel < 3) { %>
                                 <input type="hidden" name="data_registro" value="<%= new Date(registro.data_registro).toISOString().split('T')[0] %>">
-                            <% } %>
+                           <% } %>
                         </div>
         
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Malharia / Setor</label>
+                             <label class="form-label fw-bold">Malharia / Setor</label>
                             <select class="form-select <%= user.nivel < 3 ? 'bg-light' : '' %>" id="malharia_id" <%= user.nivel < 3 ? 'disabled' : 'name="malharia_id"' %> required onchange="carregarDadosMalharia()">
                                 <option value="" disabled>Selecione a malharia...</option>
                                 <% malharias.forEach(function(mal) { %>
@@ -34,14 +34,14 @@
                             </select>
                             <% if (user.nivel < 3) { %>
                                 <input type="hidden" name="malharia_id" value="<%= registro.malharia_id %>">
-                                <small class="text-danger mt-1 d-block"><i class="bi bi-lock-fill"></i> Data e Setor não podem ser alterados durante a produção em andamento.</small>
+                                 <small class="text-danger mt-1 d-block"><i class="bi bi-lock-fill"></i> Data e Setor não podem ser alterados durante a produção em andamento.</small>
                             <% } %>
                         </div>
            
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Internos a Trabalhar</label>
                             <input type="number" class="form-control" id="qtd_internos" name="qtd_internos" min="1" value="<%= registro.qtd_internos %>" required oninput="validarInternos()">
-                            <small class="text-danger" id="avisoInternos"></small>
+                             <small class="text-danger" id="avisoInternos"></small>
                         </div>
                     </div>
 
@@ -50,20 +50,21 @@
                     <div class="row bg-light p-3 rounded mb-3 border align-items-center">
                         <div class="col-md-8">
                             <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
-                            <small class="text-muted">
+                             <small class="text-muted">
                                 Altere abaixo as quantidades registadas para o que efetivamente foi produzido hoje ou adicione novos produtos.<br><b class="text-danger">Atenção:</b> Caso não tenha havido nenhuma produção no dia, remova todos os produtos da lista e preencha a justificativa abaixo.
-                            </small>
+                             </small>
                         </div>
                         <div class="col-md-4 text-end">
                             <button type="button" class="btn btn-success" onclick="abrirModalBusca()">
-                                <i class="bi bi-search"></i> Buscar Produtos
+                                 <i class="bi bi-search"></i> Buscar Produtos
                             </button>
                         </div>
                     </div>
 
-                    <table class="table table-bordered table-sm" id="tabelaProducao">
+                     <table class="table table-bordered table-sm align-middle" id="tabelaProducao">
                         <thead class="table-dark">
                             <tr>
+                                <th style="width: 60px;" class="text-center">Foto/Arte</th>
                                 <th>Órgão</th>
                                 <th>Produto</th>
                                 <th>Descrição</th>
@@ -71,23 +72,23 @@
                                 <th class="text-center" style="width: 80px;">Ações</th>
                             </tr>
                         </thead>
-                        <tbody>
+                         <tbody>
                         </tbody>
                         <tfoot class="table-light">
                             <tr>
-                                <td colspan="3" class="text-end fw-bold align-middle">Meta Calculada:</td>
+                                 <td colspan="4" class="text-end fw-bold align-middle">Meta Calculada:</td>
                                 <td colspan="2" class="align-middle">
                                     <span id="displayMeta" class="badge bg-primary fs-5" style="cursor:help;" onclick="mostrarExplicacaoMeta()">0</span>
                                     <span class="ms-2 text-muted" style="font-size: 0.8em; cursor:help;" onclick="mostrarExplicacaoMeta()">(Clique para entender)</span>
                                     <input type="hidden" name="meta_calculada" id="meta_calculada" value="<%= registro.meta_calculada %>">
                                     <input type="hidden" name="explicacao_meta" id="explicacao_meta" value="<%= registro.explicacao_meta %>">
-                                </td>
+                                 </td>
                             </tr>
                             <tr>
-                                <td colspan="3" class="text-end fw-bold align-middle">Total Produzido Hoje:</td>
+                                 <td colspan="4" class="text-end fw-bold align-middle">Total Produzido Hoje:</td>
                                 <td colspan="2" class="align-middle"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
                             </tr>
-                        </tfoot>
+                         </tfoot>
                     </table>
 
                     <div id="boxJustificativa" class="mb-3 p-3 border rounded" style="display: none;">
@@ -95,20 +96,20 @@
                         <select class="form-select" name="justificativa_id" id="justificativa_id">
                             <option value="">Selecione a Justificativa...</option>
                             <% justificativas.forEach(function(just) { %>
-                                <option value="<%= just.id %>"><%= just.nome %></option>
+                                <option value="<%= just.id %>" <%= registro.justificativa_id == just.id ? 'selected' : '' %>><%= just.nome %></option>
                             <% }); %>
                         </select>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Observações Adicionais</label>
-                        <textarea class="form-control" name="observacao" rows="2"><%= registro.observacao || '' %></textarea>
+                         <textarea class="form-control" name="observacao" rows="2"><%= registro.observacao || '' %></textarea>
                     </div>
 
                     <div class="text-end">
                         <button type="submit" class="btn btn-primary btn-lg px-5"><i class="bi bi-save"></i> Atualizar Apontamento</button>
                     </div>
-                </form>
+             </form>
             </div>
         </div>
     </div>
@@ -119,7 +120,7 @@
         <div class="modal-content">
             <div class="modal-header bg-light">
                 <h5 class="modal-title">Como a meta foi calculada?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <pre id="textoExplicacaoMeta" style="white-space: pre-wrap; font-family: monospace; font-size: 14px;"></pre>
@@ -140,25 +141,43 @@
                     <input type="text" id="inputBuscaProduto" class="form-control form-control-lg" placeholder="Buscar por órgão, nome ou descrição do produto..." onkeyup="filtrarModalProdutos()">
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm border" id="tabelaModalProdutos">
+                    <table class="table table-hover table-sm border align-middle" id="tabelaModalProdutos">
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 50px;" class="text-center">
                                     <input type="checkbox" class="form-check-input" id="checkAllModal" onclick="toggleAllModal(this)">
                                 </th>
+                                 <th style="width: 60px;" class="text-center">Arte</th>
                                 <th>Órgão</th>
                                 <th>Produto</th>
                                 <th>Descrição</th>
                             </tr>
-                        </thead>
+                         </thead>
                         <tbody id="tbodyModalProdutos">
                         </tbody>
                     </table>
-                </div>
+                 </div>
             </div>
             <div class="modal-footer bg-light">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-success px-4" onclick="adicionarProdutosSelecionados()"><i class="bi bi-check-lg"></i> Adicionar Selecionados</button>
+            </div>
+        </div>
+ </div>
+</div>
+
+<div class="modal fade" id="modalZoomImagem" tabindex="-1" aria-hidden="true" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg bg-dark text-white">
+            <div class="modal-header border-0 pb-0 justify-content-between">
+                <h6 class="modal-title fw-bold text-truncate" id="modalZoomTitulo">Visualização do Modelo</h6>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <img id="modalZoomElemento" src="" class="img-fluid rounded shadow d-none" alt="Modelo Ampliado" style="max-height: 70vh; object-fit: contain;">
+                <div id="modalZoomPdfContainer" class="d-none" style="height: 70vh; width: 100%;">
+                    <iframe id="modalZoomPdfElemento" src="" style="width: 100%; height: 100%; border: none;" class="rounded"></iframe>
+                </div>
             </div>
         </div>
     </div>
@@ -171,7 +190,7 @@
                 <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle"></i> Atenção</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body text-center p-3" id="textoAviso"></div>
+             <div class="modal-body text-center p-3" id="textoAviso"></div>
             <div class="modal-footer py-1 justify-content-center">
                 <button type="button" class="btn btn-sm btn-dark px-3" data-bs-dismiss="modal">OK</button>
             </div>
@@ -191,26 +210,45 @@
     let isCarregamentoInicial = true;
     let combinacoesDisponiveis = [];
 
-    // Função para mostrar aviso elegante
     function exibirAviso(msg) {
         document.getElementById('textoAviso').innerText = msg;
         new bootstrap.Modal(document.getElementById('modalAviso')).show();
     }
 
-    // Função para evitar que aspas e caracteres especiais quebrem o HTML
     function escapeHTML(str) {
         if (!str || str.trim() === '') return '-';
-        return String(str)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
+
+    // MODIFICADO: Função de Zoom Inteligente para alternar entre Imagem e Segunda Telinha de PDF
+    void function zoomImagem(url, titulo) {
+        window.zoomImagem = function(url, titulo) {
+            document.getElementById('modalZoomTitulo').innerText = titulo;
+            const imgEl = document.getElementById('modalZoomElemento');
+            const pdfContainer = document.getElementById('modalZoomPdfContainer');
+            const pdfEl = document.getElementById('modalZoomPdfElemento');
+            
+            const isPdf = url && url.toLowerCase().split('?')[0].endsWith('.pdf');
+            
+            if (isPdf) {
+                imgEl.classList.add('d-none');
+                imgEl.src = '';
+                pdfContainer.classList.remove('d-none');
+                pdfEl.src = url;
+            } else {
+                pdfContainer.classList.add('d-none');
+                pdfEl.src = '';
+                imgEl.classList.remove('d-none');
+                imgEl.src = url;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalZoomImagem'));
+            modal.show();
+        }
+    }();
     
-    // Injetar os itens do banco de dados na lista temporária
     let listaProducao = [
-        <% registro.itens.forEach((item) => { %>
+         <% registro.itens.forEach((item) => { %>
             {
                 processo_id: '<%= item.processo_id %>',
                 item_id: '<%= item.item_id %>',
@@ -219,7 +257,6 @@
         <% }) %>
     ];
 
-    // LÓGICA DE PROTEÇÃO DE DUPLICADOS NO CARREGAMENTO
     let matchedProcessItems = [];
 
     listaProducao.forEach(prod => {
@@ -228,6 +265,8 @@
         
         let desc = '-';
         let tam = '';
+        let urlImagem = null;
+
         if (p && p.itens) {
             const itemNoProcesso = p.itens.find((x, index) => {
                 const isMatch = String(x.item_id) === String(prod.item_id);
@@ -239,6 +278,12 @@
                 if (itemNoProcesso.tamanho) tam = itemNoProcesso.tamanho;
                 const idx = p.itens.indexOf(itemNoProcesso);
                 matchedProcessItems.push(`${p.id}_${idx}`);
+
+                if (p.imagens && p.imagens.length > 0) {
+                    const imgProduto = p.imagens.find(img => String(img.processo_item_id) === String(itemNoProcesso.id));
+                    const imgGeral = p.imagens.find(img => !img.processo_item_id);
+                    urlImagem = imgProduto ? imgProduto.url_publica : (imgGeral ? imgGeral.url_publica : null);
+                }
             }
         }
         
@@ -249,13 +294,12 @@
         prod.nomeProduto = i ? i.nome : 'Sem Nome';
         prod.descricao = desc;
         prod.tamanho = tam;
+        prod.url_imagem = urlImagem;
         prod.id_unico = `${prod.processo_id}_${prod.item_id}_${tam}_${desc}`;
     });
 
     $(document).ready(function() {
         $('#malharia_id, #justificativa_id').select2({ theme: 'bootstrap-5', width: '100%' });
-        
-        // Se estiver disabled pelo EJS, o Select2 respeita automaticamente
         $('#malharia_id').val('<%= registro.malharia_id %>').trigger('change');
         
         if('<%= registro.justificativa_id %>') {
@@ -263,7 +307,7 @@
         }
 
         atualizarTabela();
-    });
+     });
 
     async function carregarDadosMalharia() {
         const selectMal = document.getElementById('malharia_id');
@@ -273,7 +317,6 @@
         const inputInternos = document.getElementById('qtd_internos');
         inputInternos.max = maxInternos;
         inputInternos.placeholder = `Máx: ${maxInternos}`;
-        
         if (!isCarregamentoInicial) {
             inputInternos.value = '';
         }
@@ -315,6 +358,13 @@
                         const descricaoFinal = pi.descricao || dadosItem.descricao || '-';
                         const tamanhoFinal = pi.tamanho || dadosItem.tamanho || '';
 
+                        let urlImagem = null;
+                        if (p.imagens && p.imagens.length > 0) {
+                            const imgProduto = p.imagens.find(img => String(img.processo_item_id) === String(pi.id));
+                            const imgGeral = p.imagens.find(img => !img.processo_item_id);
+                            urlImagem = imgProduto ? imgProduto.url_publica : (imgGeral ? imgGeral.url_publica : null);
+                        }
+
                         combinacoesDisponiveis.push({
                             processo_id: p.id,
                             orgao: p.orgao || 'N/A',
@@ -322,6 +372,7 @@
                             nome_produto: dadosItem.nome || 'Sem Nome',
                             descricao: descricaoFinal,
                             tamanho: tamanhoFinal,
+                            url_imagem: urlImagem,
                             id_unico: `${p.id}_${dadosItem.id}_${pi.id || idx}`
                         });
                     }
@@ -347,7 +398,7 @@
         tbody.empty();
         
         if(combinacoesDisponiveis.length === 0) {
-            tbody.append('<tr><td colspan="4" class="text-center text-muted py-3">Nenhum produto pendente encontrado.</td></tr>');
+            tbody.append('<tr><td colspan="5" class="text-center text-muted py-3">Nenhum produto pendente encontrado.</td></tr>');
             return;
         }
 
@@ -360,11 +411,20 @@
             );
 
             if(!jaAdicionado) {
+                // MODIFICADO: Suporte duplo para renderizar Imagem ou Ícone de PDF no modal de seleção
+                const isPdf = comb.url_imagem && comb.url_imagem.toLowerCase().split('?')[0].endsWith('.pdf');
+                const imgHtml = comb.url_imagem 
+                    ? (isPdf 
+                        ? `<div class="text-center border rounded bg-white p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer;" onclick="zoomImagem('${comb.url_imagem}', '${escapeHTML(comb.nome_produto)}')"><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></div>`
+                        : `<img src="${comb.url_imagem}" class="img-thumbnail rounded" style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" onclick="zoomImagem('${comb.url_imagem}', '${escapeHTML(comb.nome_produto)}')">`)
+                    : `<div class="text-muted d-flex align-items-center justify-content-center border rounded bg-light" style="width: 45px; height: 45px;"><i class="bi bi-camera small"></i></div>`;
+
                 tbody.append(`
                     <tr>
                         <td class="text-center align-middle">
-                            <input type="checkbox" class="form-check-input check-produto" value="${comb.id_unico}">
+                            <input type="checkbox" class="form-check-input" value="${comb.id_unico}">
                         </td>
+                        <td class="text-center align-middle p-1">${imgHtml}</td>
                         <td class="busca-texto align-middle fw-bold">${escapeHTML(comb.orgao)}</td>
                         <td class="busca-texto align-middle">${escapeHTML(comb.nome_produto)}</td>
                         <td class="busca-texto align-middle text-muted small">
@@ -411,6 +471,7 @@
                     nomeProduto: comb.nome_produto,
                     descricao: comb.descricao,
                     tamanho: comb.tamanho,
+                    url_imagem: comb.url_imagem,
                     qtd: 0 
                 });
             }
@@ -427,7 +488,7 @@
     function atualizarTabela() {
         const tbody = document.querySelector('#tabelaProducao tbody');
         if(listaProducao.length === 0) {
-            tbody.innerHTML = '<tr id="linhaVazia"><td colspan="5" class="text-center text-muted">Nenhum produto adicionado na lista de hoje.</td></tr>';
+            tbody.innerHTML = '<tr id="linhaVazia"><td colspan="6" class="text-center text-muted">Nenhum produto adicionado na lista de hoje.</td></tr>';
             document.getElementById('displayTotalProduzido').innerText = 0;
             recalcularMeta();
             return;
@@ -438,8 +499,18 @@
 
         listaProducao.forEach((prod, index) => {
             totalProduzido += parseInt(prod.qtd) || 0;
+
+            // MODIFICADO: Suporte duplo para renderizar Imagem ou Ícone de PDF na tabela de apontamentos
+            const isPdf = prod.url_imagem && prod.url_imagem.toLowerCase().split('?')[0].endsWith('.pdf');
+            const imgHtml = prod.url_imagem 
+                ? (isPdf 
+                    ? `<div class="text-center border rounded bg-white p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nomeProduto)}')" title="Abrir PDF da Arte"><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></div>`
+                    : `<img src="${prod.url_imagem}" class="img-thumbnail rounded" style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nomeProduto)}')">`)
+                : `<div class="text-muted d-flex align-items-center justify-content-center border rounded bg-light" style="width: 45px; height: 45px;"><i class="bi bi-camera small"></i></div>`;
+
             tbody.innerHTML += `
                 <tr>
+                    <td class="text-center align-middle p-1">${imgHtml}</td>
                     <td class="align-middle fw-bold">
                         <input type="hidden" name="processos_ids[]" value="${prod.processo_id}">
                         ${escapeHTML(prod.orgao)}
@@ -458,7 +529,7 @@
                     <td class="text-center align-middle" style="width: 80px;">
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="removerProducao(${index})"><i class="bi bi-trash"></i></button>
                     </td>
-                </tr>
+                 </tr>
             `;
         });
         document.getElementById('displayTotalProduzido').innerText = totalProduzido;
@@ -503,7 +574,7 @@
             if(dadosItem) {
                 if(dadosItem.maquinas && dadosItem.maquinas.length > 0) {
                     dadosItem.maquinas.forEach(maq => {
-                        const idMaq = String(maq.maquinario_id || (maq.maquina && maq.maquina.id));
+                         const idMaq = String(maq.maquinario_id || (maq.maquina && maq.maquina.id));
                         if(idMaq && idMaq !== 'undefined') {
                             if(!usoMaquinario[idMaq]) usoMaquinario[idMaq] = [];
                             usoMaquinario[idMaq].push({ nome: dadosItem.nome, meta: parseFloat(dadosItem.meta_diaria) || 100 });
@@ -511,10 +582,9 @@
                     });
                 } else {
                     alertas.push(`O produto '${dadosItem.nome}' NÃO tem máquinas exigidas no cadastro.`);
-                }
+                 }
             }
         });
-
         let contagemMalharia = {};
         let nomesMaquinas = {};
         
@@ -523,11 +593,10 @@
                 const idMaq = String(maqFisica.maquinario_id || (maqFisica.maquinario && maqFisica.maquinario.id));
                 if (idMaq && idMaq !== 'undefined') {
                     contagemMalharia[idMaq] = (contagemMalharia[idMaq] || 0) + 1;
-                    if(maqFisica.maquinario) nomesMaquinas[idMaq] = maqFisica.maquinario.nome;
+                     if(maqFisica.maquinario) nomesMaquinas[idMaq] = maqFisica.maquinario.nome;
                 }
             }
         });
-
         let metaTotalGeral = 0;
         let maquinasCompativeisEncontradas = 0;
 
@@ -551,7 +620,6 @@
         }
 
         if (maquinasCompativeisEncontradas === 0) alertas.push("A malharia NÃO possui nenhuma máquina compatível para fazer os produtos da tabela.");
-
         if (alertas.length > 0) {
             explicacao += "AVISOS DO SISTEMA:\n";
             alertas.forEach(a => explicacao += `- ${a}\n`);
@@ -559,7 +627,6 @@
         }
 
         explicacao += `==============================================\nMETA FINAL DO DIA: ${Math.round(metaTotalGeral)}`;
-        
         displayMeta.innerText = Math.round(metaTotalGeral);
         inputMeta.value = Math.round(metaTotalGeral);
         document.getElementById('explicacao_meta').value = explicacao;
@@ -574,7 +641,6 @@
         const box = document.getElementById('boxJustificativa');
         const selectJust = document.getElementById('justificativa_id');
         const labelJust = document.getElementById('justificativaLabel');
-        
         if(listaProducao.length === 0) {
             box.style.display = 'block';
             selectJust.required = true;
