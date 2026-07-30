@@ -54,8 +54,7 @@ exports.index = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-    if (req.user.nivel < 3) return res.redirect('/registros/painel');
-
+    // Acesso liberado para Monitor e Coordenador
     try {
         const processos = await processosService.getAllProcessos();
         let malharias = await malhariasService.getAllMalharias();
@@ -143,88 +142,6 @@ exports.historico = async (req, res) => {
     }
 };
 
-exports.planejar = async (req, res) => {
-    if (req.user.nivel >= 3) return res.redirect('/registros');
-
-    try {
-        const malharia_id = req.params.malharia_id;
-        const malharia = await malhariasService.getMalhariaById(malharia_id);
-        
-        if (req.user.cargo === 'monitor' && !(req.user.malharias_permitidas || []).includes(parseInt(malharia_id))) {
-            return res.redirect('/registros/painel');
-        }
-
-        const horaAtualBR = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
-        const limite = malharia.horario_limite_planejamento || '10:00:00';
-        
-        if (horaAtualBR > limite) {
-            return res.redirect(`/registros/painel?erro=horario&limite=${limite}`);
-        }
-
-        const processos = await processosService.getAllProcessos();
-        const todosItens = await itensService.getAllItens();
-        const justificativas = await registrosService.getTiposJustificativa();
-
-        res.render('registros/planejar', {
-            title: 'Definir Meta do Dia',
-            malharia,
-            processos,
-            justificativas,
-            todosItensJSON: JSON.stringify(todosItens)
-        });
-    } catch (error) {
-        res.redirect('/registros/painel');
-    }
-};
-
-exports.storePlanejamento = async (req, res) => {
-    if (req.user.nivel >= 3) return res.redirect('/registros');
-
-    try {
-        const { malharia_id, qtd_internos, meta_calculada, processos_ids, itens_ids, sem_producao, justificativa_id, observacao } = req.body;
-        
-        const malharia = await malhariasService.getMalhariaById(malharia_id);
-        const horaAtualBR = new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
-        const limite = malharia.horario_limite_planejamento || '10:00:00';
-        
-        if (horaAtualBR > limite) {
-            return res.redirect(`/registros/painel?erro=horario_salvar&limite=${limite}`);
-        }
-
-        const data_registro = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }).split(',')[0].split('/').reverse().join('-');
-        
-        let obsFinal = observacao || '';
-        if (!sem_producao && !obsFinal) {
-            obsFinal = 'Meta definida. Produção em andamento.';
-        }
-
-        const dadosRegistro = { 
-            data_registro, malharia_id, qtd_internos, meta_calculada, 
-            criado_por: req.user.id, 
-            observacao: obsFinal,
-            justificativa_id: sem_producao ? justificativa_id : null
-        };
-
-        let itensProduzidos = [];
-        
-        if (!sem_producao && processos_ids) {
-            if (Array.isArray(processos_ids)) {
-                for(let i=0; i < processos_ids.length; i++){
-                    itensProduzidos.push({ processo_id: processos_ids[i], item_id: itens_ids[i], qtd_produzida: 0 });
-                }
-            } else if (processos_ids) {
-                itensProduzidos.push({ processo_id: processos_ids, item_id: itens_ids, qtd_produzida: 0 });
-            }
-        }
-
-        await registrosService.createRegistroComItens(dadosRegistro, itensProduzidos);
-        res.redirect('/registros/painel');
-    } catch (error) {
-        console.error(error);
-        res.redirect('/registros/painel'); 
-    }
-};
-
 exports.store = async (req, res) => {
     try {
         const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, itens_ids, qtds_produzidas, sem_producao } = req.body;
@@ -247,9 +164,7 @@ exports.store = async (req, res) => {
 
             if (dataEscolhida < hojeBr) {
                 avisoSistema = 'Registro retroativo inserido com atraso pelo Gestor.';
-            } else if (dataEscolhida === hojeBr) {
-                avisoSistema = 'Planejamento inserido com atraso pelo Gestor (não foi informado pelo monitor no horário padrão).';
-            }
+            } 
         }
 
         const dadosRegistro = { 
@@ -338,7 +253,6 @@ exports.update = async (req, res) => {
     }
 };
 
-// Modificado de acordo com a assinatura usada na linha 283 do seu arquivo original
 exports.destroy = async (req, res) => {
     try {
         await registrosService.deleteRegistro(req.params.id);

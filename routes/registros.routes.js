@@ -2,13 +2,11 @@ const express = require('express');
 const router = express.Router();
 const registrosController = require('../controllers/registros.controller');
 
-// ======== NOVAS ROTAS (MONITOR / COORDENADOR) ========
+// ======== ROTAS (MONITOR / COORDENADOR) ========
 router.get('/painel', registrosController.painelDiario);
-router.get('/historico', registrosController.historico); // <- ADICIONE ESTA LINHA
-router.get('/planejar/:malharia_id', registrosController.planejar);
-router.post('/planejar', registrosController.storePlanejamento);
+router.get('/historico', registrosController.historico);
 
-// ======== ROTAS ORIGINAIS ========
+// ======== ROTAS GERAIS ========
 router.get('/', registrosController.index);
 router.get('/create', registrosController.create);
 router.post('/', registrosController.store);
