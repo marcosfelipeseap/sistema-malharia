@@ -37,7 +37,7 @@
                                  <small class="text-danger mt-1 d-block"><i class="bi bi-lock-fill"></i> Data e Setor não podem ser alterados durante a produção em andamento.</small>
                             <% } %>
                         </div>
-           
+            
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Internos a Trabalhar</label>
                             <input type="number" class="form-control" id="qtd_internos" name="qtd_internos" min="1" value="<%= registro.qtd_internos %>" required oninput="validarInternos()">
@@ -220,7 +220,6 @@
         return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // MODIFICADO: Função de Zoom Inteligente para alternar entre Imagem e Segunda Telinha de PDF
     void function zoomImagem(url, titulo) {
         window.zoomImagem = function(url, titulo) {
             document.getElementById('modalZoomTitulo').innerText = titulo;
@@ -291,7 +290,7 @@
         if (tam === '' && i && i.tamanho) tam = i.tamanho;
 
         prod.orgao = p ? p.orgao : 'N/A';
-        prod.nomeProduto = i ? i.nome : 'Sem Nome';
+        prod.nome_produto = i ? i.nome : 'Sem Nome';
         prod.descricao = desc;
         prod.tamanho = tam;
         prod.url_imagem = urlImagem;
@@ -406,12 +405,10 @@
             const jaAdicionado = listaProducao.some(lp => 
                 String(lp.processo_id) === String(comb.processo_id) && 
                 String(lp.item_id) === String(comb.item_id) &&
-                String(lp.tamanho || '').trim() === String(comb.tamanho || '').trim() &&
-                String(lp.descricao || '').trim() === String(comb.descricao || '').trim()
+                (lp.tamanho || '') === (comb.tamanho || '')
             );
 
             if(!jaAdicionado) {
-                // MODIFICADO: Suporte duplo para renderizar Imagem ou Ícone de PDF no modal de seleção
                 const isPdf = comb.url_imagem && comb.url_imagem.toLowerCase().split('?')[0].endsWith('.pdf');
                 const imgHtml = comb.url_imagem 
                     ? (isPdf 
@@ -422,7 +419,7 @@
                 tbody.append(`
                     <tr>
                         <td class="text-center align-middle">
-                            <input type="checkbox" class="form-check-input" value="${comb.id_unico}">
+                            <input type="checkbox" class="form-check-input check-produto" value="${comb.id_unico}">
                         </td>
                         <td class="text-center align-middle p-1">${imgHtml}</td>
                         <td class="busca-texto align-middle fw-bold">${escapeHTML(comb.orgao)}</td>
@@ -448,19 +445,25 @@
     }
 
     function toggleAllModal(source) {
-        $('.check-produto:visible').prop('checked', source.checked);
+        const checkboxes = document.querySelectorAll('#tbodyModalProdutos .check-produto');
+        checkboxes.forEach(cb => {
+            if (cb.closest('tr').style.display !== 'none') {
+                cb.checked = source.checked;
+            }
+        });
     }
 
     function adicionarProdutosSelecionados() {
-        const selecionados = $('.check-produto:checked');
-        if(selecionados.length === 0) {
-            exibirAviso("Selecione pelo menos um produto.");
-            return;
+        // Javascript puro para garantir a seleção das checkbox
+        const selecionados = document.querySelectorAll('#tbodyModalProdutos .check-produto:checked');
+        if(selecionados.length === 0) { 
+            exibirAviso("Selecione pelo menos um produto na lista."); 
+            return; 
         }
         
-        selecionados.each(function() {
-            const idUnicoSelecionado = $(this).val();
-            const comb = combinacoesDisponiveis.find(c => c.id_unico === idUnicoSelecionado);
+        selecionados.forEach(function(checkbox) {
+            const idUnicoSelecionado = checkbox.value;
+            const comb = combinacoesDisponiveis.find(c => String(c.id_unico) === String(idUnicoSelecionado));
 
             if (comb) {
                 listaProducao.push({
@@ -468,7 +471,7 @@
                     processo_id: comb.processo_id,
                     orgao: comb.orgao,
                     item_id: comb.item_id,
-                    nomeProduto: comb.nome_produto,
+                    nome_produto: comb.nome_produto,
                     descricao: comb.descricao,
                     tamanho: comb.tamanho,
                     url_imagem: comb.url_imagem,
@@ -500,12 +503,11 @@
         listaProducao.forEach((prod, index) => {
             totalProduzido += parseInt(prod.qtd) || 0;
 
-            // MODIFICADO: Suporte duplo para renderizar Imagem ou Ícone de PDF na tabela de apontamentos
             const isPdf = prod.url_imagem && prod.url_imagem.toLowerCase().split('?')[0].endsWith('.pdf');
             const imgHtml = prod.url_imagem 
                 ? (isPdf 
-                    ? `<div class="text-center border rounded bg-white p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nomeProduto)}')" title="Abrir PDF da Arte"><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></div>`
-                    : `<img src="${prod.url_imagem}" class="img-thumbnail rounded" style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nomeProduto)}')">`)
+                    ? `<div class="text-center border rounded bg-white p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nome_produto)}')" title="Abrir PDF da Arte"><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></div>`
+                    : `<img src="${prod.url_imagem}" class="img-thumbnail rounded" style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nome_produto)}')">`)
                 : `<div class="text-muted d-flex align-items-center justify-content-center border rounded bg-light" style="width: 45px; height: 45px;"><i class="bi bi-camera small"></i></div>`;
 
             tbody.innerHTML += `
@@ -517,7 +519,7 @@
                     </td>
                     <td class="align-middle">
                         <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
-                        ${escapeHTML(prod.nomeProduto)}
+                        ${escapeHTML(prod.nome_produto)}
                     </td>
                     <td class="align-middle text-muted small">
                         ${prod.tamanho ? `<span class="badge bg-secondary me-1">Tam: ${escapeHTML(prod.tamanho)}</span>` : ''}

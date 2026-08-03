@@ -11,14 +11,14 @@
         <div class="card shadow-sm border-primary border-top border-3">
             <div class="card-body">
                 <form action="/registros" method="POST" id="formRegistro" onsubmit="return validarFormulario(event)">
-              
+               
                     <div class="form-check form-switch mb-4 bg-light p-3 rounded border">
                         <input class="form-check-input ms-0 me-2" type="checkbox" id="sem_producao" name="sem_producao" value="1" onchange="toggleSemProducao()" style="width: 40px; height: 20px;">
                         <label class="form-check-label fw-bold text-danger pt-1 fs-6 ms-2" for="sem_producao">Não houve produção nesta oficina</label>
                     </div>
 
                     <h5 class="card-title text-primary border-bottom pb-2">Dados Gerais</h5>
-                   
+                    
                     <div class="row mb-4">
                         <div class="col-md-3 mb-3">
                             <label class="form-label fw-bold">Data do Apontamento</label>
@@ -52,7 +52,7 @@
 
                     <div id="blocoProducao">
                         <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
-  
+ 
                         <div class="row bg-light p-3 rounded mb-3 border align-items-center">
                             <div class="col-md-8">
                                 <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
@@ -245,7 +245,6 @@
         return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // AJUSTADO: Função de Zoom com inteligência para carregar imagens ou o Iframe do PDF (Segunda Telinha)
     void function zoomImagem(url, titulo) {
         window.zoomImagem = function(url, titulo) {
             document.getElementById('modalZoomTitulo').innerText = titulo || 'Visualização do Modelo';
@@ -371,12 +370,10 @@
             const jaAdicionado = listaProducao.some(lp => 
                 String(lp.processo_id) === String(comb.processo_id) && 
                 String(lp.item_id) === String(comb.item_id) &&
-                String(lp.tamanho || '').trim() === String(comb.tamanho || '').trim() &&
-                String(lp.descricao || '').trim() === String(comb.descricao || '').trim()
+                (lp.tamanho || '') === (comb.tamanho || '')
             );
 
             if(!jaAdicionado) {
-                // AJUSTADO: Identifica se a arte é um PDF no seletor de busca para trocar a miniatura por um ícone interativo
                 const isPdf = comb.url_imagem && comb.url_imagem.toLowerCase().split('?')[0].endsWith('.pdf');
                 const imgHtml = comb.url_imagem 
                     ? (isPdf 
@@ -413,16 +410,25 @@
     }
 
     function toggleAllModal(source) {
-        $('.check-produto:visible').prop('checked', source.checked);
+        const checkboxes = document.querySelectorAll('#tbodyModalProdutos .check-produto');
+        checkboxes.forEach(cb => {
+            if (cb.closest('tr').style.display !== 'none') {
+                cb.checked = source.checked;
+            }
+        });
     }
 
     function adicionarProdutosSelecionados() {
-        const selecionados = $('.check-produto:checked');
-        if(selecionados.length === 0) { exibirAviso("Selecione pelo menos um produto."); return; }
+        // Uso de Javascript puro para garantir a seleção e evitar conflitos
+        const selecionados = document.querySelectorAll('#tbodyModalProdutos .check-produto:checked');
+        if(selecionados.length === 0) { 
+            exibirAviso("Selecione pelo menos um produto na lista."); 
+            return; 
+        }
         
-        selecionados.each(function() {
-            const idUnicoSelecionado = $(this).val();
-            const comb = combinacoesDisponiveis.find(c => c.id_unico === idUnicoSelecionado);
+        selecionados.forEach(function(checkbox) {
+            const idUnicoSelecionado = checkbox.value;
+            const comb = combinacoesDisponiveis.find(c => String(c.id_unico) === String(idUnicoSelecionado));
             if (comb) {
                 listaProducao.push({
                     id_unico: comb.id_unico,
@@ -437,6 +443,7 @@
                 });
             }
         });
+        
         atualizarTabela();
         $('#modalBuscaProdutos').modal('hide');
     }
@@ -461,9 +468,8 @@
         listaProducao.forEach((prod, index) => {
             totalProduzido += parseInt(prod.qtd) || 0;
 
-            // AJUSTADO: Identifica se o link da arte é um PDF na tabela de lançamentos para trocar por ícone e disparar a telinha interna
             const isPdf = prod.url_imagem && prod.url_imagem.toLowerCase().split('?')[0].endsWith('.pdf');
-            const imgHtml = prod.url_imagem 
+            const imgHtml = prod.url_imagem 
                 ? (isPdf 
                     ? `<div class="text-center border rounded bg-white p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nome_produto)}')" title="Abrir Segunda Telinha da Arte"><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></div>`
                     : `<img src="${prod.url_imagem}" class="img-thumbnail rounded" style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nome_produto)}')">`)

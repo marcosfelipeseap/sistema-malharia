@@ -11,6 +11,16 @@ function validarHorarioBrasilia(dataEnviada) {
     return dataEnviada === hojeBr;
 }
 
+// Filtro robusto para impedir que o banco de dados retorne malharias, itens ou processos duplicados
+function removerDuplicatas(array) {
+    if (!Array.isArray(array)) return array;
+    const map = new Map();
+    array.forEach(item => {
+        if (item && item.id) map.set(item.id, item);
+    });
+    return Array.from(map.values());
+}
+
 exports.index = async (req, res) => {
     if (req.user.nivel < 3) return res.redirect('/registros/painel');
 
@@ -18,7 +28,7 @@ exports.index = async (req, res) => {
         const dataBusca = req.query.data || new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }).split(',')[0].split('/').reverse().join('-');
         
         let registros = await registrosService.getRegistrosByData(dataBusca);
-        let todasMalharias = await malhariasService.getAllMalharias();
+        let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
 
         if (req.user.cargo === 'monitor') {
             const permitidas = req.user.malharias_permitidas || [];
@@ -54,10 +64,9 @@ exports.index = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-    // Acesso liberado para Monitor e Coordenador
     try {
-        const processos = await processosService.getAllProcessos();
-        let malharias = await malhariasService.getAllMalharias();
+        const processos = removerDuplicatas(await processosService.getAllProcessos());
+        let malharias = removerDuplicatas(await malhariasService.getAllMalharias());
         
         if (req.user.cargo === 'monitor') {
             const permitidas = req.user.malharias_permitidas || [];
@@ -65,7 +74,7 @@ exports.create = async (req, res) => {
         }
 
         const justificativas = await registrosService.getTiposJustificativa();
-        const todosItens = await itensService.getAllItens(); 
+        const todosItens = removerDuplicatas(await itensService.getAllItens()); 
         
         res.render('registros/create', { 
             title: 'Novo Apontamento', processos, malharias, justificativas, todosItensJSON: JSON.stringify(todosItens) 
@@ -83,7 +92,7 @@ exports.painelDiario = async (req, res) => {
         const dataHoje = brTime.split('/').reverse().join('-');
         
         let registrosHoje = await registrosService.getRegistrosByData(dataHoje);
-        let todasMalharias = await malhariasService.getAllMalharias();
+        let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
 
         const permitidas = req.user.malharias_permitidas || [];
         let minhasMalharias = todasMalharias;
@@ -116,7 +125,7 @@ exports.historico = async (req, res) => {
         const dataBusca = req.query.data || new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }).split(',')[0].split('/').reverse().join('-');
         
         let registros = await registrosService.getRegistrosByData(dataBusca);
-        let todasMalharias = await malhariasService.getAllMalharias();
+        let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
 
         const permitidas = req.user.malharias_permitidas || [];
         todasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
@@ -200,8 +209,8 @@ exports.edit = async (req, res) => {
     try {
         const { id } = req.params;
         const registro = await registrosService.getRegistroById(id);
-        const processos = await processosService.getAllProcessos();
-        let malharias = await malhariasService.getAllMalharias();
+        const processos = removerDuplicatas(await processosService.getAllProcessos());
+        let malharias = removerDuplicatas(await malhariasService.getAllMalharias());
         
         if (req.user.cargo === 'monitor') {
             const permitidas = req.user.malharias_permitidas || [];
@@ -209,7 +218,7 @@ exports.edit = async (req, res) => {
         }
 
         const justificativas = await registrosService.getTiposJustificativa();
-        const todosItens = await itensService.getAllItens(); 
+        const todosItens = removerDuplicatas(await itensService.getAllItens()); 
         
         res.render('registros/edit', { 
             title: 'Editar Apontamento', registro, processos, malharias, justificativas,

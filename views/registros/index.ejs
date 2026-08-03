@@ -26,6 +26,66 @@
 </style>
 
 <% 
+// ==========================================
+// FILTROS ANTI-DUPLICAÇÃO NA VIEW
+// ==========================================
+const malhariasPendentesUnicas = [];
+const idsPendentes = new Set();
+if (typeof malhariasPendentes !== 'undefined' && malhariasPendentes) {
+    malhariasPendentes.forEach(mal => {
+        if (!idsPendentes.has(mal.id)) {
+            idsPendentes.add(mal.id);
+            malhariasPendentesUnicas.push(mal);
+        }
+    });
+}
+
+const todasMalhariasUnicas = [];
+const idsTodas = new Set();
+if (typeof todasMalharias !== 'undefined' && todasMalharias) {
+    todasMalharias.forEach(mal => {
+        if (!idsTodas.has(mal.id)) {
+            idsTodas.add(mal.id);
+            todasMalhariasUnicas.push(mal);
+        }
+    });
+}
+
+const registrosUnicos = [];
+const idsRegistros = new Set();
+const malhariasJaRegistradas = new Set(); // Evita 2 cards da MESMA malharia no dia
+
+if (typeof registros !== 'undefined' && registros) {
+    registros.forEach(reg => {
+        // Ignora duplicatas de ID exato ou de malharias que já apareceram (pega sempre a mais recente)
+        if (!idsRegistros.has(reg.id) && !malhariasJaRegistradas.has(reg.malharia_id)) {
+            idsRegistros.add(reg.id);
+            if(reg.malharia_id) malhariasJaRegistradas.add(reg.malharia_id);
+            
+            // Limpa produtos/itens duplicados DENTRO do apontamento
+            if (reg.itens) {
+                const itensLimpos = [];
+                const chavesItens = new Set();
+                
+                reg.itens.forEach(it => {
+                    const chave = `${it.processo_id}_${it.item_id}_${it.tamanho || ''}`;
+                    if (!chavesItens.has(chave)) {
+                        chavesItens.add(chave);
+                        itensLimpos.push(it);
+                    } else {
+                        // Se o item veio repetido do banco, apenas soma a quantidade para não perder a produção
+                        const itemSalvo = itensLimpos.find(u => `${u.processo_id}_${u.item_id}_${u.tamanho || ''}` === chave);
+                        if(itemSalvo) itemSalvo.qtd_produzida += (it.qtd_produzida || 0);
+                    }
+                });
+                reg.itens = itensLimpos;
+            }
+
+            registrosUnicos.push(reg);
+        }
+    });
+}
+
 const brTime = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 const [dataParte] = brTime.split(','); 
 const [diaHoje, mesHoje, anoHoje] = dataParte.trim().split('/');
@@ -93,14 +153,14 @@ const isHoje = dataBusca === dataHojeBRT;
             <i class="bi bi-check-circle-fill"></i> Apontamentos do Dia <%= dataBusca.split('-').reverse().join('/') %>
         </h4>
         
-        <% if (registros.length === 0) { %>
+        <% if (registrosUnicos.length === 0) { %>
             <div class="alert alert-secondary text-center py-4 border-dashed">
                 <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
                 Nenhuma produção registrada nesta data.
             </div>
         <% } else { %>
             <div class="row g-3">
-                <% registros.forEach(function(reg) { %>
+                <% registrosUnicos.forEach(function(reg) { %>
                     <% 
                         let totalProd = 0;
                         if(reg.itens) reg.itens.forEach(i => totalProd += i.qtd_produzida);
@@ -272,17 +332,17 @@ const isHoje = dataBusca === dataHojeBRT;
     <div class="col-md-4">
         <h4 class="text-secondary mb-3">
             <i class="bi bi-clock-history"></i> Faltam Registrar
-            <span class="badge bg-secondary ms-2 fs-6"><%= malhariasPendentes.length %></span>
+            <span class="badge bg-secondary ms-2 fs-6"><%= malhariasPendentesUnicas.length %></span>
         </h4>
         
-        <% if (malhariasPendentes.length === 0) { %>
+        <% if (malhariasPendentesUnicas.length === 0) { %>
             <div class="alert alert-success text-center">
                 <i class="bi bi-emoji-sunglasses d-block fs-3 mb-1"></i>
                 Nenhuma produção pendente para este dia!
             </div>
         <% } else { %>
             <div class="list-group shadow-sm">
-                <% malhariasPendentes.forEach(function(mal) { %>
+                <% malhariasPendentesUnicas.forEach(function(mal) { %>
                     <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center bg-light">
                         <div>
                             <h6 class="mb-0 text-dark fw-bold"><%= mal.nome %></h6>
@@ -348,7 +408,7 @@ const isHoje = dataBusca === dataHojeBRT;
                                     <input type="text" class="form-control form-control-sm" id="buscaMalhariaFeriado" placeholder="Buscar pelo nome..." onkeyup="filtrarMalhariasFeriado()">
                                 </li>
                                 <div class="p-2 pt-1" id="listaCheckboxesMalharias">
-                                    <% todasMalharias.forEach(function(m) { %>
+                                    <% todasMalhariasUnicas.forEach(function(m) { %>
                                         <li class="item-malharia-feriado rounded px-2">
                                             <div class="form-check py-1 m-0">
                                                 <input class="form-check-input check-malharia-feriado" type="checkbox" name="malharia_id" value="<%= m.id %>" id="checkMal_<%= m.id %>" onchange="atualizarTextoMalharias()">
@@ -500,10 +560,10 @@ const isHoje = dataBusca === dataHojeBRT;
 
     const resumoRegistros = <%- resumoGeralJSON || '[]' %>;
     const listaFeriados = <%- feriadosJSON || '[]' %>;
-    const totalMalharias = parseInt("<%= totalMalharias || 0 %>");
+    const totalMalharias = parseInt("<%= todasMalhariasUnicas.length || 0 %>");
     const dataBusca = "<%= dataBusca %>";
     const primeiraDataStr = "<%= primeiraData %>";
-    const minhasMalhariasIds = <%- JSON.stringify(todasMalharias.map(m => m.id)) %>;
+    const minhasMalhariasIds = <%- JSON.stringify(todasMalhariasUnicas.map(m => m.id)) %>;
     
     let currentViewDate = new Date(dataBusca + "T12:00:00");
     const primeiraDataObj = new Date(primeiraDataStr + "T00:00:00");
