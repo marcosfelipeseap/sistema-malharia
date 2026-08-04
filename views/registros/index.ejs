@@ -53,16 +53,14 @@ if (typeof todasMalharias !== 'undefined' && todasMalharias) {
 
 const registrosUnicos = [];
 const idsRegistros = new Set();
-const malhariasJaRegistradas = new Set(); // Evita 2 cards da MESMA malharia no dia
+const malhariasJaRegistradas = new Set();
 
 if (typeof registros !== 'undefined' && registros) {
     registros.forEach(reg => {
-        // Ignora duplicatas de ID exato ou de malharias que já apareceram (pega sempre a mais recente)
         if (!idsRegistros.has(reg.id) && !malhariasJaRegistradas.has(reg.malharia_id)) {
             idsRegistros.add(reg.id);
             if(reg.malharia_id) malhariasJaRegistradas.add(reg.malharia_id);
             
-            // Limpa produtos/itens duplicados DENTRO do apontamento
             if (reg.itens) {
                 const itensLimpos = [];
                 const chavesItens = new Set();
@@ -73,7 +71,6 @@ if (typeof registros !== 'undefined' && registros) {
                         chavesItens.add(chave);
                         itensLimpos.push(it);
                     } else {
-                        // Se o item veio repetido do banco, apenas soma a quantidade para não perder a produção
                         const itemSalvo = itensLimpos.find(u => `${u.processo_id}_${u.item_id}_${u.tamanho || ''}` === chave);
                         if(itemSalvo) itemSalvo.qtd_produzida += (it.qtd_produzida || 0);
                     }
@@ -86,11 +83,26 @@ if (typeof registros !== 'undefined' && registros) {
     });
 }
 
-const brTime = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-const [dataParte] = brTime.split(','); 
-const [diaHoje, mesHoje, anoHoje] = dataParte.trim().split('/');
+// ==========================================
+// DATA E LÓGICA DE PRAZOS
+// ==========================================
+const agStr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+const agoraObj = new Date(agStr);
+
+const anoHoje = agoraObj.getFullYear();
+const mesHoje = String(agoraObj.getMonth() + 1).padStart(2, '0');
+const diaHoje = String(agoraObj.getDate()).padStart(2, '0');
 const dataHojeBRT = `${anoHoje}-${mesHoje}-${diaHoje}`;
+
+const ontemObj = new Date(agoraObj);
+ontemObj.setDate(ontemObj.getDate() - 1);
+const dataOntemBRT = `${ontemObj.getFullYear()}-${String(ontemObj.getMonth() + 1).padStart(2, '0')}-${String(ontemObj.getDate()).padStart(2, '0')}`;
+
+const horaAtual = agoraObj.getHours();
+
 const isHoje = dataBusca === dataHojeBRT;
+const isOntemEditavel = (dataBusca === dataOntemBRT && horaAtual < 12);
+const isEditavel = isHoje || isOntemEditavel;
 %>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -108,12 +120,12 @@ const isHoje = dataBusca === dataHojeBRT;
 
 <% if (user.nivel < 3) { %>
     <div class="mb-4">
-        <% if (isHoje) { %>
+        <% if (isEditavel) { %>
             <div class="timer-aviso w-100 shadow-sm">
                 <i class="bi bi-stopwatch fs-4 text-warning"></i>
                 <div>
-                    Atenção: Os registros devem ser inseridos através do <b>Meu Painel Diário</b>.<br>
-                    Restam <span id="contadorTempoRestante" class="text-danger fw-bold">--:--:--</span> para enviar ou ajustar o relatório de hoje.
+                    Atenção: Você tem até o <b>meio-dia do dia seguinte</b> para registrar ou corrigir a produção.<br>
+                    Restam <span id="contadorTempoRestante" class="text-danger fw-bold">--:--:--</span> para o fechamento deste relatório.
                 </div>
             </div>
         <% } else { %>
@@ -122,7 +134,7 @@ const isHoje = dataBusca === dataHojeBRT;
                 <div>
                     <strong>Modo de Leitura Ativo</strong><br>
                     Você está visualizando os registros do dia <%= dataBusca.split('-').reverse().join('/') %>.
-                    Não é possível alterar ou inserir apontamentos em datas passadas.
+                    Não é possível alterar ou inserir apontamentos nesta data devido ao prazo esgotado.
                 </div>
             </div>
         <% } %>
@@ -240,7 +252,7 @@ const isHoje = dataBusca === dataHojeBRT;
                                     <i class="bi bi-card-list"></i> Detalhes
                                 </button>
 
-                                <% if (user.nivel >= 3 || isHoje) { %>
+                                <% if (user.nivel >= 3 || isEditavel) { %>
                                     <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
                                     <% if (user.nivel >= 3) { %> 
                                     <form action="/registros/<%= reg.id %>/delete" method="POST">
@@ -349,7 +361,7 @@ const isHoje = dataBusca === dataHojeBRT;
                             <small class="text-muted"><%= mal.tipo || 'Setor Padrão' %></small>
                         </div>
                         
-                        <% if (user.nivel >= 3) { %>
+                        <% if (user.nivel >= 3 || isOntemEditavel) { %>
                             <a href="/registros/create?malharia=<%= mal.id %>&data=<%= dataBusca %>" class="btn btn-sm btn-primary rounded-pill shadow-sm" title="Criar apontamento">
                                 <i class="bi bi-plus-lg"></i> Inserir
                             </a>
@@ -496,14 +508,17 @@ const isHoje = dataBusca === dataHojeBRT;
     if (userNivel < 3) {
         const contadorEl = document.getElementById('contadorTempoRestante');
         if (contadorEl) { 
+            const partesData = "<%= dataBusca %>".split('-');
+            const dataLimite = new Date(partesData[0], partesData[1] - 1, partesData[2]);
+            dataLimite.setDate(dataLimite.getDate() + 1); 
+            dataLimite.setHours(12, 0, 0, 0);
+
             function atualizarContagemRegressiva() {
                 const agora = new Date();
-                const fimDoDia = new Date();
-                fimDoDia.setHours(23, 59, 59, 999);
+                const diferenca = dataLimite - agora;
 
-                const diferenca = fimDoDia - agora;
                 if (diferenca > 0) {
-                    const horas = Math.floor((diferenca / (1000 * 60 * 60)) % 24);
+                    const horas = Math.floor(diferenca / (1000 * 60 * 60));
                     const minutos = Math.floor((diferenca / 1000 / 60) % 60);
                     const segundos = Math.floor((diferenca / 1000) % 60);
                     const horasStr = horas.toString().padStart(2, '0');

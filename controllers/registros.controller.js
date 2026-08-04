@@ -4,11 +4,35 @@ const malhariasService = require('../services/malharias.service');
 const itensService = require('../services/itens.service');
 
 function validarHorarioBrasilia(dataEnviada) {
-    const brTime = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
-    const [dataParte] = brTime.split(','); 
-    const [dia, mes, ano] = dataParte.trim().split('/');
+    const agStr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+    const agoraBr = new Date(agStr);
+    
+    const ano = agoraBr.getFullYear();
+    const mes = String(agoraBr.getMonth() + 1).padStart(2, '0');
+    const dia = String(agoraBr.getDate()).padStart(2, '0');
     const hojeBr = `${ano}-${mes}-${dia}`;
-    return dataEnviada === hojeBr;
+    
+    // Calcula a data de ontem
+    const ontemObj = new Date(agoraBr);
+    ontemObj.setDate(ontemObj.getDate() - 1);
+    const ontemAno = ontemObj.getFullYear();
+    const ontemMes = String(ontemObj.getMonth() + 1).padStart(2, '0');
+    const ontemDia = String(ontemObj.getDate()).padStart(2, '0');
+    const ontemBr = `${ontemAno}-${ontemMes}-${ontemDia}`;
+    
+    const horaAtual = agoraBr.getHours();
+
+    // Se for o dia de hoje, libera.
+    if (dataEnviada === hojeBr) {
+        return true;
+    } 
+    // Se for o dia de ontem, libera apenas se a hora atual for menor que 12h (meio-dia).
+    else if (dataEnviada === ontemBr && horaAtual < 12) {
+        return true;
+    }
+    
+    // Qualquer outra data ou horário é bloqueado.
+    return false;
 }
 
 // Filtro robusto para impedir que o banco de dados retorne malharias, itens ou processos duplicados
