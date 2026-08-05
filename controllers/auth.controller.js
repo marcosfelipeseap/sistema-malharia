@@ -106,9 +106,9 @@ exports.processForgotPassword = async (req, res) => {
 
         const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
 
-        // Envio do e-mail usando a API do Resend
+        // Envio do e-mail usando a API do Resend com o domínio verificado
         await resend.emails.send({
-            from: 'Sistema Malharia <onboarding@resend.dev>',
+            from: 'Sistema Malharia <nao-responda@malhariaseap.com>', // <-- LINHA ATUALIZADA AQUI
             to: user.email,
             subject: 'Recuperação de Senha - Sistema Malharia',
             html: `
