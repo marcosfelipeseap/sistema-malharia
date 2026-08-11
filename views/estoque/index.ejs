@@ -16,6 +16,9 @@
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
     <h1 class="h2"><i class="bi bi-boxes text-success"></i> Estoque Consolidado</h1>
+    <a href="/estoque/historico" class="btn btn-outline-primary shadow-sm fw-bold">
+        <i class="bi bi-clock-history"></i> Histórico de Entregas e Transferências
+    </a>
 </div>
 
 <% if (locals.user && user.nivel >= 3 && typeof transferenciasPendentes !== 'undefined' && transferenciasPendentes.length > 0) { %>
@@ -229,6 +232,7 @@
 
 <% } %>
 
+<!-- MODAL TRANSFERÊNCIA -->
 <div class="modal fade" id="modalTransferenciaMultipla" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
@@ -236,7 +240,9 @@
                 <h5 class="modal-title"><i class="bi bi-box-arrow-up-right"></i> <%= locals.user && user.nivel >= 3 ? 'Processar Envio de Estoque' : 'Solicitar Envio de Estoque' %></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="/estoque/transferir" method="POST" id="formTransferencia">
+            
+            <!-- ENCTYPE ADICIONADO PARA ENVIO DE ARQUIVOS -->
+            <form action="/estoque/transferir" method="POST" enctype="multipart/form-data" id="formTransferencia">
                 <div class="modal-body">
                     <input type="hidden" name="malharia_origem_id" id="multi_malharia_id">
                     <input type="hidden" name="processo_id" id="multi_processo_id">
@@ -244,10 +250,18 @@
                     
                     <p class="text-muted mb-3">Processo: <strong id="multi_processo_nome" class="text-dark"></strong></p>
                     
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label class="form-label text-secondary fw-bold small text-uppercase"><i class="bi bi-signpost-split-fill"></i> Destino da Mercadoria</label>
-                        <select name="tipo_destino" class="form-select border-primary shadow-sm fw-bold text-primary" id="multi_tipo_destino" required>
-                            </select>
+                        <select name="tipo_destino" class="form-select border-primary shadow-sm fw-bold text-primary" id="multi_tipo_destino" required></select>
+                    </div>
+
+                    <!-- CAMPO OBRIGATÓRIO DE TERMO EM PDF -->
+                    <div class="mb-4 border border-1 border-primary bg-light p-3 rounded">
+                        <label class="form-label text-primary fw-bold small text-uppercase">
+                            <i class="bi bi-file-earmark-pdf-fill text-danger"></i> Termo de Entrega (PDF) <span class="text-danger">* OBRIGATÓRIO</span>
+                        </label>
+                        <input type="file" name="documento_termo" class="form-control border-primary shadow-sm" accept="application/pdf" required>
+                        <div class="form-text small text-muted">Anexe o documento em PDF referente a este pedido de transferência/baixa.</div>
                     </div>
                     
                     <% if (locals.user && user.nivel < 3) { %>
@@ -397,6 +411,7 @@
                                     <th>Processo</th>
                                     <th>Item / Tamanho</th>
                                     <th>Destino Solicitado</th>
+                                    <th>Termo (PDF)</th>
                                     <th class="text-center" style="width: 140px;">Qtd. Aprovada</th>
                                     <th class="text-center pe-4" style="width: 120px;">Ação</th>
                                 </tr>
@@ -415,6 +430,16 @@
                                                 <span class="badge bg-primary bg-opacity-10 text-primary border border-primary"><i class="bi bi-buildings"></i> Malharia Sede</span>
                                             <% } %>
                                             <div class="small text-muted mt-1"><i class="bi bi-person"></i> <%= t.solicitante ? t.solicitante.nome : 'Usuário' %></div>
+                                        </td>
+
+                                        <td>
+                                            <% if (t.documento_termo) { %>
+                                                <a href="<%= t.documento_termo %>" target="_blank" class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-file-earmark-pdf"></i> Ver PDF
+                                                </a>
+                                            <% } else { %>
+                                                <span class="text-muted small">Sem PDF</span>
+                                            <% } %>
                                         </td>
                                         
                                         <td class="text-center">
@@ -541,10 +566,13 @@
         myModal.show();
     }
 
-    document.getElementById('formTransferencia').addEventListener('submit', function() {
+    document.getElementById('formTransferencia').addEventListener('submit', function(e) {
         const btn = document.getElementById('btnConfirmarTransf');
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+        // O setTimeout evita que o navegador aborte o upload multipart/form-data ao desativar o botão imediatamente
+        setTimeout(() => {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processando...';
+        }, 50);
     });
 
     async function processarAprovacao(idTransferencia, acao) {

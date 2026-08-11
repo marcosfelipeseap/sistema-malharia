@@ -1,8 +1,8 @@
 const supabase = require('../config/supabaseClient');
 
 exports.getAllTransferencias = async () => {
-    // Tenta buscar as transferências fazendo join para pegar o nome do solicitante
     const { data, error } = await supabase
+        .schema('malharia')
         .from('transferencias_estoque')
         .select(`
             *,
@@ -13,8 +13,8 @@ exports.getAllTransferencias = async () => {
         
     if (error) {
         console.error("Erro ao buscar transferencias:", error);
-        // Fallback de segurança caso o nome da chave estrangeira seja diferente
         const { data: fallbackData } = await supabase
+            .schema('malharia')
             .from('transferencias_estoque')
             .select('*, processo(*), item(*)');
         return fallbackData || [];
@@ -25,8 +25,8 @@ exports.getAllTransferencias = async () => {
 exports.createTransferencia = async (dados) => {
     const arrDados = Array.isArray(dados) ? dados : [dados];
     
-    // Todas nascem como 'pendente' por padrão
     const { data, error } = await supabase
+        .schema('malharia')
         .from('transferencias_estoque')
         .insert(arrDados)
         .select();
@@ -37,6 +37,7 @@ exports.createTransferencia = async (dados) => {
 
 exports.updateTransferencia = async (id, dados) => {
     const { data, error } = await supabase
+        .schema('malharia')
         .from('transferencias_estoque')
         .update(dados)
         .eq('id', id)

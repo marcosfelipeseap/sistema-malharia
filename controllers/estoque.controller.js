@@ -30,7 +30,6 @@ exports.index = async (req, res) => {
             estoque[m.id] = { id: m.id, nome: m.nome, tipo: m.tipo, processos: {}, total_geral: 0, isSede: false };
         });
 
-        // 1. Contabiliza toda a produção bruta
         todosRegistros.forEach(reg => {
             const malhariaId = reg.malharia_id;
             const malhariaPermitida = req.user.cargo === 'monitor' ? (req.user.malharias_permitidas || []).map(String).includes(String(malhariaId)) : true;
@@ -63,7 +62,6 @@ exports.index = async (req, res) => {
 
         todasTransferencias.sort((a, b) => new Date(a.data_transferencia) - new Date(b.data_transferencia));
 
-        // 2. Processa as Movimentações e Entregas
         todasTransferencias.forEach(transf => {
             const malhariaId = transf.malharia_origem_id ? String(transf.malharia_origem_id) : sedeId;
             const procId = String(transf.processo_id);
@@ -75,7 +73,6 @@ exports.index = async (req, res) => {
             const permitidas = req.user.cargo === 'monitor' ? (req.user.malharias_permitidas || []).map(String) : [];
             const pertenceAoUsuario = req.user.cargo === 'monitor' ? (malhariaId === sedeId ? false : permitidas.includes(malhariaId)) : true;
             
-            // CORREÇÃO: Força a comparação de ID ser Texto com Texto (String)
             transf.nome_origem = malhariaId === sedeId ? 'MALHARIA SEDE' : (malharias.find(m => String(m.id) === String(malhariaId))?.nome || 'Oficina Desconhecida');
 
             if (transf.status === 'pendente') {
@@ -149,12 +146,45 @@ exports.index = async (req, res) => {
 exports.transferir = async (req, res) => {
     try {
         const { malharia_origem_id, processo_id, transferencias_json, tipo_destino } = req.body;
-        if (!malharia_origem_id || !processo_id || !transferencias_json) return res.redirect('/estoque');
+        
+        // 1. VERIFICA SE O ARQUIVO CHEGOU NO BACKEND
+        if (!req.file) {
+            console.error("Erro: Nenhum arquivo PDF foi recebido pelo Multer.");
+            return res.send("<script>alert('Erro: O arquivo PDF do termo não foi recebido pelo servidor. Verifique o formulário.'); window.location.href='/estoque';</script>");
+        }
 
-        // BLOQUEIO DE SEGURANÇA: Se for da Sede e o usuário for Monitor/Coordenador, bloqueia a transferência.
+        if (!malharia_origem_id || !processo_id || !transferencias_json) {
+            return res.redirect('/estoque');
+        }
+
         if (malharia_origem_id === 'sede-central-estoque' && req.user.nivel < 3) {
             return res.redirect('/estoque');
         }
+
+        // 2. TENTA SUBIR O PDF PARA O SUPABASE STORAGE
+        const fileExt = 'pdf';
+        const fileName = `termo_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `termos/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('termos-malhariaestoque')
+            .upload(filePath, req.file.buffer, {
+                contentType: 'application/pdf',
+                upsert: false
+            });
+
+        // 3. SE DER ERRO NO UPLOAD (Falta de permissão no Bucket)
+        if (uploadError) {
+            console.error("Erro do Supabase Storage:", uploadError);
+            return res.send(`<script>alert('Erro ao salvar o PDF no Supabase: ${uploadError.message}. Verifique as permissões (Policies) do Bucket!'); window.location.href='/estoque';</script>`);
+        }
+
+        // Obtém a URL pública do documento anexado
+        const { data: publicUrlData } = supabase.storage
+            .from('termos-malhariaestoque')
+            .getPublicUrl(filePath);
+
+        const documentoUrl = publicUrlData.publicUrl;
 
         const itensTransferir = JSON.parse(transferencias_json);
         const statusDaTransferencia = req.user.nivel >= 3 ? 'aprovada' : 'pendente';
@@ -170,7 +200,8 @@ exports.transferir = async (req, res) => {
             quantidade_solicitada: parseInt(t.quantidade),
             usuario_id: req.user.id,
             status: statusDaTransferencia,
-            tipo_destino: destinoFinal
+            tipo_destino: destinoFinal,
+            documento_termo: documentoUrl
         })).filter(t => t.quantidade > 0); 
 
         if (dadosInsert.length > 0) {
@@ -184,8 +215,8 @@ exports.transferir = async (req, res) => {
         }
         res.redirect('/estoque');
     } catch (error) {
-        console.error("Erro ao transferir:", error);
-        res.redirect('/estoque');
+        console.error("Erro geral ao transferir:", error);
+        return res.send(`<script>alert('Erro interno do servidor: ${error.message}'); window.location.href='/estoque';</script>`);
     }
 };
 
@@ -260,6 +291,64 @@ exports.arquivar = async (req, res) => {
         if (req.headers.accept && req.headers.accept.includes('application/json')) {
             return res.status(500).json({ success: false, error: 'Erro ao arquivar' });
         }
+        res.redirect('/estoque');
+    }
+};
+
+exports.historico = async (req, res) => {
+    try {
+        const { malharia_id, data_inicio, data_fim, status, busca } = req.query;
+        
+        let query = supabase.schema('malharia')
+            .from('transferencias_estoque')
+            .select(`
+                *,
+                processo (*),
+                item (*),
+                solicitante:usuarios!transferencias_estoque_usuario_id_fkey(nome),
+                avaliador:usuarios!transferencias_estoque_avaliador_id_fkey(nome)
+            `);
+
+        if (malharia_id) {
+            if (malharia_id === 'sede') {
+                query = query.is('malharia_origem_id', null);
+            } else {
+                query = query.eq('malharia_origem_id', malharia_id);
+            }
+        }
+        if (status) query = query.eq('status', status);
+        if (data_inicio) query = query.gte('data_transferencia', data_inicio + 'T00:00:00');
+        if (data_fim) query = query.lte('data_transferencia', data_fim + 'T23:59:59');
+
+        const { data: transferencias, error } = await query.order('data_transferencia', { ascending: false });
+        if (error) throw error;
+
+        let transferenciasFiltradas = transferencias || [];
+
+        // Filtro unificado com sanitização para processo
+        if (busca) {
+            const buscaSanitizada = busca.replace(/\./g, '').toLowerCase(); 
+            transferenciasFiltradas = transferenciasFiltradas.filter(t => {
+                const numProc = (t.processo?.numero_processo || '').replace(/\./g, '').toLowerCase();
+                const nomeSolicitante = (t.solicitante?.nome || '').toLowerCase();
+                const nomeAvaliador = (t.avaliador?.nome || '').toLowerCase();
+                
+                return numProc.includes(buscaSanitizada) || 
+                       nomeSolicitante.includes(buscaSanitizada) || 
+                       nomeAvaliador.includes(buscaSanitizada);
+            });
+        }
+
+        const malharias = await malhariasService.getAllMalharias();
+
+        res.render('estoque/historico', {
+            title: 'Histórico de Transferências',
+            transferencias: transferenciasFiltradas,
+            malharias,
+            filtros: req.query
+        });
+    } catch (error) {
+        console.error("Erro ao buscar histórico:", error);
         res.redirect('/estoque');
     }
 };
