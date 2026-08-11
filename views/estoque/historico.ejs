@@ -22,8 +22,14 @@
             <div class="col-md-2">
                 <label class="form-label fw-bold small text-secondary">Origem (Malharia)</label>
                 <select name="malharia_id" class="form-select shadow-sm">
-                    <option value="">Todas</option>
-                    <option value="sede" <%= filtros.malharia_id === 'sede' ? 'selected' : '' %>>Malharia Sede</option>
+                    <!-- O Monitor vê "Minhas Malharias", os demais veem "Todas" -->
+                    <option value=""><%= locals.user && locals.user.cargo === 'monitor' ? 'Minhas Malharias' : 'Todas' %></option>
+                    
+                    <!-- A Sede aparece para todos que NÃO são monitores -->
+                    <% if (locals.user && locals.user.cargo !== 'monitor') { %>
+                        <option value="sede" <%= filtros.malharia_id === 'sede' ? 'selected' : '' %>>Malharia Sede</option>
+                    <% } %>
+                    
                     <% malharias.forEach(m => { %>
                         <option value="<%= m.id %>" <%= filtros.malharia_id == m.id ? 'selected' : '' %>><%= m.nome %></option>
                     <% }) %>
@@ -106,9 +112,9 @@
                                 </td>
                                 
                                 <td>
-                                    <small class="d-block text-muted" title="Solicitante"><i class="bi bi-person text-secondary"></i> <%= t.solicitante?.nome || 'Usuário' %></small>
-                                    <% if (t.avaliador) { %>
-                                        <small class="d-block text-muted" title="Autorizado/Avaliado por"><i class="bi bi-person-check-fill text-success"></i> <%= t.avaliador.nome %></small>
+                                    <small class="d-block text-muted" title="Solicitante"><i class="bi bi-person text-secondary"></i> <%= t.nome_solicitante %></small>
+                                    <% if (t.nome_avaliador) { %>
+                                        <small class="d-block text-muted" title="Autorizado/Avaliado por"><i class="bi bi-person-check-fill text-success"></i> <%= t.nome_avaliador %></small>
                                     <% } %>
                                 </td>
 

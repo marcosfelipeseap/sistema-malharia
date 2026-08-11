@@ -147,7 +147,6 @@ exports.transferir = async (req, res) => {
     try {
         const { malharia_origem_id, processo_id, transferencias_json, tipo_destino } = req.body;
         
-        // 1. VERIFICA SE O ARQUIVO CHEGOU NO BACKEND
         if (!req.file) {
             console.error("Erro: Nenhum arquivo PDF foi recebido pelo Multer.");
             return res.send("<script>alert('Erro: O arquivo PDF do termo não foi recebido pelo servidor. Verifique o formulário.'); window.location.href='/estoque';</script>");
@@ -161,7 +160,6 @@ exports.transferir = async (req, res) => {
             return res.redirect('/estoque');
         }
 
-        // 2. TENTA SUBIR O PDF PARA O SUPABASE STORAGE
         const fileExt = 'pdf';
         const fileName = `termo_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
         const filePath = `termos/${fileName}`;
@@ -173,13 +171,11 @@ exports.transferir = async (req, res) => {
                 upsert: false
             });
 
-        // 3. SE DER ERRO NO UPLOAD (Falta de permissão no Bucket)
         if (uploadError) {
             console.error("Erro do Supabase Storage:", uploadError);
             return res.send(`<script>alert('Erro ao salvar o PDF no Supabase: ${uploadError.message}. Verifique as permissões (Policies) do Bucket!'); window.location.href='/estoque';</script>`);
         }
 
-        // Obtém a URL pública do documento anexado
         const { data: publicUrlData } = supabase.storage
             .from('termos-malhariaestoque')
             .getPublicUrl(filePath);
@@ -301,21 +297,35 @@ exports.historico = async (req, res) => {
         
         let query = supabase.schema('malharia')
             .from('transferencias_estoque')
-            .select(`
-                *,
-                processo (*),
-                item (*),
-                solicitante:usuarios!transferencias_estoque_usuario_id_fkey(nome),
-                avaliador:usuarios!transferencias_estoque_avaliador_id_fkey(nome)
-            `);
+            .select('*, processo(*), item(*)');
+
+        // AGORA A RESTRIÇÃO É EXCLUSIVA PARA O MONITOR! O Coordenador verá tudo.
+        const isMonitor = req.user.cargo === 'monitor';
+        const permitidas = isMonitor ? (req.user.malharias_permitidas || []).map(String) : [];
 
         if (malharia_id) {
+            if (isMonitor && malharia_id !== 'sede' && !permitidas.includes(String(malharia_id))) {
+                return res.redirect('/estoque/historico');
+            }
+            if (isMonitor && malharia_id === 'sede') {
+                return res.redirect('/estoque/historico');
+            }
+
             if (malharia_id === 'sede') {
                 query = query.is('malharia_origem_id', null);
             } else {
                 query = query.eq('malharia_origem_id', malharia_id);
             }
+        } else {
+            if (isMonitor) {
+                if (permitidas.length > 0) {
+                    query = query.in('malharia_origem_id', permitidas);
+                } else {
+                    query = query.eq('malharia_origem_id', -1); 
+                }
+            }
         }
+
         if (status) query = query.eq('status', status);
         if (data_inicio) query = query.gte('data_transferencia', data_inicio + 'T00:00:00');
         if (data_fim) query = query.lte('data_transferencia', data_fim + 'T23:59:59');
@@ -325,21 +335,37 @@ exports.historico = async (req, res) => {
 
         let transferenciasFiltradas = transferencias || [];
 
-        // Filtro unificado com sanitização para processo
-        if (busca) {
-            const buscaSanitizada = busca.replace(/\./g, '').toLowerCase(); 
-            transferenciasFiltradas = transferenciasFiltradas.filter(t => {
-                const numProc = (t.processo?.numero_processo || '').replace(/\./g, '').toLowerCase();
-                const nomeSolicitante = (t.solicitante?.nome || '').toLowerCase();
-                const nomeAvaliador = (t.avaliador?.nome || '').toLowerCase();
-                
-                return numProc.includes(buscaSanitizada) || 
-                       nomeSolicitante.includes(buscaSanitizada) || 
-                       nomeAvaliador.includes(buscaSanitizada);
-            });
+        const { data: usuarios } = await supabase.schema('malharia').from('usuarios').select('id, nome');
+        const mapUsuarios = {};
+        if (usuarios) {
+            usuarios.forEach(u => mapUsuarios[u.id] = u.nome);
         }
 
-        const malharias = await malhariasService.getAllMalharias();
+        const buscaSanitizada = busca ? busca.replace(/\./g, '').toLowerCase() : null;
+
+        transferenciasFiltradas = transferenciasFiltradas.filter(t => {
+            t.nome_solicitante = mapUsuarios[t.usuario_id] || 'Usuário';
+            t.nome_avaliador = t.avaliador_id ? mapUsuarios[t.avaliador_id] : '';
+
+            if (buscaSanitizada) {
+                const numProc = (t.processo?.numero_processo || '').replace(/\./g, '').toLowerCase();
+                const nomeSol = t.nome_solicitante.toLowerCase();
+                const nomeAv = t.nome_avaliador.toLowerCase();
+                const doc = (t.documento_termo || '').toLowerCase();
+                
+                return numProc.includes(buscaSanitizada) || 
+                       nomeSol.includes(buscaSanitizada) || 
+                       nomeAv.includes(buscaSanitizada) ||
+                       doc.includes(buscaSanitizada);
+            }
+            return true;
+        });
+
+        let malharias = await malhariasService.getAllMalharias();
+        
+        if (isMonitor) {
+            malharias = malharias.filter(m => permitidas.includes(String(m.id)));
+        }
 
         res.render('estoque/historico', {
             title: 'Histórico de Transferências',
@@ -348,7 +374,7 @@ exports.historico = async (req, res) => {
             filtros: req.query
         });
     } catch (error) {
-        console.error("Erro ao buscar histórico:", error);
-        res.redirect('/estoque');
+        console.error("Erro ao processar histórico:", error);
+        res.send(`<script>alert('Atenção, erro ao processar o banco de dados: ${error.message}'); window.location.href='/estoque';</script>`);
     }
 };
