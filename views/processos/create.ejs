@@ -37,6 +37,7 @@
             setVal('data_entrada', "<%= formData.data_entrada %>");
             setVal('tipo_demanda', "<%= formData.tipo_demanda %>");
             setVal('situacao', "<%= formData.situacao %>");
+            setVal('link_sei', "<%= formData.link_sei %>");
             if(document.querySelector('[name="observacao"]')) document.querySelector('[name="observacao"]').value = "<%= formData.observacao %>";
         });
     </script>
@@ -112,7 +113,7 @@
     </div>
 
     <div class="row mb-3 g-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label class="form-label small fw-bold">Status Geral</label>
             <select class="form-select" name="status" id="statusGeral">
                 <option value="ENTREGA NÃO INICIADA" class="text-danger fw-bold">ENTREGA NÃO INICIADA</option>
@@ -120,9 +121,16 @@
                 <option value="DEMANDA CONCLUÍDA" class="text-success fw-bold">DEMANDA CONCLUÍDA</option>
             </select>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-5">
             <label class="form-label small fw-bold">Situação (Detalhe)</label>
             <input type="text" class="form-control" name="situacao" placeholder="Ex: Aguardando liberação...">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label small fw-bold">Link do SEI</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-link-45deg"></i></span>
+                <input type="url" class="form-control border-start-0" name="link_sei" placeholder="https://sei.ma.gov.br/..." autocomplete="off">
+            </div>
         </div>
     </div>
 

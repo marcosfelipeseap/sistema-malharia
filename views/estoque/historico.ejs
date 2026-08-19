@@ -91,8 +91,8 @@
                         <% transferencias.forEach(t => { %>
                             <tr>
                                 <td class="ps-4 text-nowrap">
-                                    <span class="fw-bold text-dark d-block"><%= new Date(t.data_transferencia).toLocaleDateString('pt-BR') %></span>
-                                    <small class="text-muted"><%= new Date(t.data_transferencia).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}) %></small>
+                                    <span class="fw-bold text-dark d-block"><%= new Date(t.data_transferencia).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) %></span>
+                                    <small class="text-muted"><%= new Date(t.data_transferencia).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' }) %></small>
                                 </td>
                                 
                                 <td>

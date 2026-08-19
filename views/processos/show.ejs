@@ -1,9 +1,16 @@
-<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom flex-wrap">
     <div>
-        <h1 class="h2">Processo: <%= processo.numero_processo %></h1>
+        <h1 class="h2 d-flex align-items-center gap-2 mb-1">
+            Processo: <%= processo.numero_processo %>
+            <% if (processo.link_sei) { %>
+                <a href="<%= processo.link_sei %>" target="_blank" class="btn btn-sm btn-outline-primary" title="Abrir direto no SEI">
+                    <i class="bi bi-box-arrow-up-right"></i> Acessar SEI
+                </a>
+            <% } %>
+        </h1>
         <span class="text-muted"><%= processo.orgao %></span>
     </div>
-    <div>
+    <div class="mt-2 mt-md-0">
         <a href="/processos/<%= processo.id %>/edit" class="btn btn-primary">
             <i class="bi bi-pencil"></i> Editar
         </a>
@@ -28,6 +35,17 @@
 
                     <dt class="col-sm-4">Situação:</dt>
                     <dd class="col-sm-8"><%= processo.situacao || '-' %></dd>
+                    
+                    <dt class="col-sm-4 mt-2">Link SEI:</dt>
+                    <dd class="col-sm-8 mt-2">
+                        <% if (processo.link_sei) { %>
+                            <a href="<%= processo.link_sei %>" target="_blank" class="text-decoration-none fw-bold">
+                                <i class="bi bi-link-45deg"></i> Abrir Processo no SEI
+                            </a>
+                        <% } else { %>
+                            <span class="text-muted">-</span>
+                        <% } %>
+                    </dd>
 
                     <dt class="col-sm-4 mt-2">Total Fabricado:</dt>
                     <dd class="col-sm-8 mt-2">
@@ -222,10 +240,21 @@
                             Nenhuma produção diária registrada para este processo ainda.
                         </li>
                     <% } else { %>
-                        <% Object.entries(processo.detalhesMalharias).forEach(([malharia, qtd]) => { %>
-                            <li class="list-group-item d-flex justify-content-between align-items-center py-3 bg-white">
-                                <span class="fw-bold text-secondary"><i class="bi bi-shop me-2 text-success"></i> <%= malharia %></span>
-                                <span class="badge bg-success rounded-pill fs-6 shadow-sm"><%= qtd %> un</span>
+                        <% Object.entries(processo.detalhesMalharias).forEach(([malharia, dadosMalharia]) => { %>
+                            <li class="list-group-item py-3 bg-white">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-secondary fs-6"><i class="bi bi-shop me-2 text-success"></i> <%= malharia %></span>
+                                    <span class="badge bg-success rounded-pill fs-6 shadow-sm"><%= dadosMalharia.total %> un</span>
+                                </div>
+                                
+                                <div class="ps-3 border-start border-2 border-success border-opacity-25 mt-2">
+                                    <% Object.entries(dadosMalharia.produtos).forEach(([produto, qtdProduto]) => { %>
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <small class="text-dark"><i class="bi bi-arrow-return-right text-muted me-1"></i> <%= produto %></small>
+                                            <small class="fw-bold text-secondary"><%= qtdProduto %> un</small>
+                                        </div>
+                                    <% }) %>
+                                </div>
                             </li>
                         <% }) %>
                     <% } %>

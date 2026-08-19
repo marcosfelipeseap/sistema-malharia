@@ -34,6 +34,8 @@ exports.getAllProcessos = async (busca = '') => {
             .select(`
                 processo_id,
                 qtd_produzida,
+                item_id,
+                item:item_id(nome),
                 registro:registro_id (
                     malharia:malharia_id (nome)
                 )
@@ -65,15 +67,31 @@ exports.getAllProcessos = async (busca = '') => {
         producaoDesteProcesso.forEach(regItem => {
             const qtd = regItem.qtd_produzida || 0;
             totalFabricado += qtd;
+            
             let nomeMalharia = 'Malharia Desconhecida';
             if (regItem.registro && regItem.registro.malharia && regItem.registro.malharia.nome) {
                 nomeMalharia = regItem.registro.malharia.nome;
             }
-            if (detalhesMalharias[nomeMalharia]) {
-                detalhesMalharias[nomeMalharia] += qtd;
-            } else {
-                detalhesMalharias[nomeMalharia] = qtd;
+
+            // Descobre o nome do item e cruza com a tabela do processo para pegar o Tamanho e Descrição
+            const nomeItemDb = regItem.item ? regItem.item.nome : 'Item Desconhecido';
+            const pItem = (p.itens || []).find(i => i.item_id === regItem.item_id);
+            const tamanho = pItem && pItem.tamanho && pItem.tamanho !== '-' ? ` - Tam: ${pItem.tamanho}` : '';
+            const descricao = pItem && pItem.descricao ? ` (${pItem.descricao})` : '';
+            
+            const chaveProduto = `${nomeItemDb}${tamanho}${descricao}`;
+
+            // Agrupa por Malharia e depois por Produto
+            if (!detalhesMalharias[nomeMalharia]) {
+                detalhesMalharias[nomeMalharia] = { total: 0, produtos: {} };
             }
+            
+            detalhesMalharias[nomeMalharia].total += qtd;
+            
+            if (!detalhesMalharias[nomeMalharia].produtos[chaveProduto]) {
+                detalhesMalharias[nomeMalharia].produtos[chaveProduto] = 0;
+            }
+            detalhesMalharias[nomeMalharia].produtos[chaveProduto] += qtd;
         });
 
         // Traz as URLs públicas para TODAS as imagens do processo (gerais e dos itens) para exibir no Dashboard
@@ -114,7 +132,7 @@ exports.getProcessoById = async (id) => {
     const imagensGerais = imagensComUrl.filter(img => !img.processo_item_id);
     const imagensItens = imagensComUrl.filter(img => img.processo_item_id);
 
-    // 4. Busca total Produzido
+    // 4. Busca total Produzido e DETALHAMENTO
     let totalFabricadoGeral = 0;
     const detalhesMalharias = {};
     
@@ -124,6 +142,8 @@ exports.getProcessoById = async (id) => {
             .from('registro_diario_item')
             .select(`
                 qtd_produzida,
+                item_id,
+                item:item_id(nome),
                 registro:registro_id (
                     malharia:malharia_id (nome)
                 )
@@ -131,19 +151,31 @@ exports.getProcessoById = async (id) => {
             .eq('processo_id', id);
 
         if (producao) {
-            producao.forEach(reg => {
-                const qtd = reg.qtd_produzida || 0;
+            producao.forEach(regItem => {
+                const qtd = regItem.qtd_produzida || 0;
                 totalFabricadoGeral += qtd;
                 
                 let nomeMalharia = 'Malharia Desconhecida';
-                if (reg.registro && reg.registro.malharia && reg.registro.malharia.nome) {
-                    nomeMalharia = reg.registro.malharia.nome;
+                if (regItem.registro && regItem.registro.malharia && regItem.registro.malharia.nome) {
+                    nomeMalharia = regItem.registro.malharia.nome;
                 }
                 
+                const nomeItemDb = regItem.item ? regItem.item.nome : 'Item Desconhecido';
+                const pItem = (itens || []).find(i => i.item_id === regItem.item_id);
+                const tamanho = pItem && pItem.tamanho && pItem.tamanho !== '-' ? ` - Tam: ${pItem.tamanho}` : '';
+                const descricao = pItem && pItem.descricao ? ` (${pItem.descricao})` : '';
+                const chaveProduto = `${nomeItemDb}${tamanho}${descricao}`;
+
                 if (!detalhesMalharias[nomeMalharia]) {
-                    detalhesMalharias[nomeMalharia] = 0;
+                    detalhesMalharias[nomeMalharia] = { total: 0, produtos: {} };
                 }
-                detalhesMalharias[nomeMalharia] += qtd;
+                
+                detalhesMalharias[nomeMalharia].total += qtd;
+                
+                if (!detalhesMalharias[nomeMalharia].produtos[chaveProduto]) {
+                    detalhesMalharias[nomeMalharia].produtos[chaveProduto] = 0;
+                }
+                detalhesMalharias[nomeMalharia].produtos[chaveProduto] += qtd;
             });
         }
     } catch(err) {

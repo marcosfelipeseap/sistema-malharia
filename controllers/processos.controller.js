@@ -90,7 +90,7 @@ const parseItensFromBody = (body) => {
 
 exports.store = async (req, res) => {
     try {
-        let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
+        let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao, link_sei } = req.body;
         
         if (numero_processo) {
             numero_processo = String(numero_processo).replace(/\./g, '');
@@ -99,7 +99,7 @@ exports.store = async (req, res) => {
         const processoData = {
             numero_processo, orgao, tipo_demanda, 
             data_entrada: data_entrada || null, 
-            situacao, status, observacao
+            situacao, status, observacao, link_sei
         };
         const itensData = parseItensFromBody(req.body);
 
@@ -159,7 +159,6 @@ exports.destroyTermo = async (req, res) => {
     }
 };
 
-// MODIFICADO: Aceita tanto imagens quanto arquivos PDF de arte
 exports.storeImagem = async (req, res) => {
     const { id } = req.params;
     try {
@@ -180,7 +179,6 @@ exports.storeImagem = async (req, res) => {
     }
 };
 
-// MODIFICADO: Aceita tanto imagens quanto arquivos PDF de arte por produto
 exports.storeItemImagem = async (req, res) => {
     const { id, item_id } = req.params;
     try {
@@ -230,7 +228,7 @@ exports.edit = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         const { id } = req.params;
-        let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao } = req.body;
+        let { numero_processo, orgao, tipo_demanda, data_entrada, situacao, status, observacao, link_sei } = req.body;
 
         if (numero_processo) {
             numero_processo = String(numero_processo).replace(/\./g, '');
@@ -239,7 +237,7 @@ exports.update = async (req, res) => {
         const processoData = { 
             numero_processo, orgao, tipo_demanda, 
             data_entrada: data_entrada || null, 
-            situacao, status, observacao 
+            situacao, status, observacao, link_sei 
         };
         const itensData = parseItensFromBody(req.body);
 

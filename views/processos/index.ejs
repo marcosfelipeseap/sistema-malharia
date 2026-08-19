@@ -40,8 +40,14 @@
                                 <%= processo.status %>
                             </span>
                             <h5 class="card-title mb-0 fw-bold text-primary d-flex align-items-center">
-                                <a href="/processos/<%= processo.id %>" class="text-decoration-none text-primary stretched-link">
+                                <a href="<%= processo.link_sei ? processo.link_sei : '/processos/' + processo.id %>" 
+                                   class="text-decoration-none text-primary stretched-link"
+                                   <%= processo.link_sei ? 'target="_blank"' : '' %>
+                                   title="<%= processo.link_sei ? 'Abrir direto no SEI' : 'Ver Detalhes do Processo' %>">
                                     Processo <%= processo.numero_processo %>
+                                    <% if (processo.link_sei) { %>
+                                        <i class="bi bi-box-arrow-up-right ms-1 text-secondary" style="font-size: 0.9rem;"></i>
+                                    <% } %>
                                 </a>
                                 <% if (processo.temImagem && processo.imagens && processo.imagens.length > 0) { %>
                                     <button type="button" class="btn btn-link p-0 ms-2 text-success shadow-none position-relative" 
@@ -235,14 +241,28 @@
         listaEl.innerHTML = '';
         
         if (Object.keys(detalhes).length === 0) {
-            listaEl.innerHTML = '<li class="list-group-item text-center text-muted py-4 border-0"><i class="bi bi-inbox d-block mb-2 fs-3 text-secondary"></i>Nenhuma produção registada.</li>';
+            listaEl.innerHTML = '<li class="list-group-item text-center text-muted py-4 border-0"><i class="bi bi-inbox d-block mb-2 fs-3 text-secondary"></i>Nenhuma produção registrada.</li>';
         } else {
-            for (const [nomeMalharia, qtd] of Object.entries(detalhes)) {
-                total += qtd;
+            for (const [nomeMalharia, dadosMalharia] of Object.entries(detalhes)) {
+                total += dadosMalharia.total;
+                
+                let produtosHTML = '';
+                for (const [nomeProduto, qtdProduto] of Object.entries(dadosMalharia.produtos)) {
+                    produtosHTML += `
+                        <div class="d-flex justify-content-between align-items-center mt-2 ps-3 border-start border-2 border-primary border-opacity-25">
+                            <small class="text-dark"><i class="bi bi-arrow-return-right text-muted me-1"></i> ${nomeProduto}</small>
+                            <small class="fw-bold text-secondary">${qtdProduto} un</small>
+                        </div>
+                    `;
+                }
+
                 listaEl.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span class="text-secondary small fw-medium"><i class="bi bi-house-door me-2 text-muted"></i>${nomeMalharia}</span>
-                        <span class="badge bg-primary rounded-pill">${qtd} un</span>
+                    <li class="list-group-item py-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-secondary fw-bold"><i class="bi bi-shop me-2 text-success"></i> ${nomeMalharia}</span>
+                            <span class="badge bg-success rounded-pill shadow-sm">${dadosMalharia.total} un</span>
+                        </div>
+                        ${produtosHTML}
                     </li>
                 `;
             }
