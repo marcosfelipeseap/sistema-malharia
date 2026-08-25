@@ -5,7 +5,6 @@ const TABLE_ITENS = 'registro_diario_item';
 const TABLE_FERIADO = 'feriado'; 
 const BUCKET_IMG = 'processo_imagens';
 
-// Busca os usuários separados para não dar erro de Foreign Key no Supabase
 const enriquecerComUsuarios = async (dados) => {
     if (!dados) return dados;
     
@@ -35,7 +34,6 @@ const enriquecerComUsuarios = async (dados) => {
     return Array.isArray(dados) ? arrayDados.map(processarUsuario) : processarUsuario(dados);
 };
 
-// Modificado para carregar também as imagens vinculadas nos históricos/consultas antigas
 const enriquecerRegistros = (dados) => {
     if (!dados) return dados;
     const processarRegistro = (reg) => {
@@ -45,22 +43,20 @@ const enriquecerRegistros = (dados) => {
                 
                 if (it.processo) {
                     if (it.processo.processo_item && Array.isArray(it.processo.processo_item)) {
-                        const detalhe = it.processo.processo_item.find(pi => pi.item_id === it.item_id);
+                        // Encontra O ITEM ESPECÍFICO através do processo_item_id
+                        const detalhe = it.processo.processo_item.find(pi => String(pi.id) === String(it.processo_item_id));
                         if (detalhe) { desc = detalhe.descricao; tam = detalhe.tamanho; }
                     }
                     
-                    // Mapeia e gera a URL pública de cada imagem vinda do banco
                     if (it.processo.imagens && Array.isArray(it.processo.imagens)) {
                         const imagensComUrl = it.processo.imagens.map(img => {
                             const { data: storageData } = supabase.storage.from(BUCKET_IMG).getPublicUrl(img.caminho_arquivo);
                             return { ...img, url_publica: storageData.publicUrl };
                         });
                         
-                        const detalheItem = it.processo.processo_item.find(pi => pi.item_id === it.item_id);
-                        const imgProduto = detalheItem ? imagensComUrl.find(img => String(img.processo_item_id) === String(detalheItem.id)) : null;
+                        const imgProduto = imagensComUrl.find(img => String(img.processo_item_id) === String(it.processo_item_id));
                         const imgGeral = imagensComUrl.find(img => !img.processo_item_id);
                         
-                        // Prioriza a imagem do produto específico; senão houver, pega a geral do processo
                         if (imgProduto) urlImagem = imgProduto.url_publica;
                         else if (imgGeral) urlImagem = imgGeral.url_publica;
                     }
@@ -83,8 +79,8 @@ exports.getAllRegistros = async () => {
             malharia:malharia_id (nome), 
             justificativa:justificativa_id (nome), 
             itens:registro_diario_item(
-                processo_id, item_id, qtd_produzida, 
-                processo:processo_id(id, numero_processo, orgao, processo_item(item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                processo_id, processo_item_id, item_id, qtd_produzida, 
+                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
                 item:item_id(id, nome)
             )
         `).order('data_registro', { ascending: false });
@@ -103,8 +99,8 @@ exports.getRegistrosByData = async (dataBusca) => {
             malharia:malharia_id (id, nome, tipo), 
             justificativa:justificativa_id (nome), 
             itens:registro_diario_item(
-                processo_id, item_id, qtd_produzida, 
-                processo:processo_id(id, numero_processo, orgao, processo_item(item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                processo_id, processo_item_id, item_id, qtd_produzida, 
+                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
                 item:item_id(id, nome)
             )
         `).eq('data_registro', dataBusca).order('criado_em', { ascending: false });
@@ -123,8 +119,8 @@ exports.getRegistroById = async (id) => {
             malharia:malharia_id (nome, num_internos), 
             justificativa:justificativa_id (nome), 
             itens:registro_diario_item(
-                processo_id, item_id, qtd_produzida, 
-                processo:processo_id(id, numero_processo, orgao, processo_item(item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                processo_id, processo_item_id, item_id, qtd_produzida, 
+                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
                 item:item_id(id, nome)
             )
         `).eq('id', id).single();
@@ -148,6 +144,7 @@ exports.createRegistroComItens = async (dadosRegistro, itensProduzidos) => {
         const itensParaSalvar = itensProduzidos.map(item => ({ 
             registro_id: registro.id, 
             processo_id: item.processo_id, 
+            processo_item_id: item.processo_item_id,
             item_id: item.item_id, 
             qtd_produzida: item.qtd_produzida 
         })); 
@@ -174,6 +171,7 @@ exports.updateRegistroComItens = async (id, dadosRegistro, itensProduzidos) => {
         const itensParaSalvar = itensProduzidos.map(item => ({ 
             registro_id: id, 
             processo_id: item.processo_id, 
+            processo_item_id: item.processo_item_id,
             item_id: item.item_id, 
             qtd_produzida: item.qtd_produzida 
         })); 

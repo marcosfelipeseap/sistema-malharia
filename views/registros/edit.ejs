@@ -250,6 +250,7 @@
          <% registro.itens.forEach((item) => { %>
             {
                 processo_id: '<%= item.processo_id %>',
+                processo_item_id: '<%= item.processo_item_id %>', // Resgatando o vínculo real
                 item_id: '<%= item.item_id %>',
                 qtd: parseInt('<%= item.qtd_produzida %>') || 0
             },
@@ -267,16 +268,12 @@
         let urlImagem = null;
 
         if (p && p.itens) {
-            const itemNoProcesso = p.itens.find((x, index) => {
-                const isMatch = String(x.item_id) === String(prod.item_id);
-                const isUsed = matchedProcessItems.includes(`${p.id}_${index}`);
-                return isMatch && !isUsed;
-            });
+            // Agora a comparação é cirúrgica, via ID único do item no processo
+            const itemNoProcesso = p.itens.find(x => String(x.id) === String(prod.processo_item_id));
+            
             if (itemNoProcesso) {
                 if (itemNoProcesso.descricao) desc = itemNoProcesso.descricao;
                 if (itemNoProcesso.tamanho) tam = itemNoProcesso.tamanho;
-                const idx = p.itens.indexOf(itemNoProcesso);
-                matchedProcessItems.push(`${p.id}_${idx}`);
 
                 if (p.imagens && p.imagens.length > 0) {
                     const imgProduto = p.imagens.find(img => String(img.processo_item_id) === String(itemNoProcesso.id));
@@ -294,7 +291,7 @@
         prod.descricao = desc;
         prod.tamanho = tam;
         prod.url_imagem = urlImagem;
-        prod.id_unico = `${prod.processo_id}_${prod.item_id}_${tam}_${desc}`;
+        prod.id_unico = `${prod.processo_id}_${prod.item_id}_${prod.processo_item_id}`;
     });
 
     $(document).ready(function() {
@@ -366,6 +363,7 @@
 
                         combinacoesDisponiveis.push({
                             processo_id: p.id,
+                            processo_item_id: pi.id,
                             orgao: p.orgao || 'N/A',
                             item_id: dadosItem.id,
                             nome_produto: dadosItem.nome || 'Sem Nome',
@@ -403,9 +401,7 @@
 
         combinacoesDisponiveis.forEach(comb => {
             const jaAdicionado = listaProducao.some(lp => 
-                String(lp.processo_id) === String(comb.processo_id) && 
-                String(lp.item_id) === String(comb.item_id) &&
-                (lp.tamanho || '') === (comb.tamanho || '')
+                String(lp.processo_item_id) === String(comb.processo_item_id)
             );
 
             if(!jaAdicionado) {
@@ -454,7 +450,6 @@
     }
 
     function adicionarProdutosSelecionados() {
-        // Javascript puro para garantir a seleção das checkbox
         const selecionados = document.querySelectorAll('#tbodyModalProdutos .check-produto:checked');
         if(selecionados.length === 0) { 
             exibirAviso("Selecione pelo menos um produto na lista."); 
@@ -469,6 +464,7 @@
                 listaProducao.push({
                     id_unico: comb.id_unico,
                     processo_id: comb.processo_id,
+                    processo_item_id: comb.processo_item_id, // Enviando o ID exato
                     orgao: comb.orgao,
                     item_id: comb.item_id,
                     nome_produto: comb.nome_produto,
@@ -515,10 +511,11 @@
                     <td class="text-center align-middle p-1">${imgHtml}</td>
                     <td class="align-middle fw-bold">
                         <input type="hidden" name="processos_ids[]" value="${prod.processo_id}">
+                        <input type="hidden" name="processo_item_ids[]" value="${prod.processo_item_id}">
+                        <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
                         ${escapeHTML(prod.orgao)}
                     </td>
                     <td class="align-middle">
-                        <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
                         ${escapeHTML(prod.nome_produto)}
                     </td>
                     <td class="align-middle text-muted small">

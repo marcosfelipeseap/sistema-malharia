@@ -12,7 +12,6 @@ function validarHorarioBrasilia(dataEnviada) {
     const dia = String(agoraBr.getDate()).padStart(2, '0');
     const hojeBr = `${ano}-${mes}-${dia}`;
     
-    // Calcula a data de ontem
     const ontemObj = new Date(agoraBr);
     ontemObj.setDate(ontemObj.getDate() - 1);
     const ontemAno = ontemObj.getFullYear();
@@ -22,20 +21,16 @@ function validarHorarioBrasilia(dataEnviada) {
     
     const horaAtual = agoraBr.getHours();
 
-    // Se for o dia de hoje, libera.
     if (dataEnviada === hojeBr) {
         return true;
     } 
-    // Se for o dia de ontem, libera apenas se a hora atual for menor que 12h (meio-dia).
     else if (dataEnviada === ontemBr && horaAtual < 12) {
         return true;
     }
     
-    // Qualquer outra data ou horário é bloqueado.
     return false;
 }
 
-// Filtro robusto para impedir que o banco de dados retorne malharias, itens ou processos duplicados
 function removerDuplicatas(array) {
     if (!Array.isArray(array)) return array;
     const map = new Map();
@@ -177,7 +172,7 @@ exports.historico = async (req, res) => {
 
 exports.store = async (req, res) => {
     try {
-        const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, itens_ids, qtds_produzidas, sem_producao } = req.body;
+        const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, processo_item_ids, itens_ids, qtds_produzidas, sem_producao } = req.body;
         
         if (req.user.nivel < 3) {
             if (!validarHorarioBrasilia(data_registro)) {
@@ -214,10 +209,20 @@ exports.store = async (req, res) => {
         if (!sem_producao && processos_ids) {
             if (Array.isArray(processos_ids)) {
                 for(let i=0; i < processos_ids.length; i++){
-                    itensProduzidos.push({ processo_id: processos_ids[i], item_id: itens_ids[i], qtd_produzida: qtds_produzidas[i] });
+                    itensProduzidos.push({ 
+                        processo_id: processos_ids[i], 
+                        processo_item_id: processo_item_ids[i],
+                        item_id: itens_ids[i],
+                        qtd_produzida: parseInt(qtds_produzidas[i]) 
+                    });
                 }
             } else if (processos_ids) {
-                itensProduzidos.push({ processo_id: processos_ids, item_id: itens_ids, qtd_produzida: qtds_produzidas });
+                itensProduzidos.push({ 
+                    processo_id: processos_ids, 
+                    processo_item_id: processo_item_ids,
+                    item_id: itens_ids, 
+                    qtd_produzida: parseInt(qtds_produzidas) 
+                });
             }
         }
 
@@ -257,7 +262,7 @@ exports.edit = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         const { id } = req.params;
-        const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, itens_ids, qtds_produzidas } = req.body;
+        const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, processo_item_ids, itens_ids, qtds_produzidas } = req.body;
 
         if (req.user.nivel < 3) {
             if (!validarHorarioBrasilia(data_registro)) {
@@ -270,10 +275,20 @@ exports.update = async (req, res) => {
         let itensProduzidos = [];
         if (Array.isArray(processos_ids)) {
             for(let i=0; i < processos_ids.length; i++){
-                itensProduzidos.push({ processo_id: processos_ids[i], item_id: itens_ids[i], qtd_produzida: parseInt(qtds_produzidas[i]) });
+                itensProduzidos.push({ 
+                    processo_id: processos_ids[i], 
+                    processo_item_id: processo_item_ids[i],
+                    item_id: itens_ids[i],
+                    qtd_produzida: parseInt(qtds_produzidas[i]) 
+                });
             }
         } else if (processos_ids) {
-            itensProduzidos.push({ processo_id: processos_ids, item_id: itens_ids, qtd_produzida: parseInt(qtds_produzidas) });
+            itensProduzidos.push({ 
+                processo_id: processos_ids, 
+                processo_item_id: processo_item_ids,
+                item_id: itens_ids, 
+                qtd_produzida: parseInt(qtds_produzidas) 
+            });
         }
 
         await registrosService.updateRegistroComItens(id, dadosRegistro, itensProduzidos);

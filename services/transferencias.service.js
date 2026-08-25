@@ -6,7 +6,7 @@ exports.getAllTransferencias = async () => {
         .from('transferencias_estoque')
         .select(`
             *,
-            processo (*),
+            processo (id, numero_processo, orgao, processo_item(*)),
             item (*),
             solicitante:usuarios!transferencias_estoque_usuario_id_fkey(nome)
         `);
@@ -16,7 +16,7 @@ exports.getAllTransferencias = async () => {
         const { data: fallbackData } = await supabase
             .schema('malharia')
             .from('transferencias_estoque')
-            .select('*, processo(*), item(*)');
+            .select('*, processo(id, numero_processo, orgao, processo_item(*)), item(*)');
         return fallbackData || [];
     }
     return data;

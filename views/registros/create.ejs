@@ -11,7 +11,7 @@
         <div class="card shadow-sm border-primary border-top border-3">
             <div class="card-body">
                 <form action="/registros" method="POST" id="formRegistro" onsubmit="return validarFormulario(event)">
-               
+                
                     <div class="form-check form-switch mb-4 bg-light p-3 rounded border">
                         <input class="form-check-input ms-0 me-2" type="checkbox" id="sem_producao" name="sem_producao" value="1" onchange="toggleSemProducao()" style="width: 40px; height: 20px;">
                         <label class="form-check-label fw-bold text-danger pt-1 fs-6 ms-2" for="sem_producao">Não houve produção nesta oficina</label>
@@ -336,6 +336,7 @@
 
                         combinacoesDisponiveis.push({
                             processo_id: p.id,
+                            processo_item_id: pi.id, // AQUI GARANTIMOS O ID EXATO DO PROCESSO ITEM
                             orgao: p.orgao || 'N/A',
                             item_id: dadosItem.id,
                             nome_produto: dadosItem.nome || 'Sem Nome',
@@ -368,9 +369,7 @@
 
         combinacoesDisponiveis.forEach(comb => {
             const jaAdicionado = listaProducao.some(lp => 
-                String(lp.processo_id) === String(comb.processo_id) && 
-                String(lp.item_id) === String(comb.item_id) &&
-                (lp.tamanho || '') === (comb.tamanho || '')
+                String(lp.processo_item_id) === String(comb.processo_item_id)
             );
 
             if(!jaAdicionado) {
@@ -419,7 +418,6 @@
     }
 
     function adicionarProdutosSelecionados() {
-        // Uso de Javascript puro para garantir a seleção e evitar conflitos
         const selecionados = document.querySelectorAll('#tbodyModalProdutos .check-produto:checked');
         if(selecionados.length === 0) { 
             exibirAviso("Selecione pelo menos um produto na lista."); 
@@ -433,6 +431,7 @@
                 listaProducao.push({
                     id_unico: comb.id_unico,
                     processo_id: comb.processo_id,
+                    processo_item_id: comb.processo_item_id, // Enviando o ID exato
                     orgao: comb.orgao,
                     item_id: comb.item_id,
                     nome_produto: comb.nome_produto,
@@ -471,7 +470,7 @@
             const isPdf = prod.url_imagem && prod.url_imagem.toLowerCase().split('?')[0].endsWith('.pdf');
             const imgHtml = prod.url_imagem 
                 ? (isPdf 
-                    ? `<div class="text-center border rounded bg-white p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nome_produto)}')" title="Abrir Segunda Telinha da Arte"><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></div>`
+                    ? `<div class="text-center border rounded bg-white p-1 shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nome_produto)}')"><i class="bi bi-file-earmark-pdf-fill text-danger fs-4"></i></div>`
                     : `<img src="${prod.url_imagem}" class="img-thumbnail rounded" style="width: 45px; height: 45px; object-fit: cover; cursor: pointer;" onclick="zoomImagem('${prod.url_imagem}', '${escapeHTML(prod.nome_produto)}')">`)
                 : `<div class="text-muted d-flex align-items-center justify-content-center border rounded bg-light" style="width: 45px; height: 45px;"><i class="bi bi-camera small"></i></div>`;
 
@@ -480,10 +479,11 @@
                     <td class="text-center align-middle p-1">${imgHtml}</td>
                     <td class="align-middle fw-bold">
                         <input type="hidden" name="processos_ids[]" value="${prod.processo_id}">
+                        <input type="hidden" name="processo_item_ids[]" value="${prod.processo_item_id}">
+                        <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
                         ${escapeHTML(prod.orgao)}
                     </td>
                     <td class="align-middle">
-                        <input type="hidden" name="itens_ids[]" value="${prod.item_id}">
                         ${escapeHTML(prod.nome_produto)}
                     </td>
                     <td class="align-middle text-muted small">

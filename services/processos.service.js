@@ -33,6 +33,7 @@ exports.getAllProcessos = async (busca = '') => {
             .from('registro_diario_item')
             .select(`
                 processo_id,
+                processo_item_id,
                 qtd_produzida,
                 item_id,
                 item:item_id(nome),
@@ -73,15 +74,32 @@ exports.getAllProcessos = async (busca = '') => {
                 nomeMalharia = regItem.registro.malharia.nome;
             }
 
-            // Descobre o nome do item e cruza com a tabela do processo para pegar o Tamanho e Descrição
             const nomeItemDb = regItem.item ? regItem.item.nome : 'Item Desconhecido';
-            const pItem = (p.itens || []).find(i => i.item_id === regItem.item_id);
-            const tamanho = pItem && pItem.tamanho && pItem.tamanho !== '-' ? ` - Tam: ${pItem.tamanho}` : '';
-            const descricao = pItem && pItem.descricao ? ` (${pItem.descricao})` : '';
+            
+            // LÓGICA INTELIGENTE DE TAMANHOS PARA O FABRICADO
+            const pItemExato = (p.itens || []).find(i => String(i.id) === String(regItem.processo_item_id));
+            let tamanho = '';
+            let descricao = '';
+
+            if (pItemExato) {
+                // Registros Novos (Têm o ID exato)
+                tamanho = pItemExato.tamanho && pItemExato.tamanho !== '-' ? ` - Tam: ${pItemExato.tamanho}` : '';
+                descricao = pItemExato.descricao ? ` (${pItemExato.descricao})` : '';
+            } else {
+                // Registros Antigos (Não têm o ID exato)
+                const itensMesmoId = (p.itens || []).filter(i => String(i.item_id) === String(regItem.item_id));
+                if (itensMesmoId.length === 1) {
+                    // Se o processo só pediu 1 tamanho desse produto, é seguro assumir ele.
+                    tamanho = itensMesmoId[0].tamanho && itensMesmoId[0].tamanho !== '-' ? ` - Tam: ${itensMesmoId[0].tamanho}` : '';
+                    descricao = itensMesmoId[0].descricao ? ` (${itensMesmoId[0].descricao})` : '';
+                } else {
+                    // Se o processo pediu PP, P, M e G no passado, agrupamos como "Legado" para não mentir que foi tudo PP.
+                    tamanho = ' - Tam: Legado (Misto)';
+                }
+            }
             
             const chaveProduto = `${nomeItemDb}${tamanho}${descricao}`;
 
-            // Agrupa por Malharia e depois por Produto
             if (!detalhesMalharias[nomeMalharia]) {
                 detalhesMalharias[nomeMalharia] = { total: 0, produtos: {} };
             }
@@ -94,7 +112,6 @@ exports.getAllProcessos = async (busca = '') => {
             detalhesMalharias[nomeMalharia].produtos[chaveProduto] += qtd;
         });
 
-        // Traz as URLs públicas para TODAS as imagens do processo (gerais e dos itens) para exibir no Dashboard
         const imagensComUrl = (p.imagens || []).map(img => {
             const { data: storageData } = supabase.storage.from(BUCKET_IMG).getPublicUrl(img.caminho_arquivo);
             return { ...img, url_publica: storageData.publicUrl };
@@ -113,8 +130,6 @@ exports.getProcessoById = async (id) => {
 
     const { data: itens } = await supabase.schema('malharia').from('processo_item').select('*, item:item_id(nome)').eq('processo_id', id);
     const { data: termos } = await supabase.schema('malharia').from(TABLE_TERMOS).select('*').eq('processo_id', id).order('numero_termo', { ascending: true });
-    
-    // Consulta TODAS as imagens deste processo
     const { data: imagens } = await supabase.schema('malharia').from('processo_imagem').select('*').eq('processo_id', id);
 
     const termosComUrl = (termos || []).map(t => {
@@ -122,17 +137,14 @@ exports.getProcessoById = async (id) => {
         return { ...t, url_publica: data.publicUrl };
     });
     
-    // OBTEM A URL DAS IMAGENS
     const imagensComUrl = (imagens || []).map(img => {
         const { data } = supabase.storage.from(BUCKET_IMG).getPublicUrl(img.caminho_arquivo);
         return { ...img, url_publica: data.publicUrl };
     });
 
-    // Separa imagens gerais (sem processo_item_id) das imagens de itens (com processo_item_id)
     const imagensGerais = imagensComUrl.filter(img => !img.processo_item_id);
     const imagensItens = imagensComUrl.filter(img => img.processo_item_id);
 
-    // 4. Busca total Produzido e DETALHAMENTO
     let totalFabricadoGeral = 0;
     const detalhesMalharias = {};
     
@@ -141,6 +153,7 @@ exports.getProcessoById = async (id) => {
             .schema('malharia')
             .from('registro_diario_item')
             .select(`
+                processo_item_id,
                 qtd_produzida,
                 item_id,
                 item:item_id(nome),
@@ -161,9 +174,25 @@ exports.getProcessoById = async (id) => {
                 }
                 
                 const nomeItemDb = regItem.item ? regItem.item.nome : 'Item Desconhecido';
-                const pItem = (itens || []).find(i => i.item_id === regItem.item_id);
-                const tamanho = pItem && pItem.tamanho && pItem.tamanho !== '-' ? ` - Tam: ${pItem.tamanho}` : '';
-                const descricao = pItem && pItem.descricao ? ` (${pItem.descricao})` : '';
+                
+                // LÓGICA INTELIGENTE DE TAMANHOS PARA O FABRICADO NA TELA SHOW
+                const pItemExato = (itens || []).find(i => String(i.id) === String(regItem.processo_item_id));
+                let tamanho = '';
+                let descricao = '';
+
+                if (pItemExato) {
+                    tamanho = pItemExato.tamanho && pItemExato.tamanho !== '-' ? ` - Tam: ${pItemExato.tamanho}` : '';
+                    descricao = pItemExato.descricao ? ` (${pItemExato.descricao})` : '';
+                } else {
+                    const itensMesmoId = (itens || []).filter(i => String(i.item_id) === String(regItem.item_id));
+                    if (itensMesmoId.length === 1) {
+                        tamanho = itensMesmoId[0].tamanho && itensMesmoId[0].tamanho !== '-' ? ` - Tam: ${itensMesmoId[0].tamanho}` : '';
+                        descricao = itensMesmoId[0].descricao ? ` (${itensMesmoId[0].descricao})` : '';
+                    } else {
+                        tamanho = ' - Tam: Legado (Misto)';
+                    }
+                }
+                
                 const chaveProduto = `${nomeItemDb}${tamanho}${descricao}`;
 
                 if (!detalhesMalharias[nomeMalharia]) {
@@ -182,7 +211,6 @@ exports.getProcessoById = async (id) => {
         console.error('Erro ao buscar fabricado:', err);
     }
 
-    // 5. RASTREIO DE ENTREGAS
     let transferencias = [];
     try {
         const { data } = await supabase
@@ -203,7 +231,11 @@ exports.getProcessoById = async (id) => {
     if (malharias) malharias.forEach(m => malhariasMap[String(m.id)] = m.nome);
 
     const itensComHistorico = (itens || []).map(item => {
-        const historicoDesseItem = transferencias.filter(t => String(t.item_id) === String(item.item_id));
+        // MATCH EXATO do estoque para a entrega de acordo com a linha
+        const historicoDesseItem = transferencias.filter(t => {
+            if (t.processo_item_id) return String(t.processo_item_id) === String(item.id);
+            return String(t.item_id) === String(item.item_id);
+        });
         
         let qtdPeloEstoque = 0;
         const historicoFormatado = historicoDesseItem.map(t => {
@@ -217,15 +249,13 @@ exports.getProcessoById = async (id) => {
         });
 
         const qtdManual = (item.qtd_entregue || 0) - qtdPeloEstoque;
-        
-        // Atrela as imagens que pertencem a este item específico
         const imagensDesteItem = imagensItens.filter(img => String(img.processo_item_id) === String(item.id));
 
         return {
             ...item,
             historico_entregas: historicoFormatado,
             qtd_manual: qtdManual > 0 ? qtdManual : 0,
-            imagens: imagensDesteItem // Adicionado array de imagens dentro do item
+            imagens: imagensDesteItem
         };
     });
 
@@ -233,7 +263,7 @@ exports.getProcessoById = async (id) => {
         ...processo, 
         itens: itensComHistorico, 
         termos: termosComUrl, 
-        imagens: imagensGerais, // A galeria principal recebe apenas as imagens que não têm um item específico vinculado
+        imagens: imagensGerais, 
         total_fabricado: totalFabricadoGeral,
         detalhesMalharias: detalhesMalharias 
     };
@@ -286,7 +316,6 @@ exports.deleteProcesso = async (id) => {
     return true;
 };
 
-// --- FUNÇÕES PARA TERMOS ---
 exports.createTermo = async (processoId, numeroTermo, fileBuffer, fileName, mimeType) => {
     const path = `processos/${processoId}/${Date.now()}_${fileName}`;
     const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, fileBuffer, { contentType: mimeType, upsert: false });
@@ -319,11 +348,18 @@ exports.deleteTermo = async (termoId) => {
     return true;
 };
 
-exports.registrarEntregaDeEstoque = async (processoId, itemId, quantidadeAdicional) => {
-    const { data: itens, error } = await supabase.schema('malharia').from('processo_item')
+exports.registrarEntregaDeEstoque = async (processoId, processoItemId, itemId, quantidadeAdicional) => {
+    let query = supabase.schema('malharia').from('processo_item')
         .select('id, qtd_entregue, qtd_autorizada, qtd_faltante')
-        .eq('processo_id', processoId)
-        .eq('item_id', itemId);
+        .eq('processo_id', processoId);
+        
+    if (processoItemId) {
+        query = query.eq('id', processoItemId);
+    } else {
+        query = query.eq('item_id', itemId);
+    }
+    
+    const { data: itens, error } = await query;
         
     if (error || !itens || itens.length === 0) return;
 
@@ -336,7 +372,6 @@ exports.registrarEntregaDeEstoque = async (processoId, itemId, quantidadeAdicion
         .eq('id', item.id);
 };
 
-// --- FUNÇÕES PARA IMAGENS ---
 exports.createImagem = async (processoId, itemId, fileBuffer, fileName, mimeType) => {
     const path = `processos_imgs/${processoId}/${Date.now()}_${fileName}`;
     
@@ -345,7 +380,7 @@ exports.createImagem = async (processoId, itemId, fileBuffer, fileName, mimeType
 
     const { data, error: dbError } = await supabase.schema('malharia').from('processo_imagem').insert([{
         processo_id: processoId,
-        processo_item_id: itemId || null, // Se tiver itemId, atrela ao produto; caso contrário, é null (geral)
+        processo_item_id: itemId || null, 
         nome_arquivo: fileName,
         caminho_arquivo: path,
         tipo_arquivo: mimeType

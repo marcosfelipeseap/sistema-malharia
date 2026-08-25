@@ -30,6 +30,7 @@ exports.index = async (req, res) => {
             estoque[m.id] = { id: m.id, nome: m.nome, tipo: m.tipo, processos: {}, total_geral: 0, isSede: false };
         });
 
+        // AGRUPANDO O ESTOQUE PELO ID ÚNICO DA LINHA DO PROCESSO (TAMANHO EXATO)
         todosRegistros.forEach(reg => {
             const malhariaId = reg.malharia_id;
             const malhariaPermitida = req.user.cargo === 'monitor' ? (req.user.malharias_permitidas || []).map(String).includes(String(malhariaId)) : true;
@@ -37,8 +38,11 @@ exports.index = async (req, res) => {
             if (malhariaPermitida && estoque[malhariaId] && reg.itens && reg.itens.length > 0) {
                 reg.itens.forEach(item => {
                     if (item.qtd_produzida > 0 && item.processo) {
-                        const procId = item.processo_id;
-                        const itemId = item.item_id;
+                        const procId = String(item.processo_id);
+                        const itemId = String(item.item_id);
+                        // Fallback para não quebrar registros antigos
+                        const procItemId = item.processo_item_id ? String(item.processo_item_id) : itemId; 
+
                         let desc = item.descricao || (item.item ? item.item.descricao : '');
                         let tam = item.tamanho || (item.item ? item.item.tamanho : '');
                         let nomeItem = item.item ? item.item.nome : 'Desconhecido';
@@ -49,12 +53,13 @@ exports.index = async (req, res) => {
                             estoque[malhariaId].processos[procId] = { id: procId, numero_processo: item.processo.numero_processo, orgao: item.processo.orgao, itens: {} };
                         }
 
-                        if (!estoque[malhariaId].processos[procId].itens[itemId]) {
-                            estoque[malhariaId].processos[procId].itens[itemId] = {
+                        if (!estoque[malhariaId].processos[procId].itens[procItemId]) {
+                            estoque[malhariaId].processos[procId].itens[procItemId] = {
+                                item_id: itemId, // Guardamos a referência do item principal
                                 nome: nomeItem, descricao: desc, tamanho: tam, total_produzido: 0, em_transito: 0, entregue: 0
                             };
                         }
-                        estoque[malhariaId].processos[procId].itens[itemId].total_produzido += item.qtd_produzida;
+                        estoque[malhariaId].processos[procId].itens[procItemId].total_produzido += item.qtd_produzida;
                     }
                 });
             }
@@ -66,6 +71,8 @@ exports.index = async (req, res) => {
             const malhariaId = transf.malharia_origem_id ? String(transf.malharia_origem_id) : sedeId;
             const procId = String(transf.processo_id);
             const itemId = String(transf.item_id);
+            const procItemId = transf.processo_item_id ? String(transf.processo_item_id) : itemId;
+            
             const qtd = parseInt(transf.quantidade) || 0;
             const qtdSolicitada = parseInt(transf.quantidade_solicitada) || qtd;
             const tipoDestino = transf.tipo_destino || 'sede';
@@ -74,6 +81,13 @@ exports.index = async (req, res) => {
             const pertenceAoUsuario = req.user.cargo === 'monitor' ? (malhariaId === sedeId ? false : permitidas.includes(malhariaId)) : true;
             
             transf.nome_origem = malhariaId === sedeId ? 'MALHARIA SEDE' : (malharias.find(m => String(m.id) === String(malhariaId))?.nome || 'Oficina Desconhecida');
+
+            // RESGATE DO TAMANHO EXATO DA TRANSFERÊNCIA
+            transf.tamanho_exato = transf.item?.tamanho || '-';
+            if (transf.processo_item_id && transf.processo && transf.processo.processo_item) {
+                const pi = transf.processo.processo_item.find(p => String(p.id) === String(transf.processo_item_id));
+                if (pi && pi.tamanho) transf.tamanho_exato = pi.tamanho;
+            }
 
             if (transf.status === 'pendente') {
                 transferenciasPendentes.push(transf); 
@@ -95,16 +109,16 @@ exports.index = async (req, res) => {
 
             const qtdAbaterOrigem = transf.status === 'pendente' ? qtdSolicitada : qtd;
 
-            if (estoque[malhariaId] && estoque[malhariaId].processos[procId] && estoque[malhariaId].processos[procId].itens[itemId]) {
-                estoque[malhariaId].processos[procId].itens[itemId].total_produzido -= qtdAbaterOrigem;
+            if (estoque[malhariaId] && estoque[malhariaId].processos[procId] && estoque[malhariaId].processos[procId].itens[procItemId]) {
+                estoque[malhariaId].processos[procId].itens[procItemId].total_produzido -= qtdAbaterOrigem;
                 estoque[malhariaId].total_geral -= qtdAbaterOrigem;
                 
                 if (transf.status === 'pendente') {
-                    estoque[malhariaId].processos[procId].itens[itemId].em_transito = (estoque[malhariaId].processos[procId].itens[itemId].em_transito || 0) + qtdAbaterOrigem;
+                    estoque[malhariaId].processos[procId].itens[procItemId].em_transito = (estoque[malhariaId].processos[procId].itens[procItemId].em_transito || 0) + qtdAbaterOrigem;
                 }
 
                 if (transf.status === 'aprovada' && tipoDestino === 'processo') {
-                    estoque[malhariaId].processos[procId].itens[itemId].entregue = (estoque[malhariaId].processos[procId].itens[itemId].entregue || 0) + qtd;
+                    estoque[malhariaId].processos[procId].itens[procItemId].entregue = (estoque[malhariaId].processos[procId].itens[procItemId].entregue || 0) + qtd;
                 }
             }
 
@@ -114,10 +128,16 @@ exports.index = async (req, res) => {
                 if (!estoque[sedeId].processos[procId]) {
                     estoque[sedeId].processos[procId] = { id: procId, numero_processo: transf.processo ? transf.processo.numero_processo : 'S/N', orgao: transf.processo ? transf.processo.orgao : 'Órgão Desconhecido', itens: {} };
                 }
-                if (!estoque[sedeId].processos[procId].itens[itemId]) {
-                    estoque[sedeId].processos[procId].itens[itemId] = { nome: transf.item ? transf.item.nome : 'Item Transferido', descricao: transf.item ? transf.item.descricao : '', tamanho: transf.item ? transf.item.tamanho : '', total_produzido: 0, em_transito: 0, entregue: 0 };
+                if (!estoque[sedeId].processos[procId].itens[procItemId]) {
+                    estoque[sedeId].processos[procId].itens[procItemId] = { 
+                        item_id: itemId, 
+                        nome: transf.item ? transf.item.nome : 'Item Transferido', 
+                        descricao: transf.item ? transf.item.descricao : '', 
+                        tamanho: transf.tamanho_exato, 
+                        total_produzido: 0, em_transito: 0, entregue: 0 
+                    };
                 }
-                estoque[sedeId].processos[procId].itens[itemId].total_produzido += qtd;
+                estoque[sedeId].processos[procId].itens[procItemId].total_produzido += qtd;
             }
         });
 
@@ -191,6 +211,7 @@ exports.transferir = async (req, res) => {
         const dadosInsert = itensTransferir.map(t => ({
             malharia_origem_id: origemDb,
             processo_id,
+            processo_item_id: t.processo_item_id, // ENVIANDO O ID DA LINHA DE TAMANHO
             item_id: t.item_id,
             quantidade: parseInt(t.quantidade),
             quantidade_solicitada: parseInt(t.quantidade),
@@ -205,7 +226,8 @@ exports.transferir = async (req, res) => {
             
             if (statusDaTransferencia === 'aprovada' && destinoFinal === 'processo') {
                 for (let t of dadosInsert) {
-                    await processosService.registrarEntregaDeEstoque(t.processo_id, t.item_id, t.quantidade);
+                    // ATUALIZADO: Agora enviando t.processo_item_id
+                    await processosService.registrarEntregaDeEstoque(t.processo_id, t.processo_item_id, t.item_id, t.quantidade);
                 }
             }
         }
@@ -235,7 +257,8 @@ exports.aprovar = async (req, res) => {
         });
         
         if (transf && transf.tipo_destino === 'processo') {
-            await processosService.registrarEntregaDeEstoque(transf.processo_id, transf.item_id, parseInt(quantidade_aprovada));
+            // ATUALIZADO: Agora enviando transf.processo_item_id
+            await processosService.registrarEntregaDeEstoque(transf.processo_id, transf.processo_item_id, transf.item_id, parseInt(quantidade_aprovada));
         }
 
         if (req.headers.accept && req.headers.accept.includes('application/json')) {
@@ -297,9 +320,8 @@ exports.historico = async (req, res) => {
         
         let query = supabase.schema('malharia')
             .from('transferencias_estoque')
-            .select('*, processo(*), item(*)');
+            .select('*, processo(id, numero_processo, orgao, processo_item(*)), item(*)');
 
-        // AGORA A RESTRIÇÃO É EXCLUSIVA PARA O MONITOR! O Coordenador verá tudo.
         const isMonitor = req.user.cargo === 'monitor';
         const permitidas = isMonitor ? (req.user.malharias_permitidas || []).map(String) : [];
 
@@ -346,6 +368,13 @@ exports.historico = async (req, res) => {
         transferenciasFiltradas = transferenciasFiltradas.filter(t => {
             t.nome_solicitante = mapUsuarios[t.usuario_id] || 'Usuário';
             t.nome_avaliador = t.avaliador_id ? mapUsuarios[t.avaliador_id] : '';
+
+            // RESGATE DO TAMANHO EXATO DA TRANSFERÊNCIA PARA O HISTÓRICO
+            t.tamanho_exato = t.item?.tamanho || '-';
+            if (t.processo_item_id && t.processo && t.processo.processo_item) {
+                const pi = t.processo.processo_item.find(p => String(p.id) === String(t.processo_item_id));
+                if (pi && pi.tamanho) t.tamanho_exato = pi.tamanho;
+            }
 
             if (buscaSanitizada) {
                 const numProc = (t.processo?.numero_processo || '').replace(/\./g, '').toLowerCase();
