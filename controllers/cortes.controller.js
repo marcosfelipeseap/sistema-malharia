@@ -4,6 +4,33 @@ const processosService = require('../services/processos.service');
 const itensService = require('../services/itens.service');
 const supabase = require('../config/supabaseClient');
 
+// Função paginadora para burlar o limite de 1000 linhas do Supabase
+const fetchAllFromSupabase = async (table, selectQuery) => {
+    let allRows = [];
+    let start = 0;
+    const step = 999;
+    
+    while (true) {
+        const { data, error } = await supabase.schema('malharia')
+            .from(table)
+            .select(selectQuery)
+            .order('id', { ascending: true })
+            .range(start, start + step);
+        
+        if (error) {
+            console.error(`Erro ao paginar ${table}:`, error.message);
+            break;
+        }
+        if (!data || data.length === 0) break;
+        
+        allRows = allRows.concat(data);
+        if (data.length <= step) break;
+        
+        start += step + 1;
+    }
+    return allRows;
+};
+
 exports.index = async (req, res) => {
     try {
         let malharias = await malhariasService.getAllMalharias();
@@ -15,7 +42,12 @@ exports.index = async (req, res) => {
         const todosProcessos = await processosService.getAllProcessos();
         const processosAtivos = todosProcessos.filter(p => p.situacao !== 'Concluído' && p.situacao !== 'Finalizado' && p.status !== 'DEMANDA CONCLUÍDA');
         const todosItens = await itensService.getAllItens();
-        const cortes = await cortesService.getAllCortes();
+        
+        const cortes = await fetchAllFromSupabase('cortes', '*, processo:processo_id(numero_processo, orgao, processo_item(*)), item:item_id(nome, meta_diaria)');
+        const producao = await fetchAllFromSupabase('registro_diario_item', 'id, processo_id, processo_item_id, item_id, qtd_produzida, registro:registro_id!inner(malharia_id, data_registro)');
+        
+        // 🌟 CORREÇÃO: Busca as máquinas físicas direto na tabela certa: malharia_item 🌟
+        const maquinasDaOficina = await fetchAllFromSupabase('malharia_item', 'malharia_id, maquinario_id, status');
 
         cortes.forEach(c => {
             c.tamanho_exato = '-';
@@ -34,43 +66,152 @@ exports.index = async (req, res) => {
             const produtosCortes = {};
 
             cortesMalharia.forEach(c => {
-                const itemKey = `${c.item_id}_${c.tamanho_exato}_${c.descricao_exata}`;
+                const itemKey = c.processo_item_id ? String(c.processo_item_id) : `legado_${c.processo_id}_${c.item_id}`; 
+                
                 if (!produtosCortes[itemKey]) {
                     produtosCortes[itemKey] = {
                         item_id: c.item_id,
+                        processo_id: c.processo_id,
+                        processo_item_id: c.processo_item_id,
+                        numero_processo: c.processo?.numero_processo || 'S/N',
+                        orgao: c.processo?.orgao || 'S/N',
                         nome: c.item?.nome || 'Item Desconhecido',
                         tamanho: c.tamanho_exato,
                         descricao: c.descricao_exata,
                         total_cortado: 0,
+                        total_produzido: 0,
+                        saldo: 0,
+                        primeira_data_corte: c.data_corte ? String(c.data_corte).substring(0, 10) : '2099-12-31',
                         historico: []
                     };
                 }
                 produtosCortes[itemKey].total_cortado += c.quantidade;
+                
+                const dataAtualLoop = c.data_corte ? String(c.data_corte).substring(0, 10) : '2099-12-31';
+                if (dataAtualLoop < produtosCortes[itemKey].primeira_data_corte) {
+                    produtosCortes[itemKey].primeira_data_corte = dataAtualLoop;
+                }
+
                 c.numero_processo = c.processo?.numero_processo || 'S/N';
                 produtosCortes[itemKey].historico.push(c);
             });
 
+            let totalSaldoMalharia = 0;
+            let somaMetasEstoque = 0;
+            let produtosDetalhados = [];
+            
+            // Pega as máquinas físicas desta oficina que estão disponíveis
+            const maquinasFisicasOficina = maquinasDaOficina.filter(maq => String(maq.malharia_id) === String(m.id) && maq.status !== 'indisponivel');
+            const qtdMaquinas = maquinasFisicasOficina.length;
+
+            Object.values(produtosCortes).forEach(prod => {
+                prod.historico.sort((a, b) => new Date(b.data_corte) - new Date(a.data_corte));
+                const dataCorteBaseStr = prod.primeira_data_corte;
+
+                const consumido = producao.filter(p => {
+                    if (!p.registro) return false;
+                    if (String(p.registro.malharia_id) !== String(m.id)) return false;
+                    
+                    let isMesmoProduto = false;
+                    const pPiId = String(p.processo_item_id || '').trim();
+                    const prodPiId = String(prod.processo_item_id || '').trim();
+                    
+                    if (pPiId && pPiId !== 'undefined' && pPiId !== 'null' && prodPiId && prodPiId !== 'undefined' && prodPiId !== 'null') {
+                        isMesmoProduto = (pPiId === prodPiId);
+                    } else {
+                        isMesmoProduto = (String(p.processo_id) === String(prod.processo_id) && String(p.item_id) === String(prod.item_id));
+                    }
+                    if (!isMesmoProduto) return false;
+                    
+                    const dataProdStr = String(p.registro.data_registro || '1970-01-01').substring(0, 10);
+                    return dataProdStr >= dataCorteBaseStr; 
+                }).reduce((sum, p) => sum + (parseInt(p.qtd_produzida) || 0), 0);
+
+                prod.total_produzido = consumido;
+                prod.saldo = prod.total_cortado - consumido;
+                if (prod.saldo < 0) prod.saldo = 0; 
+                
+                totalSaldoMalharia += prod.saldo;
+
+                if (prod.saldo > 0) {
+                    const itemRef = todosItens.find(i => String(i.id) === String(prod.item_id));
+                    let metaItem = 100; // Padrão se nada for encontrado
+                    let atendeMaquina = false;
+
+                    if (itemRef) {
+                        metaItem = parseFloat(itemRef.meta_diaria) || 100;
+                        
+                        // Verifica se o produto tem máquina exigida E se a oficina a possui fisicamente
+                        if (itemRef.maquinas && itemRef.maquinas.length > 0) {
+                            const maquinasDoProduto = itemRef.maquinas.map(req => String(req.maquinario_id));
+                            const maquinasDaOficinaIds = maquinasFisicasOficina.map(fis => String(fis.maquinario_id));
+                            
+                            // A oficina tem pelo menos UMA das máquinas que o produto pede?
+                            atendeMaquina = maquinasDoProduto.some(reqId => maquinasDaOficinaIds.includes(reqId));
+                        } else {
+                            // Produto não exige máquina (feito à mão ou genérico), então oficina atende automaticamente
+                            atendeMaquina = true;
+                        }
+                    }
+
+                    // Se a oficina não atende o maquinário, não calculamos a meta desse produto para não inflar irrealmente
+                    if (atendeMaquina) {
+                        somaMetasEstoque += metaItem;
+                        produtosDetalhados.push({ nome: prod.nome, tamanho: prod.tamanho, saldo: prod.saldo, meta: metaItem });
+                    }
+                }
+            });
+
+            // ==========================================
+            // MÁGICA DE ANÁLISE DE CAPACIDADE CORRIGIDA
+            // ==========================================
+            const mediaMeta = produtosDetalhados.length > 0 ? (somaMetasEstoque / produtosDetalhados.length) : 100;
+            const maquinasCalculo = qtdMaquinas > 0 ? qtdMaquinas : 1; 
+            
+            const capacidadeDiaria = maquinasCalculo * mediaMeta;
+            const capacidadeSemanal = capacidadeDiaria * 5; 
+            
+            const percentual = capacidadeSemanal > 0 ? (totalSaldoMalharia / capacidadeSemanal) * 100 : 0;
+
+            let statusEstoque = 'sem_estoque';
+            if (totalSaldoMalharia > 0 && percentual < 30) statusEstoque = 'baixo';
+            else if (totalSaldoMalharia > 0 && percentual >= 30) statusEstoque = 'saudavel';
+
             return {
-                id: m.id, nome: m.nome, tipo: m.tipo,
-                total_geral: cortesMalharia.reduce((acc, c) => acc + c.quantidade, 0),
+                id: m.id, 
+                nome: m.nome, 
+                tipo: m.tipo,
+                total_saldo: totalSaldoMalharia,
+                status_estoque: statusEstoque,
+                calculo: {
+                    qtd_maquinas: qtdMaquinas,
+                    media_meta: mediaMeta.toFixed(0),
+                    capacidade_diaria: capacidadeDiaria.toFixed(0), 
+                    capacidade_semanal: capacidadeSemanal.toFixed(0),
+                    percentual: percentual.toFixed(1),
+                    produtos: produtosDetalhados
+                },
                 produtos: Object.values(produtosCortes)
             };
         });
 
         res.render('cortes/index', {
-            title: 'Entradas de Cortes', abaAtual: 'entradas',
-            malhariasData, malharias,
+            title: 'Controle de Cortes',
+            malhariasData, 
+            malharias,
             processosAtivosJSON: JSON.stringify(processosAtivos),
             todosItensJSON: JSON.stringify(todosItens)
         });
     } catch(error) {
-        console.error(error); res.redirect('/');
+        console.error("Erro no Controller de Cortes:", error);
+        res.redirect('/');
     }
 };
 
 exports.store = async (req, res) => {
     try {
         const { malharia_id, data_corte, processos_ids, processo_item_ids, itens_ids, quantidades } = req.body;
+        
         if (!req.file) return res.send("<script>alert('O comprovante em PDF é obrigatório.'); window.location.href='/cortes';</script>");
         if (!processos_ids) return res.send("<script>alert('Nenhum produto foi adicionado à lista.'); window.location.href='/cortes';</script>");
 
@@ -99,7 +240,8 @@ exports.store = async (req, res) => {
         }
         res.redirect('/cortes');
     } catch (error) {
-        console.error(error); res.send(`<script>alert('Erro: ${error.message}'); window.location.href='/cortes';</script>`);
+        console.error(error); 
+        res.send(`<script>alert('Erro: ${error.message}'); window.location.href='/cortes';</script>`);
     }
 };
 
@@ -114,7 +256,6 @@ exports.update = async (req, res) => {
             const filePath = `comprovantes/${fileName}`;
             const { error: uploadError } = await supabase.storage.from('comprovantes-cortes').upload(filePath, req.file.buffer, { contentType: 'application/pdf', upsert: false });
             if (uploadError) throw uploadError;
-
             const { data: publicUrlData } = supabase.storage.from('comprovantes-cortes').getPublicUrl(filePath);
             dadosUpdate.documento_comprovante = publicUrlData.publicUrl;
         }
@@ -127,198 +268,8 @@ exports.update = async (req, res) => {
 };
 
 exports.destroy = async (req, res) => {
-    try { await cortesService.deleteCorte(req.params.id); res.redirect('/cortes'); } 
-    catch (error) { res.redirect('/cortes'); }
-};
-
-// ==========================================
-// MÓDULO DE CONSUMO DE CORTES
-// ==========================================
-
-exports.consumo = async (req, res) => {
-    try {
-        const dataBusca = req.query.data || new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }).split(',')[0].split('/').reverse().join('-');
-        
-        let malharias = await malhariasService.getAllMalharias();
-        if (req.user.cargo === 'monitor') {
-            const permitidas = (req.user.malharias_permitidas || []).map(String);
-            malharias = malharias.filter(m => permitidas.includes(String(m.id)));
-        }
-
-        const todosCortes = await cortesService.getAllCortes();
-        const todasBaixas = await cortesService.getAllBaixas();
-
-        // 1. Calcula o Saldo de Cortes Disponível
-        let estoqueDisponivel = {};
-        
-        todosCortes.forEach(c => {
-            const mId = String(c.malharia_id);
-            const piId = String(c.processo_item_id);
-            
-            if (!estoqueDisponivel[mId]) estoqueDisponivel[mId] = {};
-            if (!estoqueDisponivel[mId][piId]) {
-                const piInfo = c.processo?.processo_item?.find(pi => String(pi.id) === piId);
-                estoqueDisponivel[mId][piId] = {
-                    processo_item_id: piId, processo_id: c.processo_id,
-                    numero_processo: c.processo?.numero_processo || 'S/N', orgao: c.processo?.orgao || '',
-                    nome_produto: c.item?.nome || 'Produto', tamanho: piInfo?.tamanho || '-',
-                    descricao: piInfo?.descricao || '', total_entradas: 0, total_saidas: 0, disponivel: 0
-                };
-            }
-            estoqueDisponivel[mId][piId].total_entradas += c.quantidade;
-        });
-
-        todasBaixas.forEach(b => {
-            if (b.status !== 'rejeitada') {
-                const mId = String(b.malharia_id);
-                const piIdOrigem = String(b.processo_item_origem_id);
-                if (estoqueDisponivel[mId] && estoqueDisponivel[mId][piIdOrigem]) {
-                    estoqueDisponivel[mId][piIdOrigem].total_saidas += b.quantidade;
-                }
-            }
-        });
-
-        Object.keys(estoqueDisponivel).forEach(mId => {
-            Object.keys(estoqueDisponivel[mId]).forEach(piId => {
-                const est = estoqueDisponivel[mId][piId];
-                est.disponivel = est.total_entradas - est.total_saidas;
-                if (est.disponivel <= 0) delete estoqueDisponivel[mId][piId];
-            });
-        });
-
-        // 2. Baixas do dia
-        const baixasDoDia = todasBaixas.filter(b => {
-            const permitida = req.user.cargo === 'monitor' ? malharias.map(m=>String(m.id)).includes(String(b.malharia_id)) : true;
-            return b.data_baixa === dataBusca && permitida;
-        });
-
-        // 3. Resumo pro Calendário
-        const resumoCalendario = todasBaixas.map(b => b.data_baixa);
-
-        const todosProcessos = await processosService.getAllProcessos();
-        const processosAtivos = todosProcessos.filter(p => p.situacao !== 'Concluído' && p.situacao !== 'Finalizado' && p.status !== 'DEMANDA CONCLUÍDA');
-
-        res.render('cortes/consumo', {
-            title: 'Consumo de Cortes', abaAtual: 'consumo',
-            dataBusca, malharias,
-            estoqueDisponivelJSON: JSON.stringify(estoqueDisponivel),
-            processosAtivosJSON: JSON.stringify(processosAtivos),
-            baixasDoDia,
-            resumoCalendarioJSON: JSON.stringify(resumoCalendario)
-        });
-    } catch(error) {
-        console.error(error); res.redirect('/');
-    }
-};
-
-// FUNÇÃO DE AUTO-PREENCHIMENTO VIA PRODUÇÃO DIÁRIA
-exports.syncConsumo = async (req, res) => {
-    try {
-        const { data_baixa } = req.body;
-
-        // Puxa tudo que foi costurado neste dia nas oficinas
-        const { data: itensProduzidos, error: errProd } = await supabase
-            .schema('malharia')
-            .from('registro_diario_item')
-            .select(`
-                qtd_produzida,
-                processo_item_id,
-                registro:registro_id ( id, data_registro, malharia_id )
-            `);
-
-        if (errProd) throw errProd;
-
-        // Filtra só o dia selecionado
-        const producaoDoDia = itensProduzidos.filter(item => {
-            if (!item.registro || !item.processo_item_id) return false;
-            const dataReg = item.registro.data_registro || '';
-            return dataReg.startsWith(data_baixa);
-        });
-
-        // Evita duplicatas buscando o que já foi consumido hoje
-        const { data: baixasExistentes } = await supabase
-            .schema('malharia')
-            .from('cortes_baixas')
-            .select('processo_item_origem_id, malharia_id')
-            .eq('data_baixa', data_baixa);
-
-        // Cria a baixa automática
-        for (const prod of producaoDoDia) {
-            const malhariaId = prod.registro.malharia_id;
-            const piId = prod.processo_item_id;
-            const qtd = prod.qtd_produzida;
-
-            const jaBaixado = baixasExistentes?.find(b => String(b.processo_item_origem_id) === String(piId) && String(b.malharia_id) === String(malhariaId));
-
-            if (!jaBaixado && qtd > 0) {
-                await cortesService.createBaixa({
-                    malharia_id: malhariaId,
-                    data_baixa: data_baixa,
-                    processo_item_origem_id: piId,
-                    processo_item_destino_id: piId,
-                    quantidade: parseInt(qtd),
-                    usuario_id: req.user.id,
-                    status: req.user.nivel >= 3 ? 'aprovada' : 'pendente',
-                    avaliador_id: req.user.nivel >= 3 ? req.user.id : null,
-                    data_avaliacao: req.user.nivel >= 3 ? new Date() : null
-                });
-            }
-        }
-
-        res.redirect(`/cortes/consumo?data=${data_baixa}`);
-    } catch (error) {
-        console.error("Erro no auto-preenchimento:", error);
-        res.send(`<script>alert('Erro ao sincronizar: ${error.message}'); window.location.href='/cortes/consumo?data=${req.body.data_baixa}';</script>`);
-    }
-};
-
-exports.storeBaixa = async (req, res) => {
-    try {
-        const { malharia_id, data_baixa, processo_item_origem_id, processo_item_destino_id, quantidade } = req.body;
-        const isGestor = req.user.nivel >= 3;
-
-        await cortesService.createBaixa({
-            malharia_id, data_baixa, processo_item_origem_id, processo_item_destino_id,
-            quantidade: parseInt(quantidade), usuario_id: req.user.id,
-            status: isGestor ? 'aprovada' : 'pendente',
-            avaliador_id: isGestor ? req.user.id : null, data_avaliacao: isGestor ? new Date() : null
-        });
-
-        res.redirect(`/cortes/consumo?data=${data_baixa}`);
-    } catch (error) {
-        res.send(`<script>alert('Erro ao registrar baixa: ${error.message}'); window.location.href='/cortes/consumo';</script>`);
-    }
-};
-
-exports.updateBaixa = async (req, res) => {
-    try {
-        const { quantidade, data_baixa, processo_item_destino_id } = req.body;
-        await cortesService.updateBaixaFull(req.params.id, { 
-            quantidade: parseInt(quantidade), 
-            data_baixa,
-            processo_item_destino_id 
-        });
-        res.redirect(`/cortes/consumo?data=${data_baixa}`);
-    } catch (error) { res.redirect('/cortes/consumo'); }
-};
-
-exports.aprovarBaixa = async (req, res) => {
-    try {
-        await cortesService.updateBaixaStatus(req.params.id, 'aprovada', req.user.id);
-        res.redirect('back');
-    } catch (error) { res.redirect('/cortes/consumo'); }
-};
-
-exports.rejeitarBaixa = async (req, res) => {
-    try {
-        await cortesService.updateBaixaStatus(req.params.id, 'rejeitada', req.user.id);
-        res.redirect('back');
-    } catch (error) { res.redirect('/cortes/consumo'); }
-};
-
-exports.destroyBaixa = async (req, res) => {
-    try {
-        await cortesService.deleteBaixa(req.params.id);
-        res.redirect('back');
-    } catch (error) { res.redirect('/cortes/consumo'); }
+    try { 
+        await cortesService.deleteCorte(req.params.id); 
+        res.redirect('/cortes'); 
+    } catch (error) { res.redirect('/cortes'); }
 };

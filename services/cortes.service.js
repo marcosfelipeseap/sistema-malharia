@@ -1,6 +1,5 @@
 const supabase = require('../config/supabaseClient');
 
-// --- SERVIÇOS DE ENTRADA DE CORTES ---
 exports.getAllCortes = async () => {
     const { data, error } = await supabase
         .schema('malharia')
@@ -44,51 +43,6 @@ exports.deleteCorte = async (id) => {
     }
 
     const { error } = await supabase.schema('malharia').from('cortes').delete().eq('id', id);
-    if (error) throw error;
-    return true;
-};
-
-// --- SERVIÇOS DE CONSUMO / QUEIMA DE CORTES ---
-exports.getAllBaixas = async () => {
-    const { data, error } = await supabase
-        .schema('malharia')
-        .from('cortes_baixas')
-        .select(`
-            *,
-            malharia:malharia_id(nome),
-            item_origem:processo_item_origem_id(tamanho, descricao, item_id, processo_id, item:item_id(nome), processo:processo_id(numero_processo, orgao)),
-            item_destino:processo_item_destino_id(tamanho, descricao, item_id, processo_id, item:item_id(nome), processo:processo_id(numero_processo, orgao)),
-            solicitante:usuario_id(nome),
-            avaliador:avaliador_id(nome)
-        `)
-        .order('data_baixa', { ascending: false });
-
-    if (error) throw error;
-    return data || [];
-};
-
-exports.createBaixa = async (dados) => {
-    const { data, error } = await supabase.schema('malharia').from('cortes_baixas').insert([dados]).select().single();
-    if (error) throw error;
-    return data;
-};
-
-exports.updateBaixaStatus = async (id, status, avaliadorId) => {
-    const { data, error } = await supabase.schema('malharia').from('cortes_baixas')
-        .update({ status, avaliador_id: avaliadorId, data_avaliacao: new Date() })
-        .eq('id', id).select().single();
-    if (error) throw error;
-    return data;
-};
-
-exports.updateBaixaFull = async (id, dados) => {
-    const { data, error } = await supabase.schema('malharia').from('cortes_baixas').update(dados).eq('id', id).select().single();
-    if (error) throw error;
-    return data;
-};
-
-exports.deleteBaixa = async (id) => {
-    const { error } = await supabase.schema('malharia').from('cortes_baixas').delete().eq('id', id);
     if (error) throw error;
     return true;
 };
