@@ -4,22 +4,25 @@ const malhariasService = require('../services/malharias.service');
 const itensService = require('../services/itens.service');
 
 function validarHorarioBrasilia(dataEnviada) {
-    const agStr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
-    const agoraBr = new Date(agStr);
+    // Pega a hora atual exata do servidor em Brasília
+    const dataAtualBr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+    const dataHoraObj = new Date(dataAtualBr);
     
-    const ano = agoraBr.getFullYear();
-    const mes = String(agoraBr.getMonth() + 1).padStart(2, '0');
-    const dia = String(agoraBr.getDate()).padStart(2, '0');
-    const hojeBr = `${ano}-${mes}-${dia}`;
+    const anoH = dataHoraObj.getFullYear();
+    const mesH = String(dataHoraObj.getMonth() + 1).padStart(2, '0');
+    const diaH = String(dataHoraObj.getDate()).padStart(2, '0');
+    const hojeBr = `${anoH}-${mesH}-${diaH}`;
     
-    const ontemObj = new Date(agoraBr);
-    ontemObj.setDate(ontemObj.getDate() - 1);
-    const ontemAno = ontemObj.getFullYear();
-    const ontemMes = String(ontemObj.getMonth() + 1).padStart(2, '0');
-    const ontemDia = String(ontemObj.getDate()).padStart(2, '0');
-    const ontemBr = `${ontemAno}-${ontemMes}-${ontemDia}`;
+    // Calcula ontem matematicamente em milissegundos para evitar o bug do setDate do JS
+    const ontemMilissegundos = dataHoraObj.getTime() - (24 * 60 * 60 * 1000);
+    const ontemObj = new Date(ontemMilissegundos);
     
-    const horaAtual = agoraBr.getHours();
+    const anoO = ontemObj.getFullYear();
+    const mesO = String(ontemObj.getMonth() + 1).padStart(2, '0');
+    const diaO = String(ontemObj.getDate()).padStart(2, '0');
+    const ontemBr = `${anoO}-${mesO}-${diaO}`;
+    
+    const horaAtual = dataHoraObj.getHours();
 
     if (dataEnviada === hojeBr) {
         return true;

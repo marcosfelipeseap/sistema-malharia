@@ -10,6 +10,7 @@ const itensRoutes = require('./itens.routes');
 const registrosRoutes = require('./registros.routes');
 const maquinariosRoutes = require('./maquinarios.routes');
 const estoqueRoutes = require('./estoque.routes'); 
+const cortesRoutes = require('./cortes.routes'); // 1. IMPORTAÇÃO DA ROTA DE CORTES AQUI
 
 // Protegendo as rotas da malharia contra acessos do 'controlador'
 router.use('/processos', requireAuth, requireMalhariaAccess, processosRoutes);
@@ -19,6 +20,7 @@ router.use('/itens', requireAuth, requireMalhariaAccess, itensRoutes);
 router.use('/registros', requireAuth, requireMalhariaAccess, registrosRoutes);
 router.use('/maquinarios', requireAuth, requireMalhariaAccess, maquinariosRoutes);
 router.use('/estoque', requireAuth, requireMalhariaAccess, estoqueRoutes); 
+router.use('/cortes', requireAuth, requireMalhariaAccess, cortesRoutes); // 2. REGISTRO DA ROTA AQUI
 
 // Rota Principal
 router.get('/', requireAuth, (req, res) => {
