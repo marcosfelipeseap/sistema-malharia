@@ -12,7 +12,7 @@ exports.index = async (req, res) => {
             .from('usuarios')
             .select('id, nome, username, email, telefone, avatar')
             .eq('cargo', 'monitor');
-            
+
         const { data: vinculos } = await supabase.schema('malharia')
             .from('usuario_malharia')
             .select('usuario_id, malharia_id');
@@ -23,11 +23,11 @@ exports.index = async (req, res) => {
             const idsMonitores = vinculos 
                 ? vinculos.filter(v => String(v.malharia_id) === mId).map(v => String(v.usuario_id)) 
                 : [];
-                
+
             m.monitores = monitores 
                 ? monitores.filter(mon => idsMonitores.includes(String(mon.id))) 
                 : [];
-                
+
             return m;
         });
 
@@ -48,7 +48,7 @@ exports.create = async (req, res) => {
         const unidades = await unidadesService.getAllUnidades();
         let maquinarios = [];
         try { maquinarios = await maquinariosService.getAllMaquinas(); } catch (e) { }
-        
+
         res.render('malharias/create', { title: 'Nova Malharia', unidades: unidades || [], maquinarios: maquinarios || [] });
     } catch (error) {
         res.redirect('/malharias');
@@ -58,7 +58,7 @@ exports.create = async (req, res) => {
 exports.store = async (req, res) => {
     try {
         const { nome, unidade_id, responsavel, num_internos, num_internos_remunerados, horario_limite_planejamento, itensJSON } = req.body;
-        
+
         if (parseInt(num_internos_remunerados) > parseInt(num_internos)) {
             throw new Error("O número de internos remunerados não pode ser maior que o total de internos.");
         }
