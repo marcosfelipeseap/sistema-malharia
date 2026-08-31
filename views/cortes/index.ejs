@@ -181,7 +181,7 @@
                                                 <span class="fw-bold fs-5 <%= item.saldo > 0 ? 'text-primary' : 'text-danger' %>"><%= item.saldo %></span>
                                             </div>
                                         </div>
-                                        <button class="btn btn-sm btn-outline-secondary w-100 fw-bold shadow-sm mt-2" onclick="abrirHistoricoModal('modalHistorico-<%= item.processo_item_id %>')">
+                                        <button class="btn btn-sm btn-outline-secondary w-100 fw-bold shadow-sm mt-2" onclick="abrirHistoricoModal('modalHistorico-<%= malharia.id %>-<%= item.processo_item_id %>')">
                                             <i class="bi bi-clock-history"></i> Histórico de Envios
                                         </button>
                                     </div>
@@ -190,7 +190,7 @@
                         </div>
 
                         <!-- Modal Histórico de Envios -->
-                        <div class="modal fade" id="modalHistorico-<%= item.processo_item_id %>" tabindex="-1" aria-hidden="true">
+                        <div class="modal fade" id="modalHistorico-<%= malharia.id %>-<%= item.processo_item_id %>" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content border-0 shadow">
                                     <div class="modal-header bg-light">
@@ -465,7 +465,7 @@
         document.getElementById('analiseSaldo').innerText = saldo;
         document.getElementById('analiseMaquinas').innerText = calc.qtd_maquinas;
         document.getElementById('analiseMediaMeta').innerText = `${calc.media_meta} pçs`;
-        document.getElementById('analiseDiaria').innerText = `${calc.capacidade_diaria} pçs`; // CORREÇÃO: Agora exibe perfeitamente o valor calculado
+        document.getElementById('analiseDiaria').innerText = `${calc.capacidade_diaria} pçs`;
         document.getElementById('analiseSemanal').innerText = `${calc.capacidade_semanal} pçs`;
         
         const badge = document.getElementById('analisePercentualBadge');
