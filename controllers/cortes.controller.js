@@ -5,17 +5,24 @@ const itensService = require('../services/itens.service');
 const supabase = require('../config/supabaseClient');
 
 // Função paginadora para burlar o limite de 1000 linhas do Supabase
-const fetchAllFromSupabase = async (table, selectQuery) => {
+const fetchAllFromSupabase = async (table, selectQuery, inFilter = null) => {
     let allRows = [];
     let start = 0;
     const step = 999;
     
     while (true) {
-        const { data, error } = await supabase.schema('malharia')
+        let query = supabase.schema('malharia')
             .from(table)
             .select(selectQuery)
             .order('id', { ascending: true })
             .range(start, start + step);
+        
+        // Aplica o filtro direto na query do Supabase para otimizar a resposta
+        if (inFilter && inFilter.values.length > 0) {
+            query = query.in(inFilter.column, inFilter.values);
+        }
+        
+        const { data, error } = await query;
         
         if (error) {
             console.error(`Erro ao paginar ${table}:`, error.message);
@@ -34,19 +41,24 @@ const fetchAllFromSupabase = async (table, selectQuery) => {
 exports.index = async (req, res) => {
     try {
         let malharias = await malhariasService.getAllMalharias();
+        let permitidasFilter = null;
+
+        // Filtra as malharias restritas caso o usuário seja apenas monitor
         if (req.user.cargo === 'monitor') {
             const permitidas = (req.user.malharias_permitidas || []).map(String);
             malharias = malharias.filter(m => permitidas.includes(String(m.id)));
+            permitidasFilter = { column: 'malharia_id', values: permitidas };
         }
 
         const todosProcessos = await processosService.getAllProcessos();
         const processosAtivos = todosProcessos.filter(p => p.situacao !== 'Concluído' && p.situacao !== 'Finalizado' && p.status !== 'DEMANDA CONCLUÍDA');
         const todosItens = await itensService.getAllItens();
         
-        const cortes = await fetchAllFromSupabase('cortes', '*, processo:processo_id(numero_processo, orgao, processo_item(*)), item:item_id(nome, meta_diaria)');
+        // Passa o filtro de segurança para o banco trazer apenas os cortes permitidos
+        const cortes = await fetchAllFromSupabase('cortes', '*, processo:processo_id(numero_processo, orgao, processo_item(*)), item:item_id(nome, meta_diaria)', permitidasFilter);
         const producao = await fetchAllFromSupabase('registro_diario_item', 'id, processo_id, processo_item_id, item_id, qtd_produzida, registro:registro_id!inner(malharia_id, data_registro)');
         
-        // 🌟 CORREÇÃO: Busca as máquinas físicas direto na tabela certa: malharia_item 🌟
+        // Busca as máquinas físicas direto na tabela malharia_item
         const maquinasDaOficina = await fetchAllFromSupabase('malharia_item', 'malharia_id, maquinario_id, status');
 
         cortes.forEach(c => {
@@ -162,9 +174,7 @@ exports.index = async (req, res) => {
                 }
             });
 
-            // ==========================================
-            // MÁGICA DE ANÁLISE DE CAPACIDADE CORRIGIDA
-            // ==========================================
+            // Análise de Capacidade
             const mediaMeta = produtosDetalhados.length > 0 ? (somaMetasEstoque / produtosDetalhados.length) : 100;
             const maquinasCalculo = qtdMaquinas > 0 ? qtdMaquinas : 1; 
             
@@ -217,7 +227,7 @@ exports.store = async (req, res) => {
 
         const fileExt = 'pdf';
         const fileName = `corte_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `comprovantes/${fileName}`;
+        const filePath = fileName; // Upload direto na raiz do bucket
 
         const { error: uploadError } = await supabase.storage.from('comprovantes-cortes').upload(filePath, req.file.buffer, { contentType: 'application/pdf', upsert: false });
         if (uploadError) throw uploadError;
@@ -253,7 +263,7 @@ exports.update = async (req, res) => {
 
         if (req.file) {
             const fileName = `corte_edit_${Date.now()}_${Math.random().toString(36).substring(7)}.pdf`;
-            const filePath = `comprovantes/${fileName}`;
+            const filePath = fileName; // Upload direto na raiz do bucket
             const { error: uploadError } = await supabase.storage.from('comprovantes-cortes').upload(filePath, req.file.buffer, { contentType: 'application/pdf', upsert: false });
             if (uploadError) throw uploadError;
             const { data: publicUrlData } = supabase.storage.from('comprovantes-cortes').getPublicUrl(filePath);

@@ -1,15 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const cortesController = require('../controllers/cortes.controller');
-const multer = require('multer');
+const { requireAuth, requireRole, requireMalhariaAccess } = require('../middlewares/auth.middleware');
+const upload = require('../config/upload.config');
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+// Proteção global da rota: Exige login e nível mínimo de Monitor (Nível 1)
+router.use(requireAuth);
+router.use(requireRole('monitor'));
+// O middleware abaixo bloqueia o cargo "controlador" que também possui Nível 1, permitindo apenas monitores, coordenadores e gestores
+router.use(requireMalhariaAccess);
 
-// Rotas de ENTRADA de Cortes (Envio da Sede para Oficina)
 router.get('/', cortesController.index);
-router.post('/store', upload.single('documento_comprovante'), cortesController.store);
-router.post('/:id/update', upload.single('documento_comprovante'), cortesController.update);
-router.post('/:id/delete', cortesController.destroy);
+
+// Ações de criação, edição e exclusão restritas ao Gestor (Nível 3) ou superior
+router.post('/store', requireRole('gestor'), upload.single('documento_comprovante'), cortesController.store);
+router.post('/:id/update', requireRole('gestor'), upload.single('documento_comprovante'), cortesController.update);
+router.post('/:id/delete', requireRole('gestor'), cortesController.destroy);
 
 module.exports = router;
