@@ -18,6 +18,15 @@
             }
         });
     }
+
+    // Define o nível do usuário logado para controle de botões na view
+    const nivelUsuarioLogado = typeof user !== 'undefined' ? user.nivel : 0;
+    
+    // Função auxiliar para descobrir o nível do cargo do card a ser renderizado
+    const getNivelByCargo = (cargo) => {
+        const cargosNiveis = { 'monitor': 1, 'controlador': 1, 'coordenador': 2, 'gestor': 3, 'admin': 4 };
+        return cargosNiveis[cargo] || 0;
+    };
 %>
 
 <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
@@ -36,8 +45,9 @@
                     <select id="selectCargo" class="form-select">
                         <option value="">Todos os Cargos</option>
                         <option value="admin">Admin</option>
-                        <option value="coordenador">Coordenador</option>
                         <option value="gestor">Gestor</option>
+                        <option value="coordenador">Coordenador</option>
+                        <option value="controlador">Controlador</option>
                         <option value="monitor">Monitor</option>
                     </select>
                 </div>
@@ -131,16 +141,25 @@
                                 </div>
                             </div>
                             
-                            <div class="card-footer bg-light border-top p-3 d-flex gap-2">
-                                <a href="/usuarios/<%= usuario.id %>/editar" class="btn btn-sm btn-outline-secondary flex-grow-1 fw-semibold">
-                                    <i class="bi bi-pencil-square me-1"></i>Editar
-                                </a>
-                                <form action="/usuarios/<%= usuario.id %>/excluir" method="POST" class="flex-grow-1" onsubmit="return confirm('Excluir <%= usuario.nome %> permanentemente do sistema?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger w-100 fw-semibold">
-                                        <i class="bi bi-trash3 me-1"></i>Excluir
-                                    </button>
-                                </form>
-                            </div>
+                            <!-- RESTRIÇÃO DE AÇÕES NO CARD ATIVO -->
+                            <% if (nivelUsuarioLogado > getNivelByCargo(usuario.cargo) || user.id === usuario.id || nivelUsuarioLogado === 4) { %>
+                                <div class="card-footer bg-light border-top p-3 d-flex gap-2">
+                                    <a href="/usuarios/<%= usuario.id %>/editar" class="btn btn-sm btn-outline-secondary flex-grow-1 fw-semibold">
+                                        <i class="bi bi-pencil-square me-1"></i>Editar
+                                    </a>
+                                    <% if (user.id !== usuario.id) { %>
+                                        <form action="/usuarios/<%= usuario.id %>/excluir" method="POST" class="flex-grow-1" onsubmit="return confirm('Excluir <%= usuario.nome %> permanentemente do sistema?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100 fw-semibold">
+                                                <i class="bi bi-trash3 me-1"></i>Excluir
+                                            </button>
+                                        </form>
+                                    <% } %>
+                                </div>
+                            <% } else { %>
+                                <div class="card-footer bg-light border-top p-2 text-center text-muted small fst-italic">
+                                    <i class="bi bi-shield-lock me-1"></i>Ações Restritas
+                                </div>
+                            <% } %>
                         </div>
                     </div>
                 <% }); %>
@@ -209,6 +228,8 @@
                                         </div>
                                     </div>
                                 </div>
+                                
+                                <!-- AÇÕES DO CARD PENDENTE (Gestor e Admin podem aprovar) -->
                                 <div class="d-flex gap-2 mt-2 mt-md-0">
                                     <a href="/usuarios/<%= usuario.id %>/editar" class="btn btn-success px-4 fw-semibold shadow-sm text-nowrap">
                                         <i class="bi bi-check-circle me-1"></i> Definir Função & Aprovar
@@ -269,7 +290,6 @@
 </div>
 
 <script>
-    // Função para abrir o modal com a foto grande
     function ampliarFoto(base64Image) {
         document.getElementById('imgFotoAmpliada').src = base64Image;
         new bootstrap.Modal(document.getElementById('modalAmpliarFoto')).show();

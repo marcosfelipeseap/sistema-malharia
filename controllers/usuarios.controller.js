@@ -7,7 +7,6 @@ const bcrypt = require('bcryptjs');
 
 exports.getPerfil = async (req, res) => {
     try {
-        // Busca os dados diretamente e frescos do banco de dados (trazendo o avatar completo)
         const { data: perfilDb, error } = await supabase.schema('malharia')
             .from('usuarios')
             .select('*')
@@ -16,7 +15,6 @@ exports.getPerfil = async (req, res) => {
 
         if (error) throw error;
 
-        // Passamos os dados com o nome "perfil" para a tela
         res.render('usuarios/perfil', { perfil: perfilDb, error: null, success: null });
     } catch (err) {
         console.error("Erro ao carregar perfil:", err);
@@ -26,7 +24,6 @@ exports.getPerfil = async (req, res) => {
 
 exports.updatePerfil = async (req, res) => {
     try {
-        // Puxa o perfil logo no início para usar em caso de erro nas validações
         const { data: perfilAtual } = await supabase.schema('malharia')
             .from('usuarios')
             .select('*')
@@ -36,7 +33,6 @@ exports.updatePerfil = async (req, res) => {
         const { nome, username, email, telefone, senha_atual, nova_senha, confirmar_senha, avatar } = req.body;
         const updates = { nome, username, email, telefone };
 
-        // Lógica para salvar ou remover o avatar
         if (avatar) {
             if (avatar === 'remove') {
                 updates.avatar = null;
@@ -45,7 +41,6 @@ exports.updatePerfil = async (req, res) => {
             }
         }
 
-        // Lógica de alteração de senha
         if (nova_senha && nova_senha.trim() !== '') {
             if (nova_senha !== confirmar_senha) {
                 return res.render('usuarios/perfil', { perfil: perfilAtual, error: 'A nova senha e a confirmação não coincidem.', success: null });
@@ -62,7 +57,6 @@ exports.updatePerfil = async (req, res) => {
             updates.senha = await bcrypt.hash(nova_senha, salt);
         }
 
-        // Atualiza os dados no banco
         const { error } = await supabase.schema('malharia')
             .from('usuarios')
             .update(updates)
@@ -70,12 +64,9 @@ exports.updatePerfil = async (req, res) => {
 
         if (error) throw error;
 
-        // Atualiza as sessões básicas da Navbar (nome e user)
         req.user.nome = nome;
         req.user.username = username;
-        // Não colocamos a foto no req.user para não exceder os limites do Cookie
 
-        // Busca o perfil atualizado para exibir na tela o resultado final
         const { data: perfilNovo } = await supabase.schema('malharia')
             .from('usuarios')
             .select('*')
@@ -92,6 +83,12 @@ exports.updatePerfil = async (req, res) => {
 // ==========================================
 // ROTAS DE GESTÃO (Apenas Gestor e Admin)
 // ==========================================
+
+// Função auxiliar para evitar repetição no backend
+const getNivelByCargo = (cargo) => {
+    const cargosNiveis = { 'monitor': 1, 'controlador': 1, 'coordenador': 2, 'gestor': 3, 'admin': 4 };
+    return cargosNiveis[cargo] || 0;
+};
 
 exports.index = async (req, res) => {
     try {
@@ -127,13 +124,26 @@ exports.index = async (req, res) => {
 };
 
 exports.edit = async (req, res) => {
-    const { id } = req.params;
-    const { data: usuario } = await supabase.schema('malharia').from('usuarios').select('*').eq('id', id).single();
-    const { data: malharias } = await supabase.schema('malharia').from('malharia').select('id, nome');
-    const { data: vinculos } = await supabase.schema('malharia').from('usuario_malharia').select('malharia_id').eq('usuario_id', id);
-    const malhariasVinculadas = vinculos ? vinculos.map(v => v.malharia_id) : [];
+    try {
+        const { id } = req.params;
+        const { data: usuario } = await supabase.schema('malharia').from('usuarios').select('*').eq('id', id).single();
+        
+        // Bloqueio Backend: Impede que alguém digite a URL e tente editar outro usuário do mesmo nível ou superior
+        if (!usuario) return res.redirect('/usuarios');
+        const nivelAlvo = getNivelByCargo(usuario.cargo);
+        if (req.user.id !== usuario.id && req.user.nivel !== 4 && req.user.nivel <= nivelAlvo) {
+            return res.redirect('/usuarios');
+        }
 
-    res.render('usuarios/edit', { usuario, malharias, malhariasVinculadas });
+        const { data: malharias } = await supabase.schema('malharia').from('malharia').select('id, nome');
+        const { data: vinculos } = await supabase.schema('malharia').from('usuario_malharia').select('malharia_id').eq('usuario_id', id);
+        const malhariasVinculadas = vinculos ? vinculos.map(v => v.malharia_id) : [];
+
+        res.render('usuarios/edit', { usuario, malharias, malhariasVinculadas });
+    } catch (err) {
+        console.error("Erro interno ao carregar tela de edição:", err);
+        res.redirect('/usuarios');
+    }
 };
 
 exports.update = async (req, res) => {
@@ -141,13 +151,16 @@ exports.update = async (req, res) => {
         const { id } = req.params;
         const { cargo, status, malharias } = req.body; 
         
-        // Tentamos atualizar e capturamos o erro, se houver
+        // Proteção contra elevação de privilégio: Impede que um gestor transforme alguém em admin, por exemplo.
+        if (req.user.nivel !== 4 && getNivelByCargo(cargo) >= req.user.nivel) {
+            return res.redirect('/usuarios');
+        }
+
         const { error } = await supabase.schema('malharia')
             .from('usuarios')
             .update({ cargo, status })
             .eq('id', id);
 
-        // SE O SUPABASE BLOQUEAR, AVISAMOS AQUI:
         if (error) {
             console.error("❌ Erro do Supabase ao salvar cargo:", error.message);
             return res.status(400).send(`Erro ao salvar no banco de dados: ${error.message}. Verifique as restrições da coluna 'cargo' no Supabase.`);
@@ -173,10 +186,27 @@ exports.update = async (req, res) => {
 };
 
 exports.delete = async (req, res) => {
-    const { id } = req.params;
-    if (req.user.id === id) {
-        return res.redirect('/usuarios');
+    try {
+        const { id } = req.params;
+        
+        // Bloqueio base: Ninguém pode excluir a si mesmo
+        if (req.user.id === id) {
+            return res.redirect('/usuarios');
+        }
+
+        const { data: usuarioAlvo } = await supabase.schema('malharia').from('usuarios').select('cargo').eq('id', id).single();
+        if (!usuarioAlvo) return res.redirect('/usuarios');
+
+        // Bloqueio Backend: Impede exclusão de usuários do mesmo nível ou superior (exceto admin)
+        const nivelAlvo = getNivelByCargo(usuarioAlvo.cargo);
+        if (req.user.nivel !== 4 && req.user.nivel <= nivelAlvo) {
+            return res.redirect('/usuarios');
+        }
+
+        await supabase.schema('malharia').from('usuarios').delete().eq('id', id);
+        res.redirect('/usuarios');
+    } catch (err) {
+        console.error("Erro interno ao excluir usuário:", err);
+        res.redirect('/usuarios');
     }
-    await supabase.schema('malharia').from('usuarios').delete().eq('id', id);
-    res.redirect('/usuarios');
 };
