@@ -9,30 +9,81 @@
     </div>
 </div>
 
+<!-- BARRA DE FILTROS AUTOMÁTICOS -->
+<div class="card shadow-sm border-0 mb-4 bg-light">
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-secondary">Data Inicial</label>
+                <input type="date" id="filtroDataInicio" class="form-control" onchange="aplicarFiltros()">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-secondary">Data Final</label>
+                <input type="date" id="filtroDataFim" class="form-control" onchange="aplicarFiltros()">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold small text-secondary">Busca Rápida (Processo, Órgão, Item...)</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" id="filtroBusca" class="form-control border-start-0 ps-0" placeholder="Digite para filtrar na hora..." onkeyup="aplicarFiltros()" autocomplete="off">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GRÁFICO DA LINHA DO TEMPO CORRIGIDO (ALTURA FIXA NA DIV PAI) -->
+<div class="card shadow-sm mb-4 border-0" id="cardGrafico">
+    <div class="card-body" style="position: relative; height: 350px; width: 100%;">
+        <canvas id="graficoEvolucao"></canvas>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
+        
         <% if (registros.length === 0) { %>
-            <div class="alert alert-secondary text-center py-5 border-dashed">
+            <div class="alert alert-secondary text-center py-5 border-dashed" id="alertZeroRegistrosBanco">
                 <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
                 Nenhuma produção registrada para esta malharia no sistema.
             </div>
         <% } else { %>
-            <div class="row g-4">
+            
+            <div class="alert alert-secondary text-center py-5 border-dashed d-none" id="msgNenhumEncontrado">
+                <i class="bi bi-funnel fs-1 text-muted d-block mb-3"></i>
+                Nenhum registro corresponde aos filtros atuais.
+            </div>
+
+            <div class="row g-4" id="gridCardsRegistros">
                 <% registros.forEach(function(reg) { %>
                     <% 
                         let totalProd = 0;
-                        if(reg.itens) reg.itens.forEach(i => totalProd += i.qtd_produzida);
+                        let searchString = `${reg.usuario ? reg.usuario.nome : ''} ${reg.observacao || ''} ${reg.justificativa ? reg.justificativa.nome : ''}`;
+
+                        if(reg.itens) {
+                            reg.itens.forEach(i => {
+                                totalProd += i.qtd_produzida;
+                                searchString += ` ${i.processo ? i.processo.numero_processo : ''} ${i.processo ? i.processo.orgao : ''} ${i.item ? i.item.nome : ''}`;
+                            });
+                        }
+                        
                         let percentual = reg.meta_calculada > 0 ? Math.round((totalProd / reg.meta_calculada) * 100) : 0;
                         let corBarra = percentual >= 100 ? 'bg-success' : (percentual >= 70 ? 'bg-warning' : 'bg-danger');
                         
-                        // Extrai a data no formato brasileiro
                         const dataObj = new Date(reg.data_registro + "T12:00:00");
                         const diaStr = String(dataObj.getDate()).padStart(2, '0');
                         const mesStr = String(dataObj.getMonth() + 1).padStart(2, '0');
                         const anoStr = dataObj.getFullYear();
                         const dataFormatada = `${diaStr}/${mesStr}/${anoStr}`;
+                        searchString += ` ${dataFormatada}`;
                     %>
-                    <div class="col-md-6 col-lg-4">
+                    
+                    <div class="col-md-6 col-lg-4 card-registro-item" 
+                         data-data="<%= reg.data_registro %>" 
+                         data-busca="<%= searchString.toLowerCase() %>" 
+                         data-total="<%= totalProd %>" 
+                         data-meta="<%= Math.round(reg.meta_calculada) || 0 %>">
+                         
                         <div class="card h-100 shadow-sm border-start border-4 <%= percentual >= 100 ? 'border-success' : 'border-warning' %>">
                             <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
                                 <span class="fw-bold text-dark fs-5"><i class="bi bi-calendar-event"></i> <%= dataFormatada %></span>
@@ -88,12 +139,10 @@
                                 </button>
 
                                 <% if (user.nivel >= 3) { %>
-                                    <!-- Apenas Gestores e Super Admins podem editar registros passados via Histórico -->
                                     <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
                                 <% } %>
                             </div>
 
-                            <!-- DADOS ESCONDIDOS PARA O MODAL DE DETALHES -->
                             <div id="detalhes-html-<%= reg.id %>" class="d-none">
                                 <div class="row mb-3 bg-light p-3 rounded">
                                     <div class="col-6">
@@ -178,12 +227,153 @@
     </div>
 </div>
 
+<!-- CARREGA O CHART.JS PARA O GRÁFICO -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script>
     function abrirModalDetalhes(registroId) {
         const conteudoOriginal = document.getElementById('detalhes-html-' + registroId).innerHTML;
         document.getElementById('detalhesModalBody').innerHTML = conteudoOriginal;
-        
-        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesRegistro'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('modalDetalhesRegistro')).show();
     }
+
+    // Variáveis e Lógica do Gráfico + Filtros
+    let chartInstance = null;
+    const registrosCards = document.querySelectorAll('.card-registro-item');
+    const msgVazia = document.getElementById('msgNenhumEncontrado');
+
+    function initChart() {
+        const ctx = document.getElementById('graficoEvolucao');
+        if (!ctx) return;
+        
+        chartInstance = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: { labels: [], datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    title: { 
+                        display: true, 
+                        text: 'Comparativo: Total Produzido x Meta Diária',
+                        font: { size: 14 }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: { 
+                    y: { 
+                        beginAtZero: true,
+                        title: { display: true, text: 'Peças' }
+                    } 
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+
+    function aplicarFiltros() {
+        const dtIni = document.getElementById('filtroDataInicio').value;
+        const dtFim = document.getElementById('filtroDataFim').value;
+        const busca = document.getElementById('filtroBusca').value.toLowerCase().trim();
+
+        let visibleData = [];
+        let countVisible = 0;
+
+        registrosCards.forEach(card => {
+            const dataCard = card.getAttribute('data-data'); // YYYY-MM-DD
+            const textoBusca = card.getAttribute('data-busca');
+            const total = parseInt(card.getAttribute('data-total')) || 0;
+            const meta = parseInt(card.getAttribute('data-meta')) || 0;
+
+            let show = true;
+
+            // Filtros de Data
+            if (dtIni && dataCard < dtIni) show = false;
+            if (dtFim && dataCard > dtFim) show = false;
+            
+            // Filtro de Texto
+            if (busca && !textoBusca.includes(busca)) show = false;
+
+            if (show) {
+                card.style.display = '';
+                countVisible++;
+                visibleData.push({ data: dataCard, total, meta });
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Alterna a mensagem de "Não encontrado"
+        if (msgVazia) {
+            if (countVisible === 0) {
+                msgVazia.classList.remove('d-none');
+                document.getElementById('cardGrafico').classList.add('d-none');
+            } else {
+                msgVazia.classList.add('d-none');
+                document.getElementById('cardGrafico').classList.remove('d-none');
+            }
+        }
+
+        atualizarGrafico(visibleData);
+    }
+
+    function atualizarGrafico(data) {
+        if (!chartInstance) return;
+
+        // Agrupa os registros pela mesma data (caso tenha mais de um lançamento no mesmo dia na malharia)
+        const dadosAgrupados = {};
+        data.forEach(d => {
+            if (!dadosAgrupados[d.data]) {
+                dadosAgrupados[d.data] = { total: 0, meta: d.meta };
+            }
+            dadosAgrupados[d.data].total += d.total;
+        });
+
+        // Ordena cronologicamente do mais antigo pro mais novo para a linha ficar correta
+        const chavesOrdenadas = Object.keys(dadosAgrupados).sort();
+
+        const labels = chavesOrdenadas.map(k => k.split('-').reverse().join('/'));
+        const dataTotal = chavesOrdenadas.map(k => dadosAgrupados[k].total);
+        const dataMeta = chavesOrdenadas.map(k => dadosAgrupados[k].meta);
+
+        chartInstance.data.labels = labels;
+        chartInstance.data.datasets = [
+            {
+                label: 'Produzido (Soma do dia)',
+                data: dataTotal,
+                borderColor: '#198754', // success
+                backgroundColor: 'rgba(25, 135, 84, 0.2)',
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.2
+            },
+            {
+                label: 'Meta Calculada',
+                data: dataMeta,
+                borderColor: '#0d6efd', // primary
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                fill: false,
+                tension: 0.2
+            }
+        ];
+        chartInstance.update();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initChart();
+        aplicarFiltros(); // Alimenta a tabela a primeira vez
+    });
 </script>
