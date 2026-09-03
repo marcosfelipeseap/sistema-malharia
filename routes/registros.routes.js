@@ -6,6 +6,12 @@ const registrosController = require('../controllers/registros.controller');
 router.get('/painel', registrosController.painelDiario);
 router.get('/historico', registrosController.historico);
 
+// ======== BUSCA AVANÇADA / RELATÓRIOS (CARDS) ========
+router.get('/relatorios', registrosController.relatorios);
+
+// ======== HISTÓRICO ESPECÍFICO POR MALHARIA ========
+router.get('/malharia/:malharia_id/historico', registrosController.historicoPorMalharia);
+
 // ======== ROTAS GERAIS ========
 router.get('/', registrosController.index);
 router.get('/create', registrosController.create);

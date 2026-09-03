@@ -180,6 +180,104 @@ exports.historico = async (req, res) => {
     }
 };
 
+exports.relatorios = async (req, res) => {
+    try {
+        const { data_inicio, data_fim, busca, malharia_id } = req.query;
+        
+        // Padrão de 30 dias
+        const hojeObj = new Date();
+        const trintaDiasAtras = new Date();
+        trintaDiasAtras.setDate(hojeObj.getDate() - 30);
+        
+        const formatData = (d) => {
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const dia = String(d.getDate()).padStart(2, '0');
+            return `${d.getFullYear()}-${mes}-${dia}`;
+        };
+
+        const di = data_inicio || formatData(trintaDiasAtras);
+        const df = data_fim || formatData(hojeObj);
+        const termo = busca ? busca.toLowerCase().trim() : '';
+
+        let registros = await registrosService.getRegistrosFiltrados(di, df);
+        let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
+
+        // Trava para o Monitor só ver e listar as oficinas dele
+        if (req.user.cargo === 'monitor') {
+            const permitidas = req.user.malharias_permitidas || [];
+            todasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
+            registros = registros.filter(r => permitidas.includes(r.malharia_id));
+        }
+
+        // Filtro por Malharia específica no dropdown
+        if (malharia_id) {
+            registros = registros.filter(r => String(r.malharia_id) === String(malharia_id));
+        }
+
+        // Filtro por Busca de Texto Livre
+        if (termo) {
+            registros = registros.filter(reg => {
+                const malhariaNome = reg.malharia ? reg.malharia.nome.toLowerCase() : '';
+                const justifNome = reg.justificativa ? reg.justificativa.nome.toLowerCase() : '';
+                const obs = reg.observacao ? reg.observacao.toLowerCase() : '';
+
+                let matchStr = `${malhariaNome} ${justifNome} ${obs}`;
+
+                if (reg.itens && reg.itens.length > 0) {
+                    reg.itens.forEach(it => {
+                        const procNum = it.processo ? it.processo.numero_processo : '';
+                        const orgao = it.processo ? it.processo.orgao.toLowerCase() : '';
+                        const prodNome = it.item ? it.item.nome.toLowerCase() : '';
+                        matchStr += ` ${procNum} ${orgao} ${prodNome}`;
+                    });
+                }
+
+                return matchStr.includes(termo);
+            });
+        }
+
+        res.render('registros/relatorios', {
+            title: 'Histórico de Relatórios',
+            registros,
+            todasMalharias,
+            data_inicio: di,
+            data_fim: df,
+            busca: termo,
+            malharia_id: malharia_id || ''
+        });
+    } catch (error) {
+        console.error("Erro no relatorio/historico:", error);
+        res.redirect('/registros');
+    }
+};
+
+exports.historicoPorMalharia = async (req, res) => {
+    try {
+        const { malharia_id } = req.params;
+        
+        if (req.user.cargo === 'monitor') {
+            const permitidas = req.user.malharias_permitidas || [];
+            if (!permitidas.includes(parseInt(malharia_id))) {
+                return res.redirect('/registros/painel');
+            }
+        }
+
+        const malharia = await malhariasService.getMalhariaById(malharia_id);
+        if (!malharia) return res.redirect('/registros');
+
+        const registros = await registrosService.getRegistrosByMalharia(malharia_id);
+
+        res.render('registros/historico_malharia', {
+            title: `Histórico: ${malharia.nome}`,
+            malharia,
+            registros
+        });
+    } catch (error) {
+        console.error("Erro ao carregar histórico da malharia:", error);
+        res.redirect('/registros');
+    }
+};
+
 exports.store = async (req, res) => {
     try {
         const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, processo_item_ids, itens_ids, qtds_produzidas, sem_producao } = req.body;
@@ -192,7 +290,6 @@ exports.store = async (req, res) => {
 
         let avisoSistema = null;
         
-        // Garante que a data está limpa (YYYY-MM-DD) mesmo que o fallback dispare
         let dtRegistro = data_registro;
         if (!dtRegistro) {
             const brTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });

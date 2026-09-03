@@ -229,3 +229,51 @@ exports.deleteFeriado = async (id) => {
     if (error) throw error; 
     return true; 
 };
+
+exports.getRegistrosByMalharia = async (malhariaId) => {
+    const { data, error } = await supabase
+        .schema('malharia')
+        .from(TABLE_REGISTRO)
+        .select(`
+            *, 
+            malharia:malharia_id (id, nome, tipo), 
+            justificativa:justificativa_id (nome), 
+            itens:registro_diario_item(
+                processo_id, processo_item_id, item_id, qtd_produzida, 
+                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                item:item_id(id, nome)
+            )
+        `)
+        .eq('malharia_id', malhariaId)
+        .order('data_registro', { ascending: false });
+        
+    if (error) throw error; 
+    let dadosComUser = await enriquecerComUsuarios(data);
+    return enriquecerRegistros(dadosComUser);
+};
+
+
+exports.getRegistrosFiltrados = async (dataInicio, dataFim) => {
+    let query = supabase
+        .schema('malharia')
+        .from(TABLE_REGISTRO)
+        .select(`
+            *, 
+            malharia:malharia_id (id, nome, tipo), 
+            justificativa:justificativa_id (nome), 
+            itens:registro_diario_item(
+                processo_id, processo_item_id, item_id, qtd_produzida, 
+                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                item:item_id(id, nome)
+            )
+        `)
+        .order('data_registro', { ascending: false });
+
+    if (dataInicio) query = query.gte('data_registro', dataInicio);
+    if (dataFim) query = query.lte('data_registro', dataFim);
+
+    const { data, error } = await query;
+    if (error) throw error; 
+    let dadosComUser = await enriquecerComUsuarios(data);
+    return enriquecerRegistros(dadosComUser);
+};

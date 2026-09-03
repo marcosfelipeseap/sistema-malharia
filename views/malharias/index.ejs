@@ -190,9 +190,12 @@
                                                 </div>
                                             </div>
 
-                                            <div class="mt-auto">
-                                                <a href="/malharias/<%= m.id %>/edit" class="btn btn-sm btn-outline-primary w-100">
-                                                    <%= user.nivel >= 3 ? 'Gerenciar' : 'Ver / Editar Máquinas' %>
+                                            <div class="mt-auto d-flex gap-2">
+                                                <a href="/registros/malharia/<%= m.id %>/historico" class="btn btn-sm btn-outline-info w-50" title="Histórico de Produção">
+                                                    <i class="bi bi-clock-history"></i> Histórico
+                                                </a>
+                                                <a href="/malharias/<%= m.id %>/edit" class="btn btn-sm btn-outline-primary w-50" title="<%= user.nivel >= 3 ? 'Gerenciar Cadastro' : 'Ver / Editar Máquinas' %>">
+                                                    <i class="bi bi-gear"></i> <%= user.nivel >= 3 ? 'Gerenciar' : 'Máquinas' %>
                                                 </a>
                                             </div>
 
@@ -259,9 +262,12 @@
                         <td class="text-center"><span class="badge bg-secondary rounded-pill"><%= m.itens ? m.itens.length : 0 %></span></td>
                         <td class="text-center fw-bold text-success"><%= m.num_internos || 0 %></td>
                         <td class="text-center fw-bold text-info"><%= m.num_internos_remunerados || 0 %></td>
-                        <td class="text-end">
-                            <a href="/malharias/<%= m.id %>/edit" class="btn btn-sm btn-outline-primary" title="<%= user.nivel >= 3 ? 'Gerenciar' : 'Ver' %>">
-                                <i class="bi bi-pencil"></i>
+                        <td class="text-end text-nowrap">
+                            <a href="/registros/malharia/<%= m.id %>/historico" class="btn btn-sm btn-outline-info" title="Ver Histórico Diário">
+                                <i class="bi bi-clock-history"></i>
+                            </a>
+                            <a href="/malharias/<%= m.id %>/edit" class="btn btn-sm btn-outline-primary ms-1" title="<%= user.nivel >= 3 ? 'Gerenciar' : 'Ver Máquinas' %>">
+                                <i class="bi bi-gear"></i>
                             </a>
                             <% if (user.nivel >= 3) { %>
                                 <button class="btn btn-sm btn-outline-danger ms-1" onclick="confirmarExclusao('<%= m.id %>', '<%= m.nome %>')" title="Excluir">
@@ -397,20 +403,18 @@
         new bootstrap.Modal(document.getElementById('modalAmpliarFoto')).show();
     }
 
-    // Função para exibir os contatos do Monitor (Agora suporta a Foto)
+    // Função para exibir os contatos do Monitor
     function verMonitorInfo(nome, username, email, telefone, avatarBase64) {
         document.getElementById('infoNomeMonitor').innerText = nome;
         document.getElementById('infoUserMonitor').innerText = username;
         
         const avatarDiv = document.getElementById('infoAvatarMonitor');
         
-        // Verifica se há foto
         if (avatarBase64 && avatarBase64.trim() !== '') {
             avatarDiv.style.backgroundImage = `url('${avatarBase64}')`;
             avatarDiv.style.color = 'transparent';
             avatarDiv.innerHTML = '';
             
-            // Ativa o clique para ampliar
             avatarDiv.style.cursor = 'pointer';
             avatarDiv.onclick = function() { ampliarFoto(avatarBase64); };
             avatarDiv.title = 'Clique para ampliar a foto';
@@ -418,10 +422,9 @@
             avatarDiv.onmouseout = function() { this.style.transform = 'scale(1)'; };
         } else {
             avatarDiv.style.backgroundImage = 'none';
-            avatarDiv.style.color = '#0d6efd'; // text-primary
+            avatarDiv.style.color = '#0d6efd'; 
             avatarDiv.innerHTML = nome.charAt(0).toUpperCase();
             
-            // Desativa o clique
             avatarDiv.style.cursor = 'default';
             avatarDiv.onclick = null;
             avatarDiv.title = '';

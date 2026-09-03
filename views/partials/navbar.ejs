@@ -23,18 +23,20 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link <%= typeof title !== 'undefined' && title === 'Histórico de Relatórios' ? 'active' : '' %>" href="/registros/relatorios">
+                        <i class="bi bi-card-checklist"></i> Histórico de Relatórios
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link " href="/estoque">
                         <i class="bi bi-boxes"></i> Estoque de Produção
                     </a>
                 </li>
-                
-                <!-- MENU DE CORTES (Apenas Nível 3+) com ícone ajustado -->
                 <li class="nav-item">
                     <a class="nav-link <%= typeof title !== 'undefined' && title === 'Controle de Cortes' ? 'active' : '' %>" href="/cortes">
                         <i class="bi bi-scissors"></i> Controle de Cortes
                     </a>
                 </li>
-
                 <li class="nav-item">
                     <a class="nav-link" href="/processos">
                         <i class="bi bi-file-earmark-text"></i> Processos
@@ -72,18 +74,20 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link <%= typeof title !== 'undefined' && title === 'Histórico de Relatórios' ? 'active' : '' %>" href="/registros/relatorios">
+                        <i class="bi bi-card-checklist"></i> Histórico de Relatórios
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link text-primary fw-bold" href="/estoque">
                          <i class="bi bi-boxes"></i> Estoque da Oficina
                     </a>
                 </li>
-                
-                <!-- MENU DE CORTES (Adicionado para Monitores e Coordenadores) -->
                 <li class="nav-item">
                     <a class="nav-link <%= typeof title !== 'undefined' && title === 'Controle de Cortes' ? 'active' : '' %>" href="/cortes">
                         <i class="bi bi-scissors"></i> Controle de Cortes
                     </a>
                 </li>
-
                 <li class="nav-item mt-3">
                     <a class="nav-link" href="/malharias">
                         <i class="bi bi-shop"></i> Minhas Malharias
