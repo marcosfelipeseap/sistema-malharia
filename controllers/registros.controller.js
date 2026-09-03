@@ -4,31 +4,38 @@ const malhariasService = require('../services/malharias.service');
 const itensService = require('../services/itens.service');
 
 function validarHorarioBrasilia(dataEnviada) {
-    // Pega a hora atual exata do servidor em Brasília
     const dataAtualBr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
     const dataHoraObj = new Date(dataAtualBr);
     
-    const anoH = dataHoraObj.getFullYear();
-    const mesH = String(dataHoraObj.getMonth() + 1).padStart(2, '0');
-    const diaH = String(dataHoraObj.getDate()).padStart(2, '0');
-    const hojeBr = `${anoH}-${mesH}-${diaH}`;
+    const getBrDateString = (ms) => {
+        const obj = new Date(ms);
+        const ano = obj.getFullYear();
+        const mes = String(obj.getMonth() + 1).padStart(2, '0');
+        const dia = String(obj.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    };
     
-    // Calcula ontem matematicamente em milissegundos para evitar o bug do setDate do JS
-    const ontemMilissegundos = dataHoraObj.getTime() - (24 * 60 * 60 * 1000);
-    const ontemObj = new Date(ontemMilissegundos);
-    
-    const anoO = ontemObj.getFullYear();
-    const mesO = String(ontemObj.getMonth() + 1).padStart(2, '0');
-    const diaO = String(ontemObj.getDate()).padStart(2, '0');
-    const ontemBr = `${anoO}-${mesO}-${diaO}`;
+    const hojeMs = dataHoraObj.getTime();
+    const hojeBr = getBrDateString(hojeMs);
+    const ontemBr = getBrDateString(hojeMs - (24 * 60 * 60 * 1000));
     
     const horaAtual = dataHoraObj.getHours();
+    const diaSemanaHoje = dataHoraObj.getDay(); 
 
     if (dataEnviada === hojeBr) {
         return true;
     } 
     else if (dataEnviada === ontemBr && horaAtual < 12) {
         return true;
+    }
+    
+    if (diaSemanaHoje === 1 && horaAtual < 12) {
+        const sextaBr = getBrDateString(hojeMs - (3 * 24 * 60 * 60 * 1000));
+        const sabadoBr = getBrDateString(hojeMs - (2 * 24 * 60 * 60 * 1000));
+        
+        if (dataEnviada === sextaBr || dataEnviada === sabadoBr) {
+            return true;
+        }
     }
     
     return false;
@@ -184,6 +191,17 @@ exports.store = async (req, res) => {
         }
 
         let avisoSistema = null;
+        
+        // Garante que a data está limpa (YYYY-MM-DD) mesmo que o fallback dispare
+        let dtRegistro = data_registro;
+        if (!dtRegistro) {
+            const brTime = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+            const dataHoraObj = new Date(brTime);
+            const ano = dataHoraObj.getFullYear();
+            const mes = String(dataHoraObj.getMonth() + 1).padStart(2, '0');
+            const dia = String(dataHoraObj.getDate()).padStart(2, '0');
+            dtRegistro = `${ano}-${mes}-${dia}`;
+        }
 
         if (req.user.nivel >= 3) {
             const brTime = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -191,15 +209,13 @@ exports.store = async (req, res) => {
             const [dia, mes, ano] = dataParte.trim().split('/');
             const hojeBr = `${ano}-${mes}-${dia}`;
             
-            const dataEscolhida = data_registro || hojeBr;
-
-            if (dataEscolhida < hojeBr) {
+            if (dtRegistro < hojeBr) {
                 avisoSistema = 'Registro retroativo inserido com atraso pelo Gestor.';
             } 
         }
 
         const dadosRegistro = { 
-            data_registro: data_registro || new Date(), 
+            data_registro: dtRegistro, 
             malharia_id, qtd_internos, meta_calculada, explicacao_meta, 
             justificativa_id: sem_producao ? justificativa_id : (justificativa_id || null), 
             observacao, 

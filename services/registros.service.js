@@ -43,7 +43,6 @@ const enriquecerRegistros = (dados) => {
                 
                 if (it.processo) {
                     if (it.processo.processo_item && Array.isArray(it.processo.processo_item)) {
-                        // Encontra O ITEM ESPECÍFICO através do processo_item_id
                         const detalhe = it.processo.processo_item.find(pi => String(pi.id) === String(it.processo_item_id));
                         if (detalhe) { desc = detalhe.descricao; tam = detalhe.tamanho; }
                     }
@@ -181,10 +180,36 @@ exports.updateRegistroComItens = async (id, dadosRegistro, itensProduzidos) => {
     return true; 
 };
 
+// =========================================================
+// CORREÇÃO DO LIMITE DE 1000 LINHAS DO SUPABASE NO CALENDÁRIO
+// =========================================================
 exports.getResumoRegistros = async () => { 
-    const { data, error } = await supabase.schema('malharia').from(TABLE_REGISTRO).select('data_registro, malharia_id').order('data_registro', { ascending: true }); 
-    if (error) throw error; 
-    return data || []; 
+    let todosRegistros = [];
+    let from = 0;
+    const limit = 999;
+    let buscarMais = true;
+
+    while (buscarMais) {
+        const { data, error } = await supabase.schema('malharia')
+            .from(TABLE_REGISTRO)
+            .select('data_registro, malharia_id')
+            .order('data_registro', { ascending: false })
+            .range(from, from + limit); 
+        
+        if (error) throw error; 
+        
+        if (data && data.length > 0) {
+            todosRegistros.push(...data);
+        }
+        
+        // Se a busca retornar menos que o limite, significa que acabou e o laço para
+        if (!data || data.length <= limit) {
+            buscarMais = false;
+        } else {
+            from += limit + 1; // Prepara para buscar o próximo bloco de 1000
+        }
+    }
+    return todosRegistros; 
 };
 
 exports.getFeriados = async () => { 

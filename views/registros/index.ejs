@@ -89,20 +89,36 @@ if (typeof registros !== 'undefined' && registros) {
 const agStr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
 const agoraObj = new Date(agStr);
 
-const anoHoje = agoraObj.getFullYear();
-const mesHoje = String(agoraObj.getMonth() + 1).padStart(2, '0');
-const diaHoje = String(agoraObj.getDate()).padStart(2, '0');
-const dataHojeBRT = `${anoHoje}-${mesHoje}-${diaHoje}`;
+const padNum = (n) => String(n).padStart(2, '0');
+const getStrBRT = (d) => `${d.getFullYear()}-${padNum(d.getMonth() + 1)}-${padNum(d.getDate())}`;
+
+const dataHojeBRT = getStrBRT(agoraObj);
 
 const ontemObj = new Date(agoraObj);
 ontemObj.setDate(ontemObj.getDate() - 1);
-const dataOntemBRT = `${ontemObj.getFullYear()}-${String(ontemObj.getMonth() + 1).padStart(2, '0')}-${String(ontemObj.getDate()).padStart(2, '0')}`;
+const dataOntemBRT = getStrBRT(ontemObj);
 
 const horaAtual = agoraObj.getHours();
+const diaSemanaHoje = agoraObj.getDay(); // 1 = Segunda-feira
 
 const isHoje = dataBusca === dataHojeBRT;
 const isOntemEditavel = (dataBusca === dataOntemBRT && horaAtual < 12);
-const isEditavel = isHoje || isOntemEditavel;
+
+let isRetroativoFimSemana = false;
+if (diaSemanaHoje === 1 && horaAtual < 12) {
+    const sextaObj = new Date(agoraObj); sextaObj.setDate(sextaObj.getDate() - 3);
+    const sabadoObj = new Date(agoraObj); sabadoObj.setDate(sabadoObj.getDate() - 2);
+    
+    if (dataBusca === getStrBRT(sextaObj) || dataBusca === getStrBRT(sabadoObj)) {
+        isRetroativoFimSemana = true;
+    }
+}
+
+const isEditavel = isHoje || isOntemEditavel || isRetroativoFimSemana;
+
+const [anoB, mesB, diaB] = dataBusca.split('-');
+const dataBuscaObj = new Date(anoB, mesB - 1, diaB, 12, 0, 0);
+const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() === 6;
 %>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -124,7 +140,7 @@ const isEditavel = isHoje || isOntemEditavel;
             <div class="timer-aviso w-100 shadow-sm">
                 <i class="bi bi-stopwatch fs-4 text-warning"></i>
                 <div>
-                    Atenção: Você tem até o <b>meio-dia do dia seguinte</b> para registrar ou corrigir a produção.<br>
+                    Atenção: Você tem até o <b>meio-dia do dia seguinte (ou da segunda-feira, para finais de semana)</b> para registrar ou corrigir a produção.<br>
                     Restam <span id="contadorTempoRestante" class="text-danger fw-bold">--:--:--</span> para o fechamento deste relatório.
                 </div>
             </div>
@@ -347,6 +363,12 @@ const isEditavel = isHoje || isOntemEditavel;
             <span class="badge bg-secondary ms-2 fs-6"><%= malhariasPendentesUnicas.length %></span>
         </h4>
         
+        <% if (isFimDeSemanaBusca) { %>
+            <div class="alert alert-info py-2 mb-3 text-center small shadow-sm">
+                <i class="bi bi-info-circle"></i> Fim de semana: Registro Opcional.
+            </div>
+        <% } %>
+        
         <% if (malhariasPendentesUnicas.length === 0) { %>
             <div class="alert alert-success text-center">
                 <i class="bi bi-emoji-sunglasses d-block fs-3 mb-1"></i>
@@ -361,7 +383,7 @@ const isEditavel = isHoje || isOntemEditavel;
                             <small class="text-muted"><%= mal.tipo || 'Setor Padrão' %></small>
                         </div>
                         
-                        <% if (user.nivel >= 3 || isOntemEditavel) { %>
+                        <% if (user.nivel >= 3 || isOntemEditavel || isRetroativoFimSemana) { %>
                             <a href="/registros/create?malharia=<%= mal.id %>&data=<%= dataBusca %>" class="btn btn-sm btn-primary rounded-pill shadow-sm" title="Criar apontamento">
                                 <i class="bi bi-plus-lg"></i> Inserir
                             </a>
@@ -510,7 +532,15 @@ const isEditavel = isHoje || isOntemEditavel;
         if (contadorEl) { 
             const partesData = "<%= dataBusca %>".split('-');
             const dataLimite = new Date(partesData[0], partesData[1] - 1, partesData[2]);
-            dataLimite.setDate(dataLimite.getDate() + 1); 
+            const diaDaSemanaBusca = dataLimite.getDay(); 
+
+            if (diaDaSemanaBusca === 5) { 
+                dataLimite.setDate(dataLimite.getDate() + 3);
+            } else if (diaDaSemanaBusca === 6) { 
+                dataLimite.setDate(dataLimite.getDate() + 2);
+            } else {
+                dataLimite.setDate(dataLimite.getDate() + 1);
+            }
             dataLimite.setHours(12, 0, 0, 0);
 
             function atualizarContagemRegressiva() {
@@ -521,11 +551,8 @@ const isEditavel = isHoje || isOntemEditavel;
                     const horas = Math.floor(diferenca / (1000 * 60 * 60));
                     const minutos = Math.floor((diferenca / 1000 / 60) % 60);
                     const segundos = Math.floor((diferenca / 1000) % 60);
-                    const horasStr = horas.toString().padStart(2, '0');
-                    const minutosStr = minutos.toString().padStart(2, '0');
-                    const segundosStr = segundos.toString().padStart(2, '0');
-
-                    contadorEl.innerText = `${horasStr}:${minutosStr}:${segundosStr}`;
+                    
+                    contadorEl.innerText = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}:${segundos.toString().padStart(2, '0')}`;
                 } else {
                     contadorEl.innerText = "Tempo Esgotado!";
                 }
@@ -578,31 +605,41 @@ const isEditavel = isHoje || isOntemEditavel;
     const totalMalharias = parseInt("<%= todasMalhariasUnicas.length || 0 %>");
     const dataBusca = "<%= dataBusca %>";
     const primeiraDataStr = "<%= primeiraData %>";
-    const minhasMalhariasIds = <%- JSON.stringify(todasMalhariasUnicas.map(m => m.id)) %>;
+    const minhasMalhariasIds = <%- JSON.stringify(todasMalhariasUnicas.map(m => String(m.id))) %>;
     
     let currentViewDate = new Date(dataBusca + "T12:00:00");
     const primeiraDataObj = new Date(primeiraDataStr + "T00:00:00");
     const hojeObj = new Date(); 
     hojeObj.setHours(23,59,59,999);
     
+    function pad(n) { return n < 10 ? '0'+n : n; }
+    function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+
+    // Correção Definitiva do Bug das Datas
     const registrosMap = {};
     resumoRegistros.forEach(r => {
-        if (minhasMalhariasIds.includes(r.malharia_id)) {
-            if (!registrosMap[r.data_registro]) registrosMap[r.data_registro] = new Set();
-            registrosMap[r.data_registro].add(r.malharia_id);
+        const malIdStr = r.malharia_id ? String(r.malharia_id) : null;
+        if (malIdStr && minhasMalhariasIds.includes(malIdStr)) {
+            // Apenas pega os 10 primeiros caracteres (YYYY-MM-DD), evitando timezone do JS
+            let dataLimpa = r.data_registro ? r.data_registro.substring(0, 10) : null;
+            if (dataLimpa) {
+                if (!registrosMap[dataLimpa]) registrosMap[dataLimpa] = new Set();
+                registrosMap[dataLimpa].add(malIdStr);
+            }
         }
     });
     
     const feriadosMap = {};
     listaFeriados.forEach(f => {
-        if (!f.malharia_id || minhasMalhariasIds.includes(f.malharia_id)) {
-            if (!feriadosMap[f.data_feriado]) feriadosMap[f.data_feriado] = [];
-            feriadosMap[f.data_feriado].push(f);
+        const malIdStr = f.malharia_id ? String(f.malharia_id) : null;
+        if (!malIdStr || minhasMalhariasIds.includes(malIdStr)) {
+            let dataLimpa = f.data_feriado ? f.data_feriado.substring(0, 10) : null;
+            if (dataLimpa) {
+                if (!feriadosMap[dataLimpa]) feriadosMap[dataLimpa] = [];
+                feriadosMap[dataLimpa].push(f);
+            }
         }
     });
-
-    function pad(n) { return n < 10 ? '0'+n : n; }
-    function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
 
     function mudarMes(delta) {
         let currentMonth = currentViewDate.getMonth();
@@ -674,13 +711,13 @@ const isEditavel = isHoje || isOntemEditavel;
             if (qtdRegistros === 0) {
                 if (expectedMalharias > 0 && loopDate >= primeiraDataObj && loopDate <= hojeObj) {
                     statusBadge.classList.add('bg-danger');
-                    statusBadge.innerText = 'Pendente';
+                    statusBadge.innerText = `Faltam ${expectedMalharias}`;
                 } else if (isGlobalHoliday) {
                     statusBadge.classList.add('bg-info', 'text-dark');
                     statusBadge.innerText = feriadosNoDia.find(f => !f.malharia_id).descricao || 'Feriado';
                 } else if (malhariasDeFolga.size > 0 && loopDate <= hojeObj) {
                     statusBadge.classList.add('bg-danger');
-                    statusBadge.innerText = 'Pendente';
+                    statusBadge.innerText = `Faltam ${expectedMalharias}`;
                 } else {
                     statusBadge.style.display = 'none';
                 }

@@ -94,7 +94,7 @@
                                 <% } %>
                                 
                                 <div class="text-primary small fw-bold mb-2 mt-2 bg-light p-1 rounded text-center">
-                                    <i class="bi bi-clock-history"></i> Edições bloqueiam amanhã ao meio-dia em: <span class="contador-fim text-danger">--:--:--</span>
+                                    <i class="bi bi-clock-history"></i> Limite de edição em: <span class="contador-fim text-danger">--:--:--</span>
                                 </div>
 
                                 <div class="alert-fim-expediente alert alert-danger py-2 px-2 small mt-2 mb-2 d-none border-danger border-start border-4" 
@@ -133,14 +133,37 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalDetalhesRegistro" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="detalhesModalTitle"><i class="bi bi-card-list"></i> Detalhes da Produção</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light" id="detalhesModalBody"></div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Pega a dataHoje injetada pelo Backend (Ex: 2026-08-04)
         const partesHoje = "<%= dataHoje %>".split('-');
         
-        // Define o limite rígido para o dia seguinte de "dataHoje", as 12:00:00.
+        // Define o limite rígido para o dia seguinte (ou segunda-feira), as 12:00:00.
         const dataLimite = new Date(partesHoje[0], partesHoje[1] - 1, partesHoje[2]);
-        dataLimite.setDate(dataLimite.getDate() + 1); 
+        const diaDaSemanaHoje = dataLimite.getDay(); // 5 = Sexta, 6 = Sábado
+
+        if (diaDaSemanaHoje === 5) { 
+            dataLimite.setDate(dataLimite.getDate() + 3); // Limite de Sexta passa pra Segunda (+3)
+        } else if (diaDaSemanaHoje === 6) { 
+            dataLimite.setDate(dataLimite.getDate() + 2); // Limite de Sábado passa pra Segunda (+2)
+        } else {
+            dataLimite.setDate(dataLimite.getDate() + 1); // Normal (+1 dia)
+        }
         dataLimite.setHours(12, 0, 0, 0);
 
         function atualizarContadores() {
