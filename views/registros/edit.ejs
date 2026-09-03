@@ -102,7 +102,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Observações Adicionais</label>
+                        <label id="labelObservacao" class="form-label fw-bold">Observações Adicionais</label>
                          <textarea class="form-control" name="observacao" rows="2"><%= registro.observacao || '' %></textarea>
                     </div>
 
@@ -146,7 +146,7 @@
                             <tr>
                                 <th style="width: 50px;" class="text-center">
                                     <input type="checkbox" class="form-check-input" id="checkAllModal" onclick="toggleAllModal(this)">
-                                </th>
+                                 </th>
                                  <th style="width: 60px;" class="text-center">Arte</th>
                                 <th>Órgão</th>
                                 <th>Produto</th>
@@ -250,7 +250,7 @@
          <% registro.itens.forEach((item) => { %>
             {
                 processo_id: '<%= item.processo_id %>',
-                processo_item_id: '<%= item.processo_item_id %>', // Resgatando o vínculo real
+                processo_item_id: '<%= item.processo_item_id %>', 
                 item_id: '<%= item.item_id %>',
                 qtd: parseInt('<%= item.qtd_produzida %>') || 0
             },
@@ -268,7 +268,6 @@
         let urlImagem = null;
 
         if (p && p.itens) {
-            // Agora a comparação é cirúrgica, via ID único do item no processo
             const itemNoProcesso = p.itens.find(x => String(x.id) === String(prod.processo_item_id));
             
             if (itemNoProcesso) {
@@ -301,6 +300,19 @@
         if('<%= registro.justificativa_id %>') {
             $('#justificativa_id').val('<%= registro.justificativa_id %>').trigger('change');
         }
+
+        // LÓGICA DO ASTERISCO NA OBSERVAÇÃO
+        $('#justificativa_id').on('change', function() {
+            const selectedText = $(this).find('option:selected').text().toLowerCase();
+            const labelObs = document.getElementById('labelObservacao');
+            if (labelObs) {
+                if (selectedText.includes('outro')) {
+                    labelObs.innerHTML = 'Observações Adicionais <span class="text-danger">* (Obrigatório para este motivo)</span>';
+                } else {
+                    labelObs.innerHTML = 'Observações Adicionais';
+                }
+            }
+        });
 
         atualizarTabela();
      });
@@ -678,6 +690,30 @@
     }
 
     function validarFormulario(e) {
+        if (typeof listaProducao !== 'undefined' && listaProducao.length === 0) {
+            e.preventDefault();
+            exibirAviso("Adicione pelo menos um produto na tabela.");
+            return false;
+        }
+
+        // NOVA LÓGICA DE VALIDAÇÃO: "OUTROS"
+        const justificativaSelect = document.getElementById('justificativa_id');
+        const boxJustificativa = document.getElementById('boxJustificativa');
+        
+        if (boxJustificativa && boxJustificativa.style.display !== 'none' && justificativaSelect && justificativaSelect.value) {
+            const selectedText = justificativaSelect.options[justificativaSelect.selectedIndex].text.toLowerCase();
+            
+            if (selectedText.includes('outro')) {
+                const observacaoInput = document.querySelector('textarea[name="observacao"]');
+                if (observacaoInput && observacaoInput.value.trim() === '') {
+                    e.preventDefault();
+                    exibirAviso("Como você selecionou 'Outros' como justificativa, é OBRIGATÓRIO detalhar o motivo no campo de 'Observações Adicionais'.");
+                    observacaoInput.focus();
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 </script>

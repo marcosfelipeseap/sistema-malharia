@@ -1,13 +1,11 @@
 const processosService = require('../services/processos.service');
 const multer = require('multer');
 
-// Configuração do Multer (Armazenamento em memória para envio ao Supabase)
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-exports.upload = upload; // Exporta para usar nas rotas se necessário
+exports.upload = upload; 
 
-// API para buscar itens (usada pelo botão de recarregar)
 exports.getItensApi = async (req, res) => {
     try {
         const itens = await processosService.getAllItensDisponiveis();
@@ -17,7 +15,6 @@ exports.getItensApi = async (req, res) => {
     }
 };
 
-// NOVA API: Retorna os produtos de um processo específico com suas imagens já anexadas
 exports.getProcessoItensComImagensApi = async (req, res) => {
     try {
         const { id } = req.params;
@@ -67,6 +64,7 @@ exports.create = async (req, res) => {
 const parseItensFromBody = (body) => {
     const toArray = (val) => (val === undefined || val === null) ? [] : (Array.isArray(val) ? val : [val]);
 
+    const pItemIds = toArray(body.processo_item_id);
     const ids = toArray(body.item_id);
     const descricoes = toArray(body.descricao);
     const tamanhos = toArray(body.tamanho);
@@ -76,16 +74,25 @@ const parseItensFromBody = (body) => {
     const qFals = toArray(body.qtd_faltante);
     const dPrazos = toArray(body.data_prazo);
 
-    return ids.map((id, i) => ({
-        item_id: parseInt(id),
-        descricao: descricoes[i] || null,
-        tamanho: tamanhos[i] || null,
-        qtd_solicitada: parseInt(qSols[i]) || 0,
-        qtd_autorizada: parseInt(qAuts[i]) || 0,
-        qtd_entregue: parseInt(qEnts[i]) || 0,
-        qtd_faltante: parseInt(qFals[i]) || 0,
-        data_prazo: dPrazos[i] || null
-    })).filter(item => item.item_id && !isNaN(item.item_id));
+    return ids.map((id, i) => {
+        const itemObj = {
+            item_id: parseInt(id),
+            descricao: descricoes[i] || null,
+            tamanho: tamanhos[i] || null,
+            qtd_solicitada: parseInt(qSols[i]) || 0,
+            qtd_autorizada: parseInt(qAuts[i]) || 0,
+            qtd_entregue: parseInt(qEnts[i]) || 0,
+            qtd_faltante: parseInt(qFals[i]) || 0,
+            data_prazo: dPrazos[i] || null
+        };
+        
+        // Atribui a chave primária se existir (Para atualização não duplicar)
+        if (pItemIds[i]) {
+            itemObj.id = parseInt(pItemIds[i]);
+        }
+        
+        return itemObj;
+    }).filter(item => item.item_id && !isNaN(item.item_id));
 };
 
 exports.store = async (req, res) => {

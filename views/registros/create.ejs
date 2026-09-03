@@ -52,7 +52,7 @@
 
                     <div id="blocoProducao">
                         <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
- 
+
                         <div class="row bg-light p-3 rounded mb-3 border align-items-center">
                             <div class="col-md-8">
                                 <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
@@ -100,7 +100,7 @@
                     </div>
 
                     <div class="mb-3">
-                       <label class="form-label fw-bold">Observações Adicionais</label>
+                       <label id="labelObservacao" class="form-label fw-bold">Observações Adicionais</label>
                         <textarea class="form-control" name="observacao" rows="2"></textarea>
                     </div>
 
@@ -276,6 +276,19 @@
         const params = new URLSearchParams(window.location.search);
         if(params.has('malharia')) $('#malharia_id').val(params.get('malharia')).trigger('change');
         if(params.has('data')) $('input[name="data_registro"]').val(params.get('data'));
+
+        // LÓGICA DO ASTERISCO NA OBSERVAÇÃO
+        $('#justificativa_id').on('change', function() {
+            const selectedText = $(this).find('option:selected').text().toLowerCase();
+            const labelObs = document.getElementById('labelObservacao');
+            if (labelObs) {
+                if (selectedText.includes('outro')) {
+                    labelObs.innerHTML = 'Observações Adicionais <span class="text-danger">* (Obrigatório para este motivo)</span>';
+                } else {
+                    labelObs.innerHTML = 'Observações Adicionais';
+                }
+            }
+        });
     });
 
     async function carregarDadosMalharia() {
@@ -336,7 +349,7 @@
 
                         combinacoesDisponiveis.push({
                             processo_id: p.id,
-                            processo_item_id: pi.id, // AQUI GARANTIMOS O ID EXATO DO PROCESSO ITEM
+                            processo_item_id: pi.id, 
                             orgao: p.orgao || 'N/A',
                             item_id: dadosItem.id,
                             nome_produto: dadosItem.nome || 'Sem Nome',
@@ -431,7 +444,7 @@
                 listaProducao.push({
                     id_unico: comb.id_unico,
                     processo_id: comb.processo_id,
-                    processo_item_id: comb.processo_item_id, // Enviando o ID exato
+                    processo_item_id: comb.processo_item_id,
                     orgao: comb.orgao,
                     item_id: comb.item_id,
                     nome_produto: comb.nome_produto,
@@ -627,12 +640,35 @@
     function mostrarExplicacaoMeta() { new bootstrap.Modal(document.getElementById('modalMeta')).show(); }
 
     function validarFormulario(e) {
-        const isSemProducao = document.getElementById('sem_producao').checked;
-        if(!isSemProducao && listaProducao.length === 0) {
+        // Validação 1: Sem produtos na tabela
+        const semProducaoCheckbox = document.getElementById('sem_producao');
+        const isSemProducao = semProducaoCheckbox ? semProducaoCheckbox.checked : false;
+        
+        if (!isSemProducao && typeof listaProducao !== 'undefined' && listaProducao.length === 0) {
             e.preventDefault();
             exibirAviso("Adicione pelo menos um produto na tabela ou marque o botão de 'Não houve produção' no topo da tela.");
             return false;
         }
+
+        // Validação 2: Justificativa "Outros" obriga preencher a Observação
+        const justificativaSelect = document.getElementById('justificativa_id');
+        const boxJustificativa = document.getElementById('boxJustificativa');
+        
+        if (boxJustificativa && boxJustificativa.style.display !== 'none' && justificativaSelect && justificativaSelect.value) {
+            const selectedText = justificativaSelect.options[justificativaSelect.selectedIndex].text.toLowerCase();
+            
+            // Se o texto da justificativa contiver a palavra "outro"
+            if (selectedText.includes('outro')) {
+                const observacaoInput = document.querySelector('textarea[name="observacao"]');
+                if (observacaoInput && observacaoInput.value.trim() === '') {
+                    e.preventDefault();
+                    exibirAviso("Como você selecionou 'Outros' como justificativa, é OBRIGATÓRIO detalhar o motivo no campo de 'Observações Adicionais'.");
+                    observacaoInput.focus();
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
 </script>

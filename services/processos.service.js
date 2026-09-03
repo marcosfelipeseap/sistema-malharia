@@ -89,11 +89,9 @@ exports.getAllProcessos = async (busca = '') => {
                 // Registros Antigos (Não têm o ID exato)
                 const itensMesmoId = (p.itens || []).filter(i => String(i.item_id) === String(regItem.item_id));
                 if (itensMesmoId.length === 1) {
-                    // Se o processo só pediu 1 tamanho desse produto, é seguro assumir ele.
                     tamanho = itensMesmoId[0].tamanho && itensMesmoId[0].tamanho !== '-' ? ` - Tam: ${itensMesmoId[0].tamanho}` : '';
                     descricao = itensMesmoId[0].descricao ? ` (${itensMesmoId[0].descricao})` : '';
                 } else {
-                    // Se o processo pediu PP, P, M e G no passado, agrupamos como "Legado" para não mentir que foi tudo PP.
                     tamanho = ' - Tam: Legado (Misto)';
                 }
             }
@@ -231,7 +229,6 @@ exports.getProcessoById = async (id) => {
     if (malharias) malharias.forEach(m => malhariasMap[String(m.id)] = m.nome);
 
     const itensComHistorico = (itens || []).map(item => {
-        // MATCH EXATO do estoque para a entrega de acordo com a linha
         const historicoDesseItem = transferencias.filter(t => {
             if (t.processo_item_id) return String(t.processo_item_id) === String(item.id);
             return String(t.item_id) === String(item.item_id);
@@ -293,6 +290,9 @@ exports.createProcessoComItens = async (processoData, itensData) => {
     return processo;
 };
 
+// =========================================================
+// CORREÇÃO: UPSERT DE ITENS EVITA DUPLICAR OS EXISTENTES
+// =========================================================
 exports.updateProcessoComItens = async (id, processoData, itensData) => {
     const existe = await verificarNumeroExistente(processoData.numero_processo, id);
     if (existe) throw new Error(`O número de processo "${processoData.numero_processo}" já pertence a outro registro!`);
@@ -300,13 +300,51 @@ exports.updateProcessoComItens = async (id, processoData, itensData) => {
     const { error: errProc } = await supabase.schema('malharia').from(TABLE).update(processoData).eq('id', id);
     if (errProc) throw errProc;
 
-    await supabase.schema('malharia').from('processo_item').delete().eq('processo_id', id);
+    // Busca quais itens já existem neste processo
+    const { data: existingItems, error: getErr } = await supabase.schema('malharia').from('processo_item').select('id').eq('processo_id', id);
+    if (getErr) throw getErr;
+
+    const existingIds = existingItems.map(i => parseInt(i.id));
+    const incomingIds = itensData.map(i => i.id).filter(id => id);
+
+    // Identifica quais itens foram removidos do formulário
+    const idsToDelete = existingIds.filter(eid => !incomingIds.includes(eid));
+
+    // Deleta apenas os itens removidos. Dispara erro explícito caso eles possuam produção registrada
+    if (idsToDelete.length > 0) {
+        const { error: delErr } = await supabase.schema('malharia').from('processo_item').delete().in('id', idsToDelete);
+        if (delErr) {
+            throw new Error("Não é possível remover um produto que já possui produções diárias registradas ou imagens atreladas. Exclua as produções/imagens antes de remover o item.");
+        }
+    }
+
+    // Divide entre itens para ATUALIZAR e itens para INSERIR
+    const itemsToUpdate = [];
+    const itemsToInsert = [];
 
     if (itensData && itensData.length > 0) {
-        const itensFormatados = itensData.map(item => ({ ...item, processo_id: id }));
-        const { error: errItens } = await supabase.schema('malharia').from('processo_item').insert(itensFormatados);
-        if (errItens) throw errItens;
+        itensData.forEach(item => {
+            const formatado = { ...item, processo_id: id };
+            if (item.id) {
+                itemsToUpdate.push(formatado);
+            } else {
+                itemsToInsert.push(formatado);
+            }
+        });
+
+        // Atualiza os existentes
+        if (itemsToUpdate.length > 0) {
+            const { error: updErr } = await supabase.schema('malharia').from('processo_item').upsert(itemsToUpdate, { onConflict: 'id' });
+            if (updErr) throw updErr;
+        }
+
+        // Insere os novos
+        if (itemsToInsert.length > 0) {
+            const { error: insErr } = await supabase.schema('malharia').from('processo_item').insert(itemsToInsert);
+            if (insErr) throw insErr;
+        }
     }
+
     return true;
 };
 

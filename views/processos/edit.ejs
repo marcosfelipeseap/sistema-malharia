@@ -94,7 +94,7 @@
         <div class="col-md-3">
             <label class="form-label small fw-bold">Status</label>
             <select class="form-select" name="status" id="statusGeral">
-                <% ['ENTREGA NÃO INICIADA','PARCIAMENTE ENTREGUE','DEMANDA CONCLUÍDA'].forEach(st => { %>
+                <% ['ENTREGA NÃO INICIADA','PARCIALMENTE ENTREGUE','DEMANDA CONCLUÍDA'].forEach(st => { %>
                     <option value="<%= st %>" <%= processo.status === st ? 'selected' : '' %>><%= st %></option>
                 <% }) %>
             </select>
@@ -192,7 +192,7 @@
         if (rows.length === 0 || totalAut === 0 || totalEnt === 0) {
             selectStatus.value = "ENTREGA NÃO INICIADA";
         } else if (totalEnt > 0 && totalEnt < totalAut) {
-            selectStatus.value = "PARCIAMENTE ENTREGUE";
+            selectStatus.value = "PARCIALMENTE ENTREGUE";
         } else if (totalEnt >= totalAut) {
             selectStatus.value = "DEMANDA CONCLUÍDA";
         }
@@ -202,6 +202,9 @@
         const tbody = document.getElementById('listaItens');
         const prazo = document.getElementById('prazoGlobal').value;
 
+        // IDENTIFICADOR ÚNICO DO ITEM (PREVINE DUPLICAÇÃO NO BACKEND)
+        const valPItemId = dados && dados.id ? dados.id : ''; 
+        
         const valId = dados ? dados.item_id : '';
         const valDescricao = dados && dados.descricao ? dados.descricao : ''; 
         const valTamanho = dados && dados.tamanho ? dados.tamanho : ''; 
@@ -213,7 +216,10 @@
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td class="p-0"><select class="tom-select-init" name="item_id" required>${criarHTMLOptions(valId)}</select></td>
+            <td class="p-0">
+                <input type="hidden" name="processo_item_id" value="${valPItemId}">
+                <select class="tom-select-init" name="item_id" required>${criarHTMLOptions(valId)}</select>
+            </td>
             <td>
                 <input type="text" class="form-control form-control-sm border-0" 
                        name="descricao" value="${valDescricao}" placeholder="Detalhes..." autocomplete="off">
