@@ -53,11 +53,19 @@ exports.create = async (req, res) => {
 
 exports.store = async (req, res) => {
     try {
-        await service.createMaquina({ nome: req.body.nome, tipo_id: req.body.tipo_id || null, modelo: req.body.modelo || null, serie_fabrica: req.body.serie_fabrica || null });
+        await service.createMaquina({ 
+            nome: req.body.nome, 
+            tipo_id: req.body.tipo_id || null 
+        });
         res.redirect('/maquinarios');
     } catch (error) {
         const tipos = await service.getAllTipos();
-        res.render('maquinarios/create', { title: 'Nova Máquina', tipos, error: 'Erro ao salvar: ' + error.message, formData: req.body });
+        res.render('maquinarios/create', { 
+            title: 'Nova Máquina', 
+            tipos, 
+            error: 'Erro ao salvar: ' + error.message, 
+            formData: req.body 
+        });
     }
 };
 
@@ -71,11 +79,20 @@ exports.edit = async (req, res) => {
 
 exports.update = async (req, res) => {
     try {
-        let updates = { nome: req.body.nome, tipo_id: req.body.tipo_id || null, modelo: req.body.modelo, serie_fabrica: req.body.serie_fabrica };
-        if (req.user.nivel < 3) { updates = { modelo: req.body.modelo, serie_fabrica: req.body.serie_fabrica }; }
+        if (req.user.nivel < 3) { 
+            return res.redirect('/maquinarios'); 
+        }
+
+        let updates = { 
+            nome: req.body.nome, 
+            tipo_id: req.body.tipo_id || null 
+        };
+        
         await service.updateMaquina(req.params.id, updates);
         res.redirect('/maquinarios');
-    } catch (error) { res.redirect(`/maquinarios/${req.params.id}/edit`); }
+    } catch (error) { 
+        res.redirect(`/maquinarios/${req.params.id}/edit`); 
+    }
 };
 
 exports.destroy = async (req, res) => {
