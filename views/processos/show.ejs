@@ -204,6 +204,12 @@
                             <button type="button" class="btn btn-sm btn-light border border-secondary shadow-sm text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalHistorico-<%= item.id %>" title="Ver Origem das Entradas">
                                 <%= item.qtd_entregue %> <i class="bi bi-box-arrow-in-right ms-1"></i>
                             </button>
+                            
+                            <% if (item.qtd_entregue > item.qtd_solicitada) { %>
+                                <div class="text-danger small fw-bold mt-1" title="Foram entregues <%= item.qtd_entregue - item.qtd_solicitada %> unidades a mais que o solicitado">
+                                    <i class="bi bi-exclamation-circle"></i> +<%= item.qtd_entregue - item.qtd_solicitada %> extra!
+                                </div>
+                            <% } %>
                         </td>
 
                         <td class="text-center fw-bold text-danger"><%= item.qtd_faltante %></td>

@@ -4,20 +4,22 @@ const multer = require('multer');
 const { requireAuth, requireInsumosAccess } = require('../middlewares/auth.middleware');
 const InsumosController = require('../controllers/insumos.controller');
 
-// Configuração do Multer para processar arquivos em memória
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Middleware de autenticação
 router.use(requireAuth, requireInsumosAccess);
 
-// Rotas do Módulo de Insumos
 router.get('/', InsumosController.index);
 
-// Rotas de listagem e criação de produtos base
+// --- ROTAS DO CATÁLOGO GLOBAL ---
+router.get('/catalogo', InsumosController.listarCatalogo);
+router.post('/catalogo/novo', InsumosController.criarItemCatalogo);
+router.post('/catalogo/:id/editar', InsumosController.editarItemCatalogo);
+router.post('/catalogo/:id/excluir', InsumosController.excluirItemCatalogo);
+
+// --- ROTAS DE ESTOQUE ---
 router.get('/:malharia_id/:categoria', InsumosController.listarEstoque);
 router.post('/:malharia_id/:categoria/novo', InsumosController.criarProduto);
 
-// Rotas de detalhes e adição de movimentações
 router.get('/:malharia_id/:categoria/:insumo_id', InsumosController.detalhesProduto);
 router.post('/:malharia_id/:categoria/:insumo_id/movimentar', 
     upload.fields([
@@ -28,12 +30,9 @@ router.post('/:malharia_id/:categoria/:insumo_id/movimentar',
 );
 
 // --- ROTAS DE EDIÇÃO E EXCLUSÃO ---
-
-// Produtos Principais
 router.post('/:malharia_id/:categoria/:insumo_id/editar', InsumosController.editarProduto);
 router.post('/:malharia_id/:categoria/:insumo_id/excluir', InsumosController.excluirProduto);
 
-// Lançamentos / Movimentações
 router.post('/:malharia_id/:categoria/:insumo_id/movimentacao/:movimentacao_id/editar', 
     upload.fields([{ name: 'nota_fiscal', maxCount: 1 }, { name: 'comprovante', maxCount: 1 }]), 
     InsumosController.editarEntrada

@@ -1,5 +1,12 @@
+<style>
+    .pulse-dot-success { animation: pulse-dot-success 2s infinite; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #198754; margin-left: 6px; }
+    @keyframes pulse-dot-success { 0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); } 70% { box-shadow: 0 0 0 5px rgba(25, 135, 84, 0); } 100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); } }
+
+    .pulse-dot-danger { animation: pulse-dot-danger 2s infinite; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #dc3545; margin-left: 6px; }
+    @keyframes pulse-dot-danger { 0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); } 70% { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); } 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); } }
+</style>
+
 <% 
-    // Usa a variável com verificação de segurança
     const envAtualMenu = typeof currentEnv !== 'undefined' ? currentEnv : 'malharia';
     const isInsumosMenu = (envAtualMenu === 'insumos') || (typeof user !== 'undefined' && user && user.cargo === 'controlador');
 %>
@@ -12,6 +19,11 @@
                     <i class="bi bi-boxes"></i> Controle de Insumos
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <%= typeof currentPath !== 'undefined' && currentPath === '/insumos/catalogo' ? 'active' : '' %>" href="/insumos/catalogo">
+                    <i class="bi bi-journal-text"></i> Catálogo Global
+                </a>
+            </li>
         </ul>
 
     <% } else { %>
@@ -22,6 +34,16 @@
                         <i class="bi bi-clipboard-check"></i> Registros Gerais
                     </a>
                 </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/solicitacoes') ? 'active' : '' %>" href="/solicitacoes">
+                        <i class="bi bi-envelope-paper"></i> Solicitar Insumos
+                        <% if (typeof pendingSolicitacoesCount !== 'undefined' && pendingSolicitacoesCount > 0) { %>
+                            <span class="badge bg-warning text-dark rounded-pill ms-2 shadow-sm"><%= pendingSolicitacoesCount %> Pendentes</span>
+                        <% } %>
+                    </a>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link <%= typeof title !== 'undefined' && title === 'Histórico de Relatórios' ? 'active' : '' %>" href="/registros/relatorios">
                         <i class="bi bi-card-checklist"></i> Histórico de Relatórios
@@ -73,6 +95,19 @@
                         <i class="bi bi-calendar-range"></i> Registros Anteriores
                     </a>
                 </li>
+
+                <li class="nav-item">
+                    <a class="nav-link d-flex align-items-center <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/solicitacoes') ? 'active' : '' %>" href="/solicitacoes">
+                        <i class="bi bi-envelope-paper"></i> Solicitar Insumos
+                        <% if (typeof recentAprovadasCount !== 'undefined' && recentAprovadasCount > 0) { %>
+                            <span class="pulse-dot-success" title="Você tem <%= recentAprovadasCount %> pedido(s) ACEITO(S) recentemente!"></span>
+                        <% } %>
+                        <% if (typeof recentRejeitadasCount !== 'undefined' && recentRejeitadasCount > 0) { %>
+                            <span class="pulse-dot-danger" title="Você tem <%= recentRejeitadasCount %> pedido(s) RECUSADO(S) recentemente!"></span>
+                        <% } %>
+                    </a>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link <%= typeof title !== 'undefined' && title === 'Histórico de Relatórios' ? 'active' : '' %>" href="/registros/relatorios">
                         <i class="bi bi-card-checklist"></i> Histórico de Relatórios

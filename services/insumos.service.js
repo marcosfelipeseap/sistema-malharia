@@ -7,6 +7,50 @@ const InsumosService = {
         return data;
     },
 
+    // --- CATÁLOGO GLOBAL ---
+    getCatalogo: async (categoria = null) => {
+        let query = supabase.schema('malharia').from('catalogo_insumos').select('*').order('nome');
+        if (categoria) query = query.eq('categoria', categoria);
+        const { data, error } = await query;
+        if (error) throw error;
+        return data;
+    },
+    
+    // NOVO: Função para checar duplicidade (ignorando maiúsculas/minúsculas e espaços)
+    verificarItemCatalogoExistente: async (nome, categoria, idIgnorado = null) => {
+        let query = supabase.schema('malharia').from('catalogo_insumos')
+            .select('id')
+            .ilike('nome', nome.trim()) // Busca ignorando case
+            .eq('categoria', categoria);
+            
+        if (idIgnorado) {
+            query = query.neq('id', idIgnorado); // Usado na edição para não conflitar com o próprio ID
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data.length > 0; // Retorna true se já existir
+    },
+
+    criarItemCatalogo: async (dados) => {
+        const { data, error } = await supabase.schema('malharia').from('catalogo_insumos').insert([dados]).select().single();
+        if (error) throw error;
+        return data;
+    },
+
+    atualizarItemCatalogo: async (id, dados) => {
+        const { data, error } = await supabase.schema('malharia').from('catalogo_insumos').update(dados).eq('id', id).select();
+        if (error) throw error;
+        return data;
+    },
+
+    excluirItemCatalogo: async (id) => {
+        const { error } = await supabase.schema('malharia').from('catalogo_insumos').delete().eq('id', id);
+        if (error) throw error;
+        return true;
+    },
+
+    // --- ESTOQUE E MOVIMENTAÇÕES ---
     getInsumos: async (malharia_id, categoria) => {
         const { data: insumos, error } = await supabase.schema('malharia')
             .from('insumos')
@@ -38,7 +82,6 @@ const InsumosService = {
         return data;
     },
 
-    // --- LÓGICA ATUALIZADA: Puxando a Última Entrega para os Detalhes ---
     getInsumoDetalhes: async (insumo_id) => {
         const { data: insumo, error: err1 } = await supabase.schema('malharia').from('insumos').select('*').eq('id', insumo_id).single();
         if (err1) throw err1;
@@ -56,7 +99,7 @@ const InsumosService = {
                     cor: mov.cor || '-', 
                     tamanho: mov.tamanho || '-', 
                     quantidade: 0,
-                    ultima_entrega: mov // Salva o registro mais recente
+                    ultima_entrega: mov
                 }; 
             }
             variacoes[chave].quantidade += Number(mov.quantidade);

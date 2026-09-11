@@ -213,7 +213,7 @@
                                                 <input type="number" 
                                                        class="form-control text-center fw-bold text-primary input-transf-<%= malharia.id %>-<%= proc.id %>" 
                                                        data-item-id="<%= item.item_id %>"
-                                                       data-processo-item-id="<%= procItemId %>"
+                                                       data-processo-item-id="<%= item.processo_item_id_real || '' %>"
                                                        data-item-nome="<%= item.nome %> <%= item.tamanho && item.tamanho !== '-' ? item.tamanho : '' %>"
                                                        max="<%= item.total_produzido %>" 
                                                        min="0" placeholder="0"
@@ -557,7 +557,7 @@
                         <span class="badge bg-success rounded-pill fs-6">${quantidade} un</span>
                     </div>
                 `;
-                arrayTransferencias.push({ item_id: itemId, processo_item_id: procItemId, quantidade: quantidade });
+                arrayTransferencias.push({ item_id: itemId, processo_item_id: procItemId || null, quantidade: quantidade });
             }
         });
 

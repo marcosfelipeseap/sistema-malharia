@@ -3,56 +3,83 @@ const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
+const supabase = require('./config/supabaseClient'); 
 
-// Inicializa o app Express
 const app = express();
 
-// Configuração do View Engine (EJS)
 app.use(expressLayouts);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.set('layout', 'layouts/main'); // Define o layout padrão
+app.set('layout', 'layouts/main');
 
-// Configuração de Arquivos Estáticos
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(morgan('dev'));
 
-// Middlewares Essenciais
-app.use(morgan('dev')); // Log de requisições
-
-// Limites aumentados para 10mb para permitir fotos Base64
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true })); 
+app.use(cookieParser());
 
-app.use(cookieParser()); // Parser para cookies (auth)
-
-// Middleware global: Memória do ambiente atual
-app.use((req, res, next) => {
+// Middleware global: Memória do ambiente e Contadores do Menu
+app.use(async (req, res, next) => {
     res.locals.currentPath = req.path;
     res.locals.query = req.query; 
     
-    // Determina e trava o ambiente atual baseado na URL
     if (req.path.startsWith('/insumos') || (req.query && req.query.env === 'insumos')) {
         res.locals.currentEnv = 'insumos';
     } else {
         res.locals.currentEnv = 'malharia';
     }
+
+    try {
+        // 1. Solicitações Pendentes (Para os Gestores)
+        const { count: countPendentes } = await supabase.schema('malharia')
+            .from('solicitacoes_insumos')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pendente');
+        res.locals.pendingSolicitacoesCount = countPendentes || 0;
+
+        // 2. Respostas Recentes nos últimos 3 dias (Para os Monitores)
+        const tresDiasAtras = new Date();
+        tresDiasAtras.setDate(tresDiasAtras.getDate() - 3);
+        const isoDate = tresDiasAtras.toISOString();
+
+        const { count: countAprovadas } = await supabase.schema('malharia')
+            .from('solicitacoes_insumos')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'aprovada')
+            .gte('updated_at', isoDate);
+        res.locals.recentAprovadasCount = countAprovadas || 0;
+
+        const { count: countRejeitadas } = await supabase.schema('malharia')
+            .from('solicitacoes_insumos')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'rejeitada')
+            .gte('updated_at', isoDate);
+        res.locals.recentRejeitadasCount = countRejeitadas || 0;
+
+    } catch (e) {
+        res.locals.pendingSolicitacoesCount = 0;
+        res.locals.recentAprovadasCount = 0;
+        res.locals.recentRejeitadasCount = 0;
+    }
     
     next();
 });
 
-// Importação das Rotas
 const indexRoutes = require('./routes/index.routes');
 const authRoutes = require('./routes/auth.routes');         
 const usuariosRoutes = require('./routes/usuarios.routes'); 
 const insumosRoutes = require('./routes/insumos.routes');
+const malhariasRoutes = require('./routes/malharias.routes');
+const solicitacoesRoutes = require('./routes/solicitacoes.routes'); 
 
-// Definição das Rotas (A ORDEM AQUI IMPORTA)
 app.use('/auth', authRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/insumos', insumosRoutes);
+app.use('/malharias', malhariasRoutes);
+app.use('/solicitacoes', solicitacoesRoutes); 
 app.use('/', indexRoutes);
 
-// Tratamento de Erro 404 (Página não encontrada)
 app.use((req, res, next) => {
     res.status(404).render('partials/alerts', {
         layout: false, 
@@ -61,5 +88,4 @@ app.use((req, res, next) => {
     });
 });
 
-// Exporta o app para ser usado no server.js
 module.exports = app;

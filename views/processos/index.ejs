@@ -120,6 +120,11 @@
                             <div class="col border-end">
                                 <small class="d-block text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Entr.</small>
                                 <span class="fw-bold text-success"><%= processo.totais.entregue %></span>
+                                <% if (processo.totais.entregue > processo.totais.solicitado) { %>
+                                    <small class="text-danger fw-bold d-block" style="font-size: 0.65rem; margin-top: -2px;" title="Foram entregues <%= processo.totais.entregue - processo.totais.solicitado %> peças a mais do que o total solicitado.">
+                                        +<%= processo.totais.entregue - processo.totais.solicitado %> extra
+                                    </small>
+                                <% } %>
                             </div>
                             <div class="col">
                                 <small class="d-block text-muted" style="font-size: 0.65rem; text-transform: uppercase;">Pend.</small>

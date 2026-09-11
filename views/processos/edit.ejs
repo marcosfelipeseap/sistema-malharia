@@ -3,7 +3,7 @@
     .ts-control { border-radius: 0; border: none; padding: 8px; box-shadow: none !important; }
     .ts-wrapper.single .ts-control { background-color: transparent; }
 
-    /* NOVA REGRA: Remove as setinhas dos inputs numéricos para liberar espaço e não encavalar os números */
+    /* Remove as setinhas dos inputs numéricos para liberar espaço */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -202,7 +202,6 @@
         const tbody = document.getElementById('listaItens');
         const prazo = document.getElementById('prazoGlobal').value;
 
-        // IDENTIFICADOR ÚNICO DO ITEM (PREVINE DUPLICAÇÃO NO BACKEND)
         const valPItemId = dados && dados.id ? dados.id : ''; 
         
         const valId = dados ? dados.item_id : '';
@@ -213,6 +212,9 @@
         const valEnt = dados ? dados.qtd_entregue : 0;
         const valFal = dados ? dados.qtd_faltante : 0;
         const valPrazo = dados && dados.data_prazo ? dados.data_prazo : prazo;
+
+        // Renderiza o aviso de quantidade extra na inicialização caso a entrega seja superior a solicitada
+        const extraWarning = valEnt > valSol ? `<div class="extra-warning text-danger small fw-bold mt-1"><i class="bi bi-exclamation-circle"></i> +${valEnt - valSol} extra!</div>` : '';
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -228,9 +230,12 @@
                 <input type="text" class="form-control form-control-sm text-center border-0" 
                        name="tamanho" value="${valTamanho}" placeholder="-" autocomplete="off">
             </td>
-            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_solicitada" value="${valSol}" min="0" oninput="validarAutorizada(this)"></td>
-            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_autorizada" value="${valAut}" min="0" oninput="validarAutorizada(this)"></td>
-            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_entregue" value="${valEnt}" min="0" oninput="validarEntregue(this)"></td>
+            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_solicitada" value="${valSol}" min="0" oninput="validarValores(this)"></td>
+            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_autorizada" value="${valAut}" min="0" oninput="validarValores(this)"></td>
+            <td>
+                <input type="number" class="form-control form-control-sm text-center border-0" name="qtd_entregue" value="${valEnt}" min="0" oninput="validarValores(this)">
+                ${extraWarning}
+            </td>
             <td class="bg-light"><input type="number" class="form-control form-control-sm text-center border-0 bg-light fw-bold text-danger" name="qtd_faltante" value="${valFal}" readonly tabindex="-1"></td>
             <td><input type="date" class="form-control form-control-sm border-0 prazo-row" name="data_prazo" value="${valPrazo}"></td>
             <td class="text-center align-middle"><button type="button" class="btn btn-link text-danger p-0" onclick="removerLinha(this)"><i class="bi bi-x-lg"></i></button></td>
@@ -251,22 +256,30 @@
         atualizarStatusGeral();
     }
     
-    function validarAutorizada(input) {
+    // NOVA LÓGICA: Calcula e exibe excedentes livremente, sem bloquear.
+    function validarValores(input) {
         const row = input.closest('tr');
         let sol = parseInt(row.querySelector('[name="qtd_solicitada"]').value) || 0;
-        let inAut = row.querySelector('[name="qtd_autorizada"]');
-        let aut = parseInt(inAut.value) || 0;
-        if(aut > sol) { exibirAviso('Autorizada > Solicitada'); inAut.value = sol; aut = sol; }
-        validarEntregue(row.querySelector('[name="qtd_entregue"]'));
-    }
-
-    function validarEntregue(input) {
-        const row = input.closest('tr');
         let aut = parseInt(row.querySelector('[name="qtd_autorizada"]').value) || 0;
         let inEnt = row.querySelector('[name="qtd_entregue"]');
         let ent = parseInt(inEnt.value) || 0;
-        if(ent > aut) { exibirAviso('Entregue > Autorizada'); inEnt.value = aut; ent = aut; }
-        row.querySelector('[name="qtd_faltante"]').value = (aut - ent < 0 ? 0 : aut - ent);
+        
+        let faltante = aut - ent;
+        row.querySelector('[name="qtd_faltante"]').value = (faltante < 0 ? 0 : faltante);
+
+        // Aviso visual comparando com a Solicitada
+        let warningSpan = row.querySelector('.extra-warning');
+        if (ent > sol) {
+            let extra = ent - sol;
+            if (!warningSpan) {
+                warningSpan = document.createElement('div');
+                warningSpan.className = 'extra-warning text-danger small fw-bold mt-1';
+                inEnt.parentElement.appendChild(warningSpan);
+            }
+            warningSpan.innerHTML = `<i class="bi bi-exclamation-circle"></i> +${extra} extra!`;
+        } else {
+            if (warningSpan) warningSpan.remove();
+        }
 
         atualizarStatusGeral();
     }
@@ -302,7 +315,6 @@
         if(itensExistentes.length > 0) itensExistentes.forEach(item => adicionarLinha(item));
         else adicionarLinha();
         
-        // Garante que o status inicie correto com os valores vindos do banco
         atualizarStatusGeral();
     });
 </script>

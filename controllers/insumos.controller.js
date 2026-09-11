@@ -11,11 +11,80 @@ const InsumosController = {
         }
     },
 
+    // --- CATÁLOGO GLOBAL ---
+    listarCatalogo: async (req, res) => {
+        try {
+            const tecido = await InsumosService.getCatalogo('tecido');
+            const aviamento = await InsumosService.getCatalogo('aviamento');
+            const error = req.query.error || null; // Captura erro de duplicidade se existir
+            
+            res.render('insumos/catalogo', { title: 'Catálogo Global de Insumos', tecido, aviamento, error });
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Erro ao carregar catálogo.');
+        }
+    },
+
+    criarItemCatalogo: async (req, res) => {
+        try {
+            const { nome, categoria } = req.body;
+            const nomeLimpo = nome.trim();
+
+            // Verifica duplicidade antes de inserir
+            const existe = await InsumosService.verificarItemCatalogoExistente(nomeLimpo, categoria);
+            if (existe) {
+                return res.redirect(`/insumos/catalogo?error=${encodeURIComponent('Este item já existe no catálogo!')}`);
+            }
+
+            await InsumosService.criarItemCatalogo({ nome: nomeLimpo, categoria });
+            res.redirect('/insumos/catalogo');
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Erro ao criar item no catálogo.');
+        }
+    },
+
+    editarItemCatalogo: async (req, res) => {
+        try {
+            const { nome, categoria } = req.body;
+            const { id } = req.params;
+            const nomeLimpo = nome.trim();
+
+            // Verifica duplicidade (ignorando o próprio ID do item sendo editado)
+            const existe = await InsumosService.verificarItemCatalogoExistente(nomeLimpo, categoria, id);
+            if (existe) {
+                return res.redirect(`/insumos/catalogo?error=${encodeURIComponent('Já existe outro item com este nome no catálogo!')}`);
+            }
+
+            await InsumosService.atualizarItemCatalogo(id, { nome: nomeLimpo, categoria });
+            res.redirect('/insumos/catalogo');
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Erro ao editar item no catálogo.');
+        }
+    },
+
+    excluirItemCatalogo: async (req, res) => {
+        try {
+            await InsumosService.excluirItemCatalogo(req.params.id);
+            res.redirect('/insumos/catalogo');
+        } catch (error) {
+            console.error(error);
+            res.status(500).send('Erro ao excluir item do catálogo.');
+        }
+    },
+
+    // --- ESTOQUE E MOVIMENTAÇÕES ---
     listarEstoque: async (req, res) => {
         try {
             const { malharia_id, categoria } = req.params;
             const insumos = await InsumosService.getInsumos(malharia_id, categoria);
-            res.render('insumos/estoque', { title: `Estoque de ${categoria}`, insumos, malharia_id, categoria });
+            
+            const catalogoCompleto = await InsumosService.getCatalogo(categoria); 
+            const nomesNoEstoque = insumos.map(i => i.nome.toLowerCase().trim());
+            const catalogo = catalogoCompleto.filter(c => !nomesNoEstoque.includes(c.nome.toLowerCase().trim()));
+
+            res.render('insumos/estoque', { title: `Estoque de ${categoria}`, insumos, catalogo, malharia_id, categoria });
         } catch (error) {
             console.error("ERRO REAL AO CARREGAR ESTOQUE:", error);
             res.status(500).send('Erro ao carregar estoque. Verifique o terminal para mais detalhes.');
@@ -75,8 +144,6 @@ const InsumosController = {
             res.status(500).send('Erro ao registrar entrada.');
         }
     },
-
-    // --- NOVAS FUNÇÕES: EDIÇÃO E EXCLUSÃO ---
 
     editarProduto: async (req, res) => {
         try {

@@ -6,7 +6,7 @@
     .no-results-link { cursor: pointer; color: #0d6efd; text-decoration: underline; }
     .no-results-link:hover { color: #0a58ca; }
 
-    /* NOVA REGRA: Remove as setinhas dos inputs numéricos para liberar espaço e não encavalar os números */
+    /* Remove as setinhas dos inputs numéricos para liberar espaço */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
         -webkit-appearance: none;
@@ -254,9 +254,9 @@
                 <input type="text" class="form-control form-control-sm text-center border-0" 
                         name="tamanho" placeholder="-" autocomplete="off">
             </td>
-            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_solicitada" value="0" min="0" oninput="validarAutorizada(this)"></td>
-            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_autorizada" value="0" min="0" oninput="validarAutorizada(this)"></td>
-            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_entregue" value="0" min="0" oninput="validarEntregue(this)"></td>
+            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_solicitada" value="0" min="0" oninput="validarValores(this)"></td>
+            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_autorizada" value="0" min="0" oninput="validarValores(this)"></td>
+            <td><input type="number" class="form-control form-control-sm text-center border-0" name="qtd_entregue" value="0" min="0" oninput="validarValores(this)"></td>
             <td class="bg-light"><input type="number" class="form-control form-control-sm text-center border-0 bg-light fw-bold text-danger" name="qtd_faltante" value="0" readonly tabindex="-1"></td>
             <td><input type="date" class="form-control form-control-sm border-0 prazo-row" name="data_prazo" value="${prazo}"></td>
             <td class="text-center align-middle">
@@ -293,30 +293,31 @@
         atualizarStatusGeral();
     }
 
-    function validarAutorizada(input) {
+    // NOVA LÓGICA: Calcula e exibe excedentes livremente, sem bloquear.
+    function validarValores(input) {
         const row = input.closest('tr');
         let sol = parseInt(row.querySelector('[name="qtd_solicitada"]').value) || 0;
-        let inAut = row.querySelector('[name="qtd_autorizada"]');
-        let aut = parseInt(inAut.value) || 0;
-        if (aut > sol) {
-            exibirAviso('Autorizada não pode ser maior que Solicitada.');
-            inAut.value = sol; aut = sol;
-        }
-        validarEntregue(row.querySelector('[name="qtd_entregue"]'));
-    }
-
-    function validarEntregue(input) {
-        const row = input.closest('tr');
         let aut = parseInt(row.querySelector('[name="qtd_autorizada"]').value) || 0;
         let inEnt = row.querySelector('[name="qtd_entregue"]');
         let ent = parseInt(inEnt.value) || 0;
-        if (ent > aut) {
-            exibirAviso('Entregue não pode ser maior que Autorizada.');
-            inEnt.value = aut; ent = aut;
-        }
-        let faltante = aut - ent;
-        row.querySelector('[name="qtd_faltante"]').value = (aut - ent < 0 ? 0 : aut - ent);
         
+        let faltante = aut - ent;
+        row.querySelector('[name="qtd_faltante"]').value = (faltante < 0 ? 0 : faltante);
+
+        // Aviso visual comparando com a Solicitada
+        let warningSpan = row.querySelector('.extra-warning');
+        if (ent > sol) {
+            let extra = ent - sol;
+            if (!warningSpan) {
+                warningSpan = document.createElement('div');
+                warningSpan.className = 'extra-warning text-danger small fw-bold mt-1';
+                inEnt.parentElement.appendChild(warningSpan);
+            }
+            warningSpan.innerHTML = `<i class="bi bi-exclamation-circle"></i> +${extra} extra!`;
+        } else {
+            if (warningSpan) warningSpan.remove();
+        }
+
         atualizarStatusGeral();
     }
 
