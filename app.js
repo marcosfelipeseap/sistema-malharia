@@ -19,7 +19,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true })); 
 app.use(cookieParser());
 
-// Middleware global: Memória do ambiente e Contadores do Menu
 app.use(async (req, res, next) => {
     res.locals.currentPath = req.path;
     res.locals.query = req.query; 
@@ -31,14 +30,12 @@ app.use(async (req, res, next) => {
     }
 
     try {
-        // 1. Solicitações Pendentes (Para os Gestores)
         const { count: countPendentes } = await supabase.schema('malharia')
             .from('solicitacoes_insumos')
             .select('*', { count: 'exact', head: true })
             .eq('status', 'pendente');
         res.locals.pendingSolicitacoesCount = countPendentes || 0;
 
-        // 2. Respostas Recentes nos últimos 3 dias (Para os Monitores)
         const tresDiasAtras = new Date();
         tresDiasAtras.setDate(tresDiasAtras.getDate() - 3);
         const isoDate = tresDiasAtras.toISOString();
@@ -72,12 +69,14 @@ const usuariosRoutes = require('./routes/usuarios.routes');
 const insumosRoutes = require('./routes/insumos.routes');
 const malhariasRoutes = require('./routes/malharias.routes');
 const solicitacoesRoutes = require('./routes/solicitacoes.routes'); 
+const suporteRoutes = require('./routes/suporte.routes'); 
 
 app.use('/auth', authRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/insumos', insumosRoutes);
 app.use('/malharias', malhariasRoutes);
 app.use('/solicitacoes', solicitacoesRoutes); 
+app.use('/suporte', suporteRoutes);
 app.use('/', indexRoutes);
 
 app.use((req, res, next) => {

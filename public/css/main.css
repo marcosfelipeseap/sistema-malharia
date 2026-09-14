@@ -1,55 +1,51 @@
 :root {
-    --header-height: 135px; /* Altura aumentada para comportar o logo maior e o texto adicional */
+    --header-height: 135px;
 }
 
-/* 1. Ajuste do Corpo */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
-    padding-top: var(--header-height); /* Empurra o conteúdo para baixo do header */
+    padding-top: var(--header-height); 
 }
 
-/* 2. Cabeçalho (Sistema Malharia) */
 header.navbar {
     height: var(--header-height);
-    background-color: #212529; /* Cor escura */
-    z-index: 1030; /* Garante que fica ACIMA de tudo */
+    background-color: #212529; 
+    z-index: 1030; 
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    padding: 0; /* Reset de padding */
+    padding: 0; 
 }
 
 .navbar-brand {
-    height: 100%; /* Ocupa toda a altura do header */
+    height: 100%; 
     display: flex;
     align-items: center;
     justify-content: center;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
-    background-color: rgba(0, 0, 0, 0.25); /* Fundo levemente diferente */
+    background-color: rgba(0, 0, 0, 0.25); 
     font-size: 1.1rem;
     white-space: nowrap;
 }
 
-/* 3. Barra Lateral (Sidebar) */
 .sidebar {
     position: fixed;
-    top: var(--header-height); /* Começa EXATAMENTE abaixo do header */
+    top: var(--header-height); 
     bottom: 0;
     left: 0;
     z-index: 100;
-    background-color: #f8f9fa; /* Alterado para cinza padrão */
-    padding-top: 20px; /* Espaço interno no topo da lista */
+    background-color: #f8f9fa; 
+    padding-top: 20px; 
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-    overflow-y: auto; /* Permite rolar se o menu for muito longo */
+    overflow-y: auto; 
 }
 
-/* Links da Sidebar */
 .sidebar .nav-link {
     font-weight: 500;
-    color: #495057; /* Texto cinza escuro para contrastar com o fundo claro */
+    color: #495057; 
     padding: 12px 24px;
     display: flex;
     align-items: center;
@@ -58,8 +54,8 @@ header.navbar {
 
 .sidebar .nav-link:hover,
 .sidebar .nav-link.active {
-    color: #0d6efd; /* Azul principal do bootstrap para hover e ativo */
-    background-color: rgba(0, 0, 0, .05); /* Escurece levemente o fundo no hover */
+    color: #0d6efd; 
+    background-color: rgba(0, 0, 0, .05); 
     border-left: 4px solid #0d6efd;
 }
 
@@ -67,28 +63,100 @@ header.navbar {
     font-size: 1.2rem;
 }
 
-/* 4. Ajustes Responsivos (Mobile) */
 @media (max-width: 767.98px) {
     .sidebar {
         top: var(--header-height);
-        height: auto; /* Altura automática */
-        position: static; /* Deixa de ser fixa */
-        width: 100%; /* Ocupa largura total */
+        height: auto; 
+        position: static; 
+        width: 100%; 
         background-color: #f8f9fa;
     }
     
     body {
-        padding-top: var(--header-height); /* Mantém o padding */
+        padding-top: var(--header-height); 
     }
 
     .navbar-brand {
-        width: auto; /* No mobile, o brand não precisa ter largura fixa de coluna */
+        width: auto; 
         background-color: transparent;
         box-shadow: none;
     }
 }
 
-/* Badges de Status */
 .status-concluido { background-color: #198754; color: white; }
 .status-parcial { background-color: #ffc107; color: black; }
-.status-nao-iniciado { background-color: #dc3545; color: white; }
+.status-nao-iniciado { background-color: #dc3545; color: white; } 
+
+.chat-floating-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #0d6efd;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    font-size: 24px;
+    z-index: 1050;
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.chat-floating-btn:hover {
+    transform: scale(1.1);
+    background-color: #0b5ed7;
+}
+
+.chat-window {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 350px;
+    height: 450px;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    z-index: 1050;
+    overflow: hidden;
+    border: 1px solid #ddd;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.msg-bubble {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+
+.msg-in {
+    align-self: flex-start;
+    background-color: #e9ecef;
+    color: #212529;
+    border-bottom-left-radius: 2px;
+}
+
+.msg-out {
+    align-self: flex-end;
+    background-color: #0d6efd;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+
+.msg-out .text-muted {
+    color: rgba(255,255,255,0.7) !important;
+}
