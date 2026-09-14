@@ -63,20 +63,22 @@ app.use(async (req, res, next) => {
     next();
 });
 
-const indexRoutes = require('./routes/index.routes');
+// Importações corretas de rotas sem duplicidade
 const authRoutes = require('./routes/auth.routes');         
 const usuariosRoutes = require('./routes/usuarios.routes'); 
 const insumosRoutes = require('./routes/insumos.routes');
-const malhariasRoutes = require('./routes/malharias.routes');
 const solicitacoesRoutes = require('./routes/solicitacoes.routes'); 
 const suporteRoutes = require('./routes/suporte.routes'); 
+const indexRoutes = require('./routes/index.routes');
 
+// Montagem das rotas independentes
 app.use('/auth', authRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/insumos', insumosRoutes);
-app.use('/malharias', malhariasRoutes);
 app.use('/solicitacoes', solicitacoesRoutes); 
 app.use('/suporte', suporteRoutes);
+
+// A rota raiz DEVE ser a última. Ela carrega a proteção das rotas da malharia
 app.use('/', indexRoutes);
 
 app.use((req, res, next) => {

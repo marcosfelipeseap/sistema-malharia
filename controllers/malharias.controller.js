@@ -36,10 +36,12 @@ exports.index = async (req, res) => {
             malharias = malharias.filter(m => permitidas.includes(m.id));
         }
 
-        res.render('malharias/index', { title: 'Gerenciar Malharias', malharias });
+        // CORREÇÃO AQUI: Passando o user explicitamente para a view
+        res.render('malharias/index', { title: 'Gerenciar Malharias', malharias, user: req.user });
     } catch (error) {
         console.error(error);
-        res.render('malharias/index', { title: 'Gerenciar Malharias', malharias: [], error: 'Erro ao listar.' });
+        // CORREÇÃO AQUI
+        res.render('malharias/index', { title: 'Gerenciar Malharias', malharias: [], error: 'Erro ao listar.', user: req.user });
     }
 };
 
@@ -49,7 +51,8 @@ exports.create = async (req, res) => {
         let maquinarios = [];
         try { maquinarios = await maquinariosService.getAllMaquinas(); } catch (e) { }
 
-        res.render('malharias/create', { title: 'Nova Malharia', unidades: unidades || [], maquinarios: maquinarios || [] });
+        // CORREÇÃO AQUI
+        res.render('malharias/create', { title: 'Nova Malharia', unidades: unidades || [], maquinarios: maquinarios || [], user: req.user });
     } catch (error) {
         res.redirect('/malharias');
     }
@@ -91,7 +94,8 @@ exports.edit = async (req, res) => {
         let maquinarios = [];
         try { maquinarios = await maquinariosService.getAllMaquinas(); } catch(e) {}
 
-        res.render('malharias/edit', { title: 'Editar Malharia', malharia, unidades, maquinarios });
+        // CORREÇÃO AQUI
+        res.render('malharias/edit', { title: 'Editar Malharia', malharia, unidades, maquinarios, user: req.user });
     } catch (error) {
         res.redirect('/malharias');
     }
