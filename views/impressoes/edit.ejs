@@ -7,7 +7,7 @@
     <div class="col-md-12">
         <div class="card shadow-sm border-primary border-top border-3">
             <div class="card-body">
-                <form action="/impressoes/<%= impressao.id %>/update" method="POST" id="formRegistroImpressao" onsubmit="return validarFormulario()">
+                <form action="/impressoes/<%= impressao.id %>/update" method="POST" id="formRegistroImpressao" onsubmit="return validarFormulario(event)">
                     
                     <h5 class="card-title text-primary border-bottom pb-2">Dados Gerais</h5>
                     <div class="row mb-4">
@@ -17,7 +17,6 @@
                         </div>
                         <div class="col-md-8 mb-3">
                             <label class="form-label fw-bold">Máquina de Impressão</label>
-                            <!-- Select congelado -->
                             <select class="form-select bg-light" disabled>
                                 <% maquinas.forEach(function(maq) { %>
                                     <option value="<%= maq.id %>" <%= String(maq.id) === String(impressao.maquina_id) ? 'selected' : '' %>>
@@ -127,6 +126,23 @@
     </div>
 </div>
 
+<!-- Modal de Aviso -->
+<div class="modal fade" id="modalAviso" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle"></i> Atenção</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-3" id="textoAviso"></div>
+            <div class="modal-footer py-1 justify-content-center">
+                <button type="button" class="btn btn-sm btn-dark px-3" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
     const optCat = ['escolar', 'diversas', 'esportiva', 'seap'];
     const optProd = ['camisa', 'camiseta', 'colete'];
@@ -136,6 +152,11 @@
 
     function gerarOptions(array) {
         return array.map(item => `<option value="${item}">${item.toUpperCase()}</option>`).join('');
+    }
+
+    function exibirAviso(msg) {
+        document.getElementById('textoAviso').innerText = msg;
+        new bootstrap.Modal(document.getElementById('modalAviso')).show();
     }
 
     function adicionarLinha() {
@@ -166,10 +187,11 @@
         }
     }
 
-    function validarFormulario() {
+    function validarFormulario(event) {
         const tbody = document.getElementById('tbodyImpressoes');
         if (tbody.children.length === 0 || document.getElementById('linhaVazia')) {
-            alert("Você precisa deixar pelo menos uma linha de impressão antes de atualizar.");
+            event.preventDefault();
+            exibirAviso("Você precisa deixar pelo menos uma linha de impressão antes de atualizar.");
             return false;
         }
         return true;

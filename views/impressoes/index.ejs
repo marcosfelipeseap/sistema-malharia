@@ -179,7 +179,8 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
                                 </a>
                                 <% if (user.nivel >= 3) { %>
                                 <form action="/impressoes/<%= imp.id %>/delete" method="POST">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Excluir este apontamento?')"><i class="bi bi-trash"></i> Excluir</button>
+                                    <!-- AQUI TROCAMOS O CONFIRM PELO MODAL -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarExclusao(this, 'impressao')"><i class="bi bi-trash"></i> Excluir</button>
                                 </form>
                                 <% } %>
                             </div>
@@ -224,6 +225,25 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
     </div>
 </div>
 
+<!-- Modal Confirmação de Exclusão -->
+<div class="modal fade" id="modalConfirmDelete" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle"></i> Confirmação</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-3" id="textoConfirmDelete">
+                Tem certeza que deseja excluir?
+            </div>
+            <div class="modal-footer py-1 justify-content-center">
+                <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-danger px-3" id="btnConfirmDelete">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script>
     const resumoRegistros = <%- resumoGeralJSON || '[]' %>;
@@ -247,7 +267,17 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
         }
     });
 
-    // Função que verifica QUANTAS máquinas existiam no banco nesta data
+    // Lógica do Modal de Exclusão
+    let formToDelete = null;
+    function confirmarExclusao(btn, tipo) {
+        formToDelete = btn.closest('form');
+        document.getElementById('textoConfirmDelete').innerText = 'Excluir este apontamento de forma permanente?';
+        new bootstrap.Modal(document.getElementById('modalConfirmDelete')).show();
+    }
+    document.getElementById('btnConfirmDelete').addEventListener('click', function() {
+        if(formToDelete) formToDelete.submit();
+    });
+
     function getExpectedMaquinas(dateStr) {
         return todasMaquinas.filter(m => {
             const dataCriacao = m.criado_em ? m.criado_em.split('T')[0] : '2000-01-01';
@@ -316,7 +346,7 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
                     statusBadge.classList.add('bg-danger');
                     statusBadge.innerText = `Faltam ${expectedMaquinas}`;
                 } else {
-                    statusBadge.style.display = 'none'; // FDS ou dia futuro ou sem máquinas criadas
+                    statusBadge.style.display = 'none'; 
                 }
             } else {
                 if (expectedMaquinas === 0) {
@@ -337,7 +367,6 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
     }
     document.addEventListener('DOMContentLoaded', renderCalendar);
 
-    // Relógio Regressivo
     if (userNivel < 3) {
         const contadorEl = document.getElementById('contadorTempoRestante');
         if (contadorEl) { 

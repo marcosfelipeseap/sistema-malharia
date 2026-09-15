@@ -44,7 +44,8 @@
                                             <i class="bi bi-pencil-square"></i>
                                         </button>
                                         <form action="/maquinas-impressao/<%= maq.id %>/delete" method="POST" class="d-inline">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Excluir" onclick="return confirm('Tem certeza que deseja excluir esta máquina?')">
+                                            <!-- AQUI TROCAMOS O CONFIRM PELO MODAL -->
+                                            <button type="button" class="btn btn-sm btn-outline-danger" title="Excluir" onclick="confirmarExclusao(this, 'maquina')">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -121,6 +122,25 @@
     </div>
 </div>
 
+<!-- Modal Confirmação de Exclusão -->
+<div class="modal fade" id="modalConfirmDelete" tabindex="-1" style="z-index: 1060;">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white py-2">
+                <h6 class="modal-title fw-bold"><i class="bi bi-exclamation-triangle"></i> Confirmação</h6>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center p-3" id="textoConfirmDelete">
+                Tem certeza que deseja excluir esta máquina permanentemente?
+            </div>
+            <div class="modal-footer py-1 justify-content-center">
+                <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-sm btn-danger px-3" id="btnConfirmDelete">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     function editarMaquina(id, nome, malharia_id) {
         document.getElementById('formEditMaquina').action = `/maquinas-impressao/${id}/update`;
@@ -128,5 +148,15 @@
         document.getElementById('editMalharia').value = malharia_id;
         new bootstrap.Modal(document.getElementById('modalEditarMaquina')).show();
     }
+
+    // Lógica do Modal de Exclusão
+    let formToDelete = null;
+    function confirmarExclusao(btn, tipo) {
+        formToDelete = btn.closest('form');
+        new bootstrap.Modal(document.getElementById('modalConfirmDelete')).show();
+    }
+    document.getElementById('btnConfirmDelete').addEventListener('click', function() {
+        if(formToDelete) formToDelete.submit();
+    });
 </script>
 <% } %>
