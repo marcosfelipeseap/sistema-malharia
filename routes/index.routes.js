@@ -10,7 +10,11 @@ const itensRoutes = require('./itens.routes');
 const registrosRoutes = require('./registros.routes');
 const maquinariosRoutes = require('./maquinarios.routes');
 const estoqueRoutes = require('./estoque.routes'); 
-const cortesRoutes = require('./cortes.routes'); // 1. IMPORTAÇÃO DA ROTA DE CORTES AQUI
+const cortesRoutes = require('./cortes.routes'); 
+
+// Importação das rotas de Impressões
+const maquinasImpressaoRoutes = require('./maquinas_impressao.routes');
+const impressoesRoutes = require('./impressoes.routes');
 
 // Protegendo as rotas da malharia contra acessos do 'controlador'
 router.use('/processos', requireAuth, requireMalhariaAccess, processosRoutes);
@@ -20,7 +24,13 @@ router.use('/itens', requireAuth, requireMalhariaAccess, itensRoutes);
 router.use('/registros', requireAuth, requireMalhariaAccess, registrosRoutes);
 router.use('/maquinarios', requireAuth, requireMalhariaAccess, maquinariosRoutes);
 router.use('/estoque', requireAuth, requireMalhariaAccess, estoqueRoutes); 
-router.use('/cortes', requireAuth, requireMalhariaAccess, cortesRoutes); // 2. REGISTRO DA ROTA AQUI
+router.use('/cortes', requireAuth, requireMalhariaAccess, cortesRoutes); 
+
+// Rotas de Impressões (Ambiente Insumos)
+// Usamos APENAS o requireAuth para que a equipe de insumos (controlador) consiga acessar,
+// pois o requireMalhariaAccess bloquearia o acesso deles.
+router.use('/maquinas-impressao', requireAuth, maquinasImpressaoRoutes);
+router.use('/impressoes', requireAuth, impressoesRoutes);
 
 // Rota Principal
 router.get('/', requireAuth, (req, res) => {
