@@ -27,7 +27,14 @@
 
             <hr class="my-2 border-secondary opacity-25">
 
-            <!-- MENU IMPRESSÕES AQUI (AMBIENTE INSUMOS) -->
+            <!-- MENU TINTAS E BOBINAS -->
+            <li class="nav-item">
+                <a class="nav-link <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/tintas-bobinas') ? 'active text-primary fw-bold' : '' %>" href="/tintas-bobinas">
+                    <i class="bi bi-droplet-half"></i> Tintas e Bobinas
+                </a>
+            </li>
+
+            <!-- MENU IMPRESSÕES -->
             <li class="nav-item">
                 <a class="nav-link <%= typeof currentPath !== 'undefined' && currentPath.startsWith('/impressoes') ? 'active text-primary fw-bold' : '' %>" href="/impressoes">
                     <i class="bi bi-printer"></i> Controle de Impressões
@@ -41,7 +48,6 @@
                 </a>
             </li>
             <% } %>
-            <!-- ------------------------------ -->
         </ul>
 
     <% } else { %>

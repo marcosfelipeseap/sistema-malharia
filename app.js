@@ -23,10 +23,11 @@ app.use(async (req, res, next) => {
     res.locals.currentPath = req.path;
     res.locals.query = req.query; 
     
-    // A regra para as rotas novas abrirem o menu de Insumos continua aqui
+    // Regra do ambiente Insumos
     if (req.path.startsWith('/insumos') || 
         req.path.startsWith('/impressoes') || 
         req.path.startsWith('/maquinas-impressao') || 
+        req.path.startsWith('/tintas-bobinas') || 
         (req.query && req.query.env === 'insumos')) {
         res.locals.currentEnv = 'insumos';
     } else {
@@ -67,7 +68,7 @@ app.use(async (req, res, next) => {
     next();
 });
 
-// Importações corretas de rotas
+// Importações corretas de rotas sem duplicidade
 const authRoutes = require('./routes/auth.routes');         
 const usuariosRoutes = require('./routes/usuarios.routes'); 
 const insumosRoutes = require('./routes/insumos.routes');
@@ -82,7 +83,7 @@ app.use('/insumos', insumosRoutes);
 app.use('/solicitacoes', solicitacoesRoutes); 
 app.use('/suporte', suporteRoutes);
 
-// A rota raiz DEVE ser a última. Ela carrega a proteção de todas as rotas (incluindo as de impressão agora)
+// A rota raiz DEVE ser a última. Ela carrega a proteção de todas as rotas (incluindo as novas)
 app.use('/', indexRoutes);
 
 app.use((req, res, next) => {
