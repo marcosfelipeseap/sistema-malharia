@@ -15,7 +15,10 @@ const cortesRoutes = require('./cortes.routes');
 // Importação das rotas de Insumos / Impressões
 const maquinasImpressaoRoutes = require('./maquinas_impressao.routes');
 const impressoesRoutes = require('./impressoes.routes');
-const tintasBobinasRoutes = require('./tintas_bobinas.routes'); // NOVA ROTA
+const tintasBobinasRoutes = require('./tintas_bobinas.routes'); 
+
+// Importação da Rota de Gamificação (Ranking)
+const rankingRoutes = require('./ranking.routes');
 
 // Protegendo as rotas da malharia contra acessos do 'controlador'
 router.use('/processos', requireAuth, requireMalhariaAccess, processosRoutes);
@@ -27,11 +30,14 @@ router.use('/maquinarios', requireAuth, requireMalhariaAccess, maquinariosRoutes
 router.use('/estoque', requireAuth, requireMalhariaAccess, estoqueRoutes); 
 router.use('/cortes', requireAuth, requireMalhariaAccess, cortesRoutes); 
 
+// Rota de Gamificação (Acesso global autenticado)
+router.use('/ranking', requireAuth, rankingRoutes);
+
 // Rotas do Ambiente de Insumos
 // Usamos APENAS o requireAuth para que a equipe de insumos (controlador) consiga acessar.
 router.use('/maquinas-impressao', requireAuth, maquinasImpressaoRoutes);
 router.use('/impressoes', requireAuth, impressoesRoutes);
-router.use('/tintas-bobinas', requireAuth, tintasBobinasRoutes); // ROTA REGISTRADA AQUI
+router.use('/tintas-bobinas', requireAuth, tintasBobinasRoutes); 
 
 // Rota Principal
 router.get('/', requireAuth, (req, res) => {

@@ -5,6 +5,9 @@ const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const supabase = require('./config/supabaseClient'); 
 
+// Importação do Serviço de Ranking para o Pódio Global
+const rankingService = require('./services/ranking.service');
+
 const app = express();
 
 app.use(expressLayouts);
@@ -59,10 +62,17 @@ app.use(async (req, res, next) => {
             .gte('updated_at', isoDate);
         res.locals.recentRejeitadasCount = countRejeitadas || 0;
 
+        // NOVO: Coleta o Ranking Global do Mês Atual para o Top 5 do Cabeçalho
+        const dataAtual = new Date();
+        const rankingCompleto = await rankingService.getRankingPerformance(dataAtual.getMonth() + 1, dataAtual.getFullYear());
+        res.locals.top5Ranking = rankingCompleto.slice(0, 5); // Pega apenas os 5 primeiros
+
     } catch (e) {
+        console.error("Erro no middleware global:", e);
         res.locals.pendingSolicitacoesCount = 0;
         res.locals.recentAprovadasCount = 0;
         res.locals.recentRejeitadasCount = 0;
+        res.locals.top5Ranking = [];
     }
     
     next();
