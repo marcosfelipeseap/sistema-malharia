@@ -6,16 +6,21 @@ const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.getLoginPage = (req, res) => {
-    if (req.cookies.access_token) return res.redirect('/');
+    // Se já estiver logado, não deixa acessar a tela de login e manda para a área restrita
+    if (req.cookies.access_token) {
+        // Se houver cargo salvo no token, pode direcionar corretamente. 
+        // Como fallback seguro, envia para /registros
+        return res.redirect('/registros');
+    }
     res.render('auth/login', { 
         layout: false, 
         error: req.query.error || null,
-        success: req.query.success || null // Permite capturar mensagens de sucesso vindas da redefinição
+        success: req.query.success || null 
     });
 };
 
 exports.getRegisterPage = (req, res) => {
-    if (req.cookies.access_token) return res.redirect('/');
+    if (req.cookies.access_token) return res.redirect('/registros');
     res.render('auth/register', { 
         layout: false, 
         error: null 
@@ -33,7 +38,7 @@ exports.login = async (req, res) => {
         }
 
         const token = jwt.sign(
-            { id: user.id, username: user.username }, 
+            { id: user.id, username: user.username, cargo: user.cargo }, 
             process.env.JWT_SECRET, 
             { expiresIn: '12h' }
         );
@@ -44,7 +49,13 @@ exports.login = async (req, res) => {
             maxAge: 12 * 60 * 60 * 1000 // 12 horas
         });
 
-        res.redirect('/');
+        // CORREÇÃO: Direciona o usuário para a área interna correta com base no cargo
+        if (user.cargo === 'controlador') {
+            res.redirect('/insumos');
+        } else {
+            res.redirect('/registros');
+        }
+
     } catch (err) {
         console.error('Erro no login:', err);
         res.render('auth/login', { layout: false, error: 'Erro interno.', success: null });
@@ -79,7 +90,8 @@ exports.register = async (req, res) => {
 
 exports.logout = (req, res) => {
     res.clearCookie('access_token');
-    res.redirect('/auth/login');
+    // CORREÇÃO: Direciona para o painel público ao deslogar
+    res.redirect('/'); 
 };
 
 // --- NOVAS FUNÇÕES DE RECUPERAÇÃO DE SENHA ---
@@ -108,7 +120,7 @@ exports.processForgotPassword = async (req, res) => {
 
         // Envio do e-mail usando a API do Resend com o domínio verificado
         await resend.emails.send({
-            from: 'Sistema Malharia <nao-responda@malhariaseap.com>', // <-- LINHA ATUALIZADA AQUI
+            from: 'Sistema Malharia <nao-responda@malhariaseap.com>', 
             to: user.email,
             subject: 'Recuperação de Senha - Sistema Malharia',
             html: `

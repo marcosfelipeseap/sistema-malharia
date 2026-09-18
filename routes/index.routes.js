@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 
-const { requireAuth, requireMalhariaAccess } = require('../middlewares/auth.middleware'); 
+const { requireAuth, requireMalhariaAccess, checkUserPassive } = require('../middlewares/auth.middleware'); 
 
+// ======== IMPORTAÇÃO DAS ROTAS ========
+const dashboardRoutes = require('./dashboard.routes'); // Rotas Públicas
 const processosRoutes = require('./processos.routes');
 const unidadesRoutes = require('./unidades.routes');
 const malhariasRoutes = require('./malharias.routes');
@@ -11,16 +13,20 @@ const registrosRoutes = require('./registros.routes');
 const maquinariosRoutes = require('./maquinarios.routes');
 const estoqueRoutes = require('./estoque.routes'); 
 const cortesRoutes = require('./cortes.routes'); 
-
-// Importação das rotas de Insumos / Impressões
 const maquinasImpressaoRoutes = require('./maquinas_impressao.routes');
 const impressoesRoutes = require('./impressoes.routes');
 const tintasBobinasRoutes = require('./tintas_bobinas.routes'); 
-
-// Importação da Rota de Gamificação (Ranking)
 const rankingRoutes = require('./ranking.routes');
 
-// Protegendo as rotas da malharia contra acessos do 'controlador'
+// ======== ÁREA PÚBLICA (SEM EXIGIR LOGIN, MAS COM LEITURA PASSIVA DE SESSÃO) ========
+router.use('/painel-publico', checkUserPassive, dashboardRoutes);
+
+// Atalho para o botão do Painel Público funcionar (tanto de dentro do sistema como do Login)
+router.get('/publico', (req, res) => {
+    res.redirect('/painel-publico/diario');
+});
+
+// ======== ÁREA RESTRITA (COM LOGIN) ========
 router.use('/processos', requireAuth, requireMalhariaAccess, processosRoutes);
 router.use('/unidades', requireAuth, requireMalhariaAccess, unidadesRoutes);
 router.use('/malharias', requireAuth, requireMalhariaAccess, malhariasRoutes);
@@ -30,23 +36,18 @@ router.use('/maquinarios', requireAuth, requireMalhariaAccess, maquinariosRoutes
 router.use('/estoque', requireAuth, requireMalhariaAccess, estoqueRoutes); 
 router.use('/cortes', requireAuth, requireMalhariaAccess, cortesRoutes); 
 
-// Rota de Gamificação (Acesso global autenticado)
+// Rota de Gamificação
 router.use('/ranking', requireAuth, rankingRoutes);
 
 // Rotas do Ambiente de Insumos
-// Usamos APENAS o requireAuth para que a equipe de insumos (controlador) consiga acessar.
 router.use('/maquinas-impressao', requireAuth, maquinasImpressaoRoutes);
 router.use('/impressoes', requireAuth, impressoesRoutes);
 router.use('/tintas-bobinas', requireAuth, tintasBobinasRoutes); 
 
-// Rota Principal
-router.get('/', requireAuth, (req, res) => {
-    // Se quem logou for controlador, jogamos direto pro ambiente dele
-    if (req.user.cargo === 'controlador') {
-        return res.redirect('/insumos');
-    }
-    // Caso contrário, vai pro fluxo normal
-    res.redirect('/registros');
+// ======== ROTA PRINCIPAL ========
+// Redireciona quem acessa a raiz do sistema direto para o login
+router.get('/', (req, res) => {
+    res.redirect('/auth/login');
 });
 
 module.exports = router;
