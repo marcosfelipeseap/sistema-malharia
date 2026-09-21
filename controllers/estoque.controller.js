@@ -48,7 +48,6 @@ exports.index = async (req, res) => {
                         let tam = item.tamanho || (item.item ? item.item.tamanho : '');
                         let nomeItem = item.item ? item.item.nome : 'Desconhecido';
 
-                        // 1. ESTOQUE PADRÃO (Por Oficina)
                         estoque[malhariaId].total_geral += qtdProduzida;
 
                         if (!estoque[malhariaId].processos[procId]) {
@@ -64,7 +63,6 @@ exports.index = async (req, res) => {
                         }
                         estoque[malhariaId].processos[procId].itens[procItemId].total_produzido += qtdProduzida;
 
-                        // 2. ESTOQUE INVERSO (Por Processo - Gestor/Admin)
                         if (req.user.nivel >= 3) {
                             if (!estoquePorProcesso[procId]) {
                                 estoquePorProcesso[procId] = {
@@ -88,6 +86,20 @@ exports.index = async (req, res) => {
                                 };
                             }
                             estoquePorProcesso[procId].malharias[malhariaId].total_geral += qtdProduzida;
+
+                            if (!estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId]) {
+                                estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId] = {
+                                    item_id: itemId,
+                                    processo_item_id_real: item.processo_item_id || null,
+                                    nome: nomeItem,
+                                    descricao: desc,
+                                    tamanho: tam,
+                                    total_produzido: 0,
+                                    em_transito: 0,
+                                    entregue: 0
+                                };
+                            }
+                            estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId].total_produzido += qtdProduzida;
                         }
                     }
                 });
@@ -137,6 +149,7 @@ exports.index = async (req, res) => {
 
             const qtdAbaterOrigem = transf.status === 'pendente' ? qtdSolicitada : qtd;
 
+            // ABATIMENTO PADRÃO
             if (estoque[malhariaId] && estoque[malhariaId].processos[procId] && estoque[malhariaId].processos[procId].itens[procItemId]) {
                 estoque[malhariaId].processos[procId].itens[procItemId].total_produzido -= qtdAbaterOrigem;
                 estoque[malhariaId].total_geral -= qtdAbaterOrigem;
@@ -154,19 +167,51 @@ exports.index = async (req, res) => {
                 if (transf.status === 'aprovada' && tipoDestino === 'processo') {
                     estoque[malhariaId].processos[procId].itens[procItemId].entregue = (estoque[malhariaId].processos[procId].itens[procItemId].entregue || 0) + qtd;
                 }
+            }
 
-                if (req.user.nivel >= 3 && estoquePorProcesso[procId] && estoquePorProcesso[procId].malharias[malhariaId]) {
-                    estoquePorProcesso[procId].malharias[malhariaId].total_geral -= qtdAbaterOrigem;
-                    estoquePorProcesso[procId].total_geral -= qtdAbaterOrigem;
+            // ABATIMENTO INVERSO (Gestor)
+            if (req.user.nivel >= 3 && estoquePorProcesso[procId]) {
+                if (!estoquePorProcesso[procId].malharias[malhariaId]) {
+                    const m = malharias.find(m => String(m.id) === String(malhariaId));
+                    estoquePorProcesso[procId].malharias[malhariaId] = {
+                        id: malhariaId,
+                        nome: malhariaId === sedeId ? 'MALHARIA SEDE' : (m ? m.nome : 'Oficina'),
+                        isSede: malhariaId === sedeId,
+                        tipo: malhariaId === sedeId ? 'Centro de Distribuição' : (m ? m.tipo : ''),
+                        total_geral: 0,
+                        itens: {}
+                    };
+                }
 
-                    if (estoquePorProcesso[procId].malharias[malhariaId].total_geral < 0) {
-                        const diff = 0 - estoquePorProcesso[procId].malharias[malhariaId].total_geral;
-                        estoquePorProcesso[procId].malharias[malhariaId].total_geral = 0;
-                        estoquePorProcesso[procId].total_geral += diff;
-                    }
+                if (!estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId]) {
+                    estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId] = {
+                        item_id: itemId, processo_item_id_real: transf.processo_item_id || null,
+                        nome: transf.item ? transf.item.nome : 'Item', descricao: '', tamanho: transf.tamanho_exato,
+                        total_produzido: 0, em_transito: 0, entregue: 0
+                    };
+                }
+
+                estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId].total_produzido -= qtdAbaterOrigem;
+                estoquePorProcesso[procId].malharias[malhariaId].total_geral -= qtdAbaterOrigem;
+                estoquePorProcesso[procId].total_geral -= qtdAbaterOrigem;
+
+                if (estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId].total_produzido < 0) {
+                    const diff = 0 - estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId].total_produzido;
+                    estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId].total_produzido = 0;
+                    estoquePorProcesso[procId].malharias[malhariaId].total_geral += diff;
+                    estoquePorProcesso[procId].total_geral += diff;
+                }
+
+                if (transf.status === 'pendente') {
+                    estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId].em_transito += qtdAbaterOrigem;
+                }
+
+                if (transf.status === 'aprovada' && tipoDestino === 'processo') {
+                    estoquePorProcesso[procId].malharias[malhariaId].itens[procItemId].entregue += qtd;
                 }
             }
 
+            // ENTRADA NA SEDE
             if (transf.status === 'aprovada' && tipoDestino === 'sede') {
                 estoque[sedeId].total_geral += qtd;
                 if (!estoque[sedeId].processos[procId]) {
@@ -187,11 +232,7 @@ exports.index = async (req, res) => {
                 if (req.user.nivel >= 3) {
                     if (!estoquePorProcesso[procId]) {
                         estoquePorProcesso[procId] = {
-                            id: procId,
-                            numero_processo: transf.processo ? transf.processo.numero_processo : 'S/N',
-                            orgao: transf.processo ? transf.processo.orgao : 'Órgão Desconhecido',
-                            total_geral: 0,
-                            malharias: {}
+                            id: procId, numero_processo: transf.processo ? transf.processo.numero_processo : 'S/N', orgao: transf.processo ? transf.processo.orgao : 'Órgão Desconhecido', total_geral: 0, malharias: {}
                         };
                     }
                     estoquePorProcesso[procId].total_geral += qtd;
@@ -201,6 +242,15 @@ exports.index = async (req, res) => {
                             id: sedeId, nome: 'MALHARIA SEDE', isSede: true, tipo: 'Centro de Distribuição', total_geral: 0, itens: {}
                         };
                     }
+                    
+                    if (!estoquePorProcesso[procId].malharias[sedeId].itens[procItemId]) {
+                        estoquePorProcesso[procId].malharias[sedeId].itens[procItemId] = {
+                            item_id: itemId, processo_item_id_real: transf.processo_item_id || null,
+                            nome: transf.item ? transf.item.nome : 'Item Transferido', descricao: transf.item ? transf.item.descricao : '', tamanho: transf.tamanho_exato,
+                            total_produzido: 0, em_transito: 0, entregue: 0
+                        };
+                    }
+                    estoquePorProcesso[procId].malharias[sedeId].itens[procItemId].total_produzido += qtd;
                     estoquePorProcesso[procId].malharias[sedeId].total_geral += qtd;
                 }
             }
@@ -327,19 +377,29 @@ exports.detalhesProcesso = async (req, res) => {
                     };
                 }
 
+                if (!processoDetalhe.itens[procItemId].locais[malhariaId]) {
+                    const m = malharias.find(m => String(m.id) === String(malhariaId));
+                    processoDetalhe.itens[procItemId].locais[malhariaId] = {
+                        nome: malhariaId === sedeId ? 'MALHARIA SEDE' : (m ? m.nome : 'Oficina'),
+                        isSede: malhariaId === sedeId,
+                        quantidade: 0
+                    };
+                }
+
                 const qtdAbaterOrigem = transf.status === 'pendente' ? qtdSolicitada : qtd;
 
-                if (processoDetalhe.itens[procItemId].locais[malhariaId]) {
-                    processoDetalhe.itens[procItemId].locais[malhariaId].quantidade -= qtdAbaterOrigem;
-                    processoDetalhe.itens[procItemId].total_disponivel -= qtdAbaterOrigem;
-                    processoDetalhe.total_geral -= qtdAbaterOrigem;
+                processoDetalhe.itens[procItemId].locais[malhariaId].quantidade -= qtdAbaterOrigem;
+                processoDetalhe.itens[procItemId].total_disponivel -= qtdAbaterOrigem;
+                processoDetalhe.total_geral -= qtdAbaterOrigem;
 
-                    if (processoDetalhe.itens[procItemId].locais[malhariaId].quantidade < 0) {
-                        const diff = 0 - processoDetalhe.itens[procItemId].locais[malhariaId].quantidade;
-                        processoDetalhe.itens[procItemId].locais[malhariaId].quantidade = 0;
-                        processoDetalhe.itens[procItemId].total_disponivel += diff;
-                        processoDetalhe.total_geral += diff;
-                    }
+                if (processoDetalhe.itens[procItemId].locais[malhariaId].quantidade < 0) {
+                    const diff = 0 - processoDetalhe.itens[procItemId].locais[malhariaId].quantidade;
+                    processoDetalhe.itens[procItemId].locais[malhariaId].quantidade = 0;
+                    processoDetalhe.itens[procItemId].total_disponivel += diff;
+                    processoDetalhe.total_geral += diff;
+                    
+                    // CORREÇÃO: Registros fantasmas que são transferidos sem registro de produção prévia precisam somar no histórico
+                    processoDetalhe.itens[procItemId].total_produzido_historico += diff;
                 }
 
                 if (transf.status === 'pendente') {
