@@ -6,6 +6,9 @@ const upload = require('../config/upload.config'); // Middleware de Upload
 
 router.get('/', authMiddleware.requireAuth, estoqueController.index);
 
+// Nova Rota: Detalhes do Processo (Gestão e Distribuição de Itens)
+router.get('/processo/:id', authMiddleware.requireAuth, estoqueController.detalhesProcesso);
+
 // Rota de Transferência com Upload do PDF (campo 'documento_termo')
 router.post('/transferir', authMiddleware.requireAuth, upload.single('documento_termo'), estoqueController.transferir);
 

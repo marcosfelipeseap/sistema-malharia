@@ -53,183 +53,234 @@
     </div>
 <% } else { %>
     
-    <div id="view-malharias" class="view-section">
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h5 class="text-secondary m-0"><i class="bi bi-1-circle"></i> Selecione uma Oficina:</h5>
-            <div class="input-group search-box shadow-sm">
-                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar malharia..." onkeyup="pesquisarCards(this, 'lista-malharias')">
-            </div>
+    <% if (locals.user && user.nivel >= 3) { %>
+        <div class="d-flex mb-4 gap-2 border-bottom pb-3">
+            <button id="btn-tab-oficina" class="btn btn-primary px-4 fw-bold shadow-sm" onclick="alternarVisaoEstoque('oficina')">
+                <i class="bi bi-shop me-1"></i> Por Oficina
+            </button>
+            <button id="btn-tab-processo" class="btn btn-outline-primary px-4 fw-bold shadow-sm" onclick="alternarVisaoEstoque('processo')">
+                <i class="bi bi-folder2-open me-1"></i> Por Processo
+            </button>
         </div>
+    <% } %>
 
-        <div class="row g-4" id="lista-malharias">
-            <% estoque.forEach(function(malharia) { %>
-                <div class="col-sm-6 col-md-4 col-lg-3 item-pesquisavel" data-search="<%= malharia.nome.toLowerCase() %> <%= malharia.tipo ? malharia.tipo.toLowerCase() : '' %>">
-                    <div class="card h-100 shadow-sm folder-card <%= malharia.isSede ? 'folder-card-sede' : 'bg-white' %>" onclick="abrirProcessos('<%= malharia.id %>')">
-                        <div class="card-body text-center d-flex flex-column justify-content-center align-items-center py-4">
-                            <% if (malharia.isSede) { %>
-                                <i class="bi bi-buildings-fill display-4 text-primary mb-3"></i>
-                            <% } else { %>
-                                <i class="bi bi-shop display-4 text-primary mb-3"></i>
-                            <% } %>
-                            
-                            <h5 class="fw-bold <%= malharia.isSede ? 'text-primary' : 'text-dark' %> mb-1"><%= malharia.nome %></h5>
-                            <small class="text-muted mb-2"><%= malharia.tipo || 'Setor Padrão' %></small>
-                            
-                            <div class="mt-auto w-100">
-                                <hr class="my-2 border-primary border-opacity-25">
-                                <span class="text-success fw-bold fs-5"><%= malharia.total_geral %> <small class="text-muted fs-6">peças no estoque</small></span>
-                                <div class="small text-muted mt-1"><%= Object.keys(malharia.processos).length %> Processo(s)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <% }); %>
-        </div>
-    </div>
-
-    <% estoque.forEach(function(malharia) { %>
-        <% const processos = Object.values(malharia.processos); %>
-        <div id="view-processos-<%= malharia.id %>" class="view-section d-none">
-            <div class="mb-4 d-flex justify-content-between align-items-center border-bottom pb-3 flex-wrap gap-3">
-                <div class="d-flex align-items-center gap-3">
-                    <button class="btn btn-outline-secondary shadow-sm" onclick="mostrarMalharias()">
-                        <i class="bi bi-arrow-left"></i> Voltar
-                    </button>
-                    <h4 class="m-0 fw-bold text-dark">
-                        <i class="bi <%= malharia.isSede ? 'bi-buildings-fill' : 'bi-shop' %> text-primary me-1"></i> <%= malharia.nome %> 
-                        <span class="text-muted fw-normal fs-5 mx-2">/</span> 
-                        <span class="text-secondary"><i class="bi bi-2-circle"></i> Processos</span>
-                    </h4>
-                </div>
-                
-                <% if (processos.length > 0) { %>
+    <div id="visao-oficina-container">
+        <div id="view-malharias" class="view-section">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 class="text-secondary m-0"><i class="bi bi-1-circle"></i> Selecione uma Oficina:</h5>
                 <div class="input-group search-box shadow-sm">
                     <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar processo..." onkeyup="pesquisarCards(this, 'lista-processos-<%= malharia.id %>')">
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar malharia..." onkeyup="pesquisarCards(this, 'lista-malharias')">
                 </div>
-                <% } %>
             </div>
 
-            <% if (processos.length === 0) { %>
-                <div class="alert alert-secondary text-center py-5 border-dashed bg-light">
-                    <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
-                    <h5 class="text-secondary">Nenhum processo com produção nesta malharia.</h5>
-                </div>
-            <% } else { %>
-                <div class="row g-4" id="lista-processos-<%= malharia.id %>">
-                    <% processos.forEach(function(proc) { %>
-                        <% 
-                            let somaTotal = 0;
-                            Object.values(proc.itens).forEach(i => somaTotal += i.total_produzido);
-                            let searchData = `${proc.numero_processo || ''} ${proc.orgao || ''}`.toLowerCase();
-                        %>
-                        <div class="col-sm-6 col-md-4 col-lg-3 item-pesquisavel" data-search="<%= searchData %>">
-                            <div class="card h-100 shadow-sm folder-card folder-card-warning bg-white border-warning border-opacity-50" onclick="abrirProdutos('<%= malharia.id %>', '<%= proc.id %>')">
-                                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center py-4">
-                                    <i class="bi bi-folder2-open display-4 text-warning mb-3"></i>
-                                    <h5 class="fw-bold text-dark text-uppercase mb-1"><%= proc.numero_processo || 'S/N' %></h5>
-                                    <small class="text-muted mb-3"><i class="bi bi-building"></i> <%= proc.orgao || 'Órgão não informado' %></small>
-                                    
-                                    <div class="mt-auto w-100">
-                                        <hr class="my-2 border-warning border-opacity-25">
-                                        <span class="text-success fw-bold fs-5"><%= somaTotal %> <small class="text-muted fs-6">em estoque</small></span>
-                                    </div>
+            <div class="row g-4" id="lista-malharias">
+                <% estoque.forEach(function(malharia) { %>
+                    <div class="col-sm-6 col-md-4 col-lg-3 item-pesquisavel" data-search="<%= malharia.nome.toLowerCase() %> <%= malharia.tipo ? malharia.tipo.toLowerCase() : '' %>">
+                        <div class="card h-100 shadow-sm folder-card <%= malharia.isSede ? 'folder-card-sede' : 'bg-white' %>" onclick="abrirProcessos('<%= malharia.id %>')">
+                            <div class="card-body text-center d-flex flex-column justify-content-center align-items-center py-4">
+                                <% if (malharia.isSede) { %>
+                                    <i class="bi bi-buildings-fill display-4 text-primary mb-3"></i>
+                                <% } else { %>
+                                    <i class="bi bi-shop display-4 text-primary mb-3"></i>
+                                <% } %>
+                                
+                                <h5 class="fw-bold <%= malharia.isSede ? 'text-primary' : 'text-dark' %> mb-1"><%= malharia.nome %></h5>
+                                <small class="text-muted mb-2"><%= malharia.tipo || 'Setor Padrão' %></small>
+                                
+                                <div class="mt-auto w-100">
+                                    <hr class="my-2 border-primary border-opacity-25">
+                                    <span class="text-success fw-bold fs-5"><%= malharia.total_geral %> <small class="text-muted fs-6">peças no estoque</small></span>
+                                    <div class="small text-muted mt-1"><%= Object.keys(malharia.processos).length %> Processo(s)</div>
                                 </div>
                             </div>
                         </div>
-                    <% }); %>
-                </div>
-            <% } %>
+                    </div>
+                <% }); %>
+            </div>
         </div>
 
-        <% processos.forEach(function(proc) { %>
-            <div id="view-produtos-<%= malharia.id %>-<%= proc.id %>" class="view-section d-none">
-                
+        <% estoque.forEach(function(malharia) { %>
+            <% const processos = Object.values(malharia.processos); %>
+            <div id="view-processos-<%= malharia.id %>" class="view-section d-none">
                 <div class="mb-4 d-flex justify-content-between align-items-center border-bottom pb-3 flex-wrap gap-3">
                     <div class="d-flex align-items-center gap-3">
-                        <button class="btn btn-outline-secondary shadow-sm" onclick="abrirProcessos('<%= malharia.id %>')">
+                        <button class="btn btn-outline-secondary shadow-sm" onclick="mostrarMalharias()">
                             <i class="bi bi-arrow-left"></i> Voltar
                         </button>
                         <h4 class="m-0 fw-bold text-dark">
                             <i class="bi <%= malharia.isSede ? 'bi-buildings-fill' : 'bi-shop' %> text-primary me-1"></i> <%= malharia.nome %> 
                             <span class="text-muted fw-normal fs-5 mx-2">/</span> 
-                            <i class="bi bi-folder2-open text-warning me-1"></i> <%= proc.numero_processo || 'S/N' %>
+                            <span class="text-secondary"><i class="bi bi-2-circle"></i> Processos</span>
                         </h4>
                     </div>
-
-                    <div class="d-flex gap-2">
-                        <% const isSede = malharia.isSede; %>
-                        <% const podeTransferir = !isSede || (isSede && locals.user && user.nivel >= 3); %>
-
-                        <% if (podeTransferir) { %>
-                            <button id="btn-transf-<%= malharia.id %>-<%= proc.id %>" class="btn btn-primary shadow-sm d-none" onclick="abrirModalMultiplo('<%= malharia.id %>', '<%= proc.id %>', '<%= proc.numero_processo || 'S/N' %>', <%= malharia.isSede %>)">
-                                <i class="bi <%= malharia.isSede ? 'bi-box-seam' : 'bi-box-arrow-up-right' %> me-1"></i> 
-                                <%= malharia.isSede ? 'Entregar ao Órgão' : 'Dar Baixa / Enviar' %> 
-                                <span class="badge bg-white text-primary ms-1" id="badge-transf-<%= malharia.id %>-<%= proc.id %>">0</span>
-                            </button>
-                        <% } %>
-
-                        <div class="input-group search-box shadow-sm">
-                            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar produto..." onkeyup="pesquisarCards(this, 'lista-produtos-<%= malharia.id %>-<%= proc.id %>')">
-                        </div>
+                    
+                    <% if (processos.length > 0) { %>
+                    <div class="input-group search-box shadow-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar processo..." onkeyup="pesquisarCards(this, 'lista-processos-<%= malharia.id %>')">
                     </div>
+                    <% } %>
                 </div>
 
-                <div class="row g-3" id="lista-produtos-<%= malharia.id %>-<%= proc.id %>">
-                    <% Object.entries(proc.itens).forEach(function([procItemId, item]) { %>
-                        <% let searchData = `${item.nome || ''} ${item.descricao || ''} ${item.tamanho || ''}`.toLowerCase(); %>
-                        <div class="col-6 col-sm-4 col-md-3 col-xl-2 item-pesquisavel" data-search="<%= searchData %>">
-                            <div class="card h-100 shadow-sm produto-card-quadrado bg-white" style="height: auto !important; aspect-ratio: auto; padding-bottom: 10px;">
-                                <div class="card-body d-flex flex-column text-center p-2 w-100 justify-content-between h-100">
-                                    <div class="mb-2 mt-2">
-                                        <h6 class="fw-bold text-primary mb-1" style="font-size: 0.95rem; line-height: 1.2;"><%= item.nome %></h6>
-                                        <div class="text-muted produto-desc small" title="<%= item.descricao || 'Sem descrição' %>"><%= item.descricao || 'Sem descrição' %></div>
-                                    </div>
-                                    <div class="mt-auto pb-2 w-100">
-                                        <% if(item.tamanho && item.tamanho !== '-') { %>
-                                            <span class="badge bg-secondary mb-1" style="font-size: 0.75rem;">Tam: <%= item.tamanho %></span>
-                                        <% } %>
+                <% if (processos.length === 0) { %>
+                    <div class="alert alert-secondary text-center py-5 border-dashed bg-light">
+                        <i class="bi bi-inbox display-4 text-muted d-block mb-3"></i>
+                        <h5 class="text-secondary">Nenhum processo com produção nesta malharia.</h5>
+                    </div>
+                <% } else { %>
+                    <div class="row g-4" id="lista-processos-<%= malharia.id %>">
+                        <% processos.forEach(function(proc) { %>
+                            <% 
+                                let somaTotal = 0;
+                                Object.values(proc.itens).forEach(i => somaTotal += i.total_produzido);
+                                let searchData = `${proc.numero_processo || ''} ${proc.orgao || ''}`.toLowerCase();
+                            %>
+                            <div class="col-sm-6 col-md-4 col-lg-3 item-pesquisavel" data-search="<%= searchData %>">
+                                <div class="card h-100 shadow-sm folder-card folder-card-warning bg-white border-warning border-opacity-50" onclick="abrirProdutos('<%= malharia.id %>', '<%= proc.id %>')">
+                                    <div class="card-body text-center d-flex flex-column justify-content-center align-items-center py-4">
+                                        <i class="bi bi-folder2-open display-4 text-warning mb-3"></i>
+                                        <h5 class="fw-bold text-dark text-uppercase mb-1"><%= proc.numero_processo || 'S/N' %></h5>
+                                        <small class="text-muted mb-3"><i class="bi bi-building"></i> <%= proc.orgao || 'Órgão não informado' %></small>
                                         
-                                        <div class="produto-qtde fw-bold text-success mt-1"><%= item.total_produzido %></div>
-                                        <span class="text-muted small text-uppercase fw-bold d-block mb-1" style="font-size: 0.65rem; letter-spacing: 1px;">Disponível</span>
-                                        
-                                        <% if (item.entregue && item.entregue > 0) { %>
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success mb-2 shadow-sm" style="font-size: 0.70rem;" title="Peças já despachadas para o Órgão">
-                                                <i class="bi bi-check-all"></i> <%= item.entregue %> Entregues
-                                            </span>
-                                        <% } %>
-                                        
-                                        <% if (item.em_transito && item.em_transito > 0) { %>
-                                            <span class="badge bg-warning text-dark mb-2 shadow-sm" style="font-size: 0.70rem;" title="Aguardando aprovação de Gestor">
-                                                <i class="bi bi-hourglass-split"></i> <%= item.em_transito %> em análise
-                                            </span>
-                                        <% } %>
-
-                                        <% if (podeTransferir && item.total_produzido > 0) { %>
-                                            <div class="input-group input-group-sm mt-2 w-100 shadow-sm">
-                                                <span class="input-group-text bg-light border-primary border-opacity-25" title="Quantidade para enviar"><i class="bi bi-box-arrow-right text-primary"></i></span>
-                                                <input type="number" 
-                                                       class="form-control text-center fw-bold text-primary input-transf-<%= malharia.id %>-<%= proc.id %>" 
-                                                       data-item-id="<%= item.item_id %>"
-                                                       data-processo-item-id="<%= item.processo_item_id_real || '' %>"
-                                                       data-item-nome="<%= item.nome %> <%= item.tamanho && item.tamanho !== '-' ? item.tamanho : '' %>"
-                                                       max="<%= item.total_produzido %>" 
-                                                       min="0" placeholder="0"
-                                                       oninput="verificarLimites(this); atualizarBotaoMultiplo('<%= malharia.id %>', '<%= proc.id %>')">
-                                            </div>
-                                        <% } %>
+                                        <div class="mt-auto w-100">
+                                            <hr class="my-2 border-warning border-opacity-25">
+                                            <span class="text-success fw-bold fs-5"><%= somaTotal %> <small class="text-muted fs-6">em estoque</small></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    <% }); %>
-                </div>
-
+                        <% }); %>
+                    </div>
+                <% } %>
             </div>
+
+            <% processos.forEach(function(proc) { %>
+                <div id="view-produtos-<%= malharia.id %>-<%= proc.id %>" class="view-section d-none">
+                    
+                    <div class="mb-4 d-flex justify-content-between align-items-center border-bottom pb-3 flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <button class="btn btn-outline-secondary shadow-sm" onclick="abrirProcessos('<%= malharia.id %>')">
+                                <i class="bi bi-arrow-left"></i> Voltar
+                            </button>
+                            <h4 class="m-0 fw-bold text-dark">
+                                <i class="bi <%= malharia.isSede ? 'bi-buildings-fill' : 'bi-shop' %> text-primary me-1"></i> <%= malharia.nome %> 
+                                <span class="text-muted fw-normal fs-5 mx-2">/</span> 
+                                <i class="bi bi-folder2-open text-warning me-1"></i> <%= proc.numero_processo || 'S/N' %>
+                            </h4>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <% const isSede = malharia.isSede; %>
+                            <% const podeTransferir = !isSede || (isSede && locals.user && user.nivel >= 3); %>
+
+                            <% if (podeTransferir) { %>
+                                <button id="btn-transf-oficina-<%= malharia.id %>-<%= proc.id %>" class="btn btn-primary shadow-sm d-none" onclick="abrirModalMultiplo('<%= malharia.id %>', '<%= proc.id %>', '<%= proc.numero_processo || 'S/N' %>', <%= malharia.isSede %>, 'oficina')">
+                                    <i class="bi <%= malharia.isSede ? 'bi-box-seam' : 'bi-box-arrow-up-right' %> me-1"></i> 
+                                    <%= malharia.isSede ? 'Entregar ao Órgão' : 'Dar Baixa / Enviar' %> 
+                                    <span class="badge bg-white text-primary ms-1" id="badge-transf-oficina-<%= malharia.id %>-<%= proc.id %>">0</span>
+                                </button>
+                            <% } %>
+
+                            <div class="input-group search-box shadow-sm">
+                                <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar produto..." onkeyup="pesquisarCards(this, 'lista-produtos-<%= malharia.id %>-<%= proc.id %>')">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3" id="lista-produtos-<%= malharia.id %>-<%= proc.id %>">
+                        <% Object.entries(proc.itens).forEach(function([procItemId, item]) { %>
+                            <% let searchData = `${item.nome || ''} ${item.descricao || ''} ${item.tamanho || ''}`.toLowerCase(); %>
+                            <div class="col-6 col-sm-4 col-md-3 col-xl-2 item-pesquisavel" data-search="<%= searchData %>">
+                                <div class="card h-100 shadow-sm produto-card-quadrado bg-white" style="height: auto !important; aspect-ratio: auto; padding-bottom: 10px;">
+                                    <div class="card-body d-flex flex-column text-center p-2 w-100 justify-content-between h-100">
+                                        <div class="mb-2 mt-2">
+                                            <h6 class="fw-bold text-primary mb-1" style="font-size: 0.95rem; line-height: 1.2;"><%= item.nome %></h6>
+                                            <div class="text-muted produto-desc small" title="<%= item.descricao || 'Sem descrição' %>"><%= item.descricao || 'Sem descrição' %></div>
+                                        </div>
+                                        <div class="mt-auto pb-2 w-100">
+                                            <% if(item.tamanho && item.tamanho !== '-') { %>
+                                                <span class="badge bg-secondary mb-1" style="font-size: 0.75rem;">Tam: <%= item.tamanho %></span>
+                                            <% } %>
+                                            
+                                            <div class="produto-qtde fw-bold text-success mt-1"><%= item.total_produzido %></div>
+                                            <span class="text-muted small text-uppercase fw-bold d-block mb-1" style="font-size: 0.65rem; letter-spacing: 1px;">Disponível</span>
+                                            
+                                            <% if (item.entregue && item.entregue > 0) { %>
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success mb-2 shadow-sm" style="font-size: 0.70rem;" title="Peças já despachadas para o Órgão">
+                                                    <i class="bi bi-check-all"></i> <%= item.entregue %> Entregues
+                                                </span>
+                                            <% } %>
+                                            
+                                            <% if (item.em_transito && item.em_transito > 0) { %>
+                                                <span class="badge bg-warning text-dark mb-2 shadow-sm" style="font-size: 0.70rem;" title="Aguardando aprovação de Gestor">
+                                                    <i class="bi bi-hourglass-split"></i> <%= item.em_transito %> em análise
+                                                </span>
+                                            <% } %>
+
+                                            <% if (podeTransferir && item.total_produzido > 0) { %>
+                                                <div class="input-group input-group-sm mt-2 w-100 shadow-sm">
+                                                    <span class="input-group-text bg-light border-primary border-opacity-25" title="Quantidade para enviar"><i class="bi bi-box-arrow-right text-primary"></i></span>
+                                                    <input type="number" 
+                                                           class="form-control text-center fw-bold text-primary input-transf-oficina-<%= malharia.id %>-<%= proc.id %>" 
+                                                           data-item-id="<%= item.item_id %>"
+                                                           data-processo-item-id="<%= item.processo_item_id_real || '' %>"
+                                                           data-item-nome="<%= item.nome %> <%= item.tamanho && item.tamanho !== '-' ? item.tamanho : '' %>"
+                                                           max="<%= item.total_produzido %>" 
+                                                           min="0" placeholder="0"
+                                                           oninput="verificarLimites(this); atualizarBotaoMultiplo('<%= malharia.id %>', '<%= proc.id %>', 'oficina')">
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+
+                </div>
+            <% }); %>
         <% }); %>
-    <% }); %>
+    </div>
+
+
+    <% if (locals.user && user.nivel >= 3 && typeof estoqueProcessosArray !== 'undefined') { %>
+    <div id="visao-processo-container" class="d-none">
+        
+        <div id="view-processos-root" class="view-section">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <h5 class="text-secondary m-0"><i class="bi bi-1-circle"></i> Selecione um Processo:</h5>
+                <div class="input-group search-box shadow-sm">
+                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar processo..." onkeyup="pesquisarCards(this, 'lista-processos-root')">
+                </div>
+            </div>
+
+            <div class="row g-4" id="lista-processos-root">
+                <% estoqueProcessosArray.forEach(function(proc) { %>
+                    <div class="col-sm-6 col-md-4 col-lg-3 item-pesquisavel" data-search="<%= proc.numero_processo.toLowerCase() %> <%= proc.orgao.toLowerCase() %>">
+                        <a href="/estoque/processo/<%= proc.id %>" class="text-decoration-none text-dark">
+                            <div class="card h-100 shadow-sm folder-card folder-card-warning bg-white border-warning border-opacity-50">
+                                <div class="card-body text-center d-flex flex-column justify-content-center align-items-center py-4">
+                                    <i class="bi bi-folder2-open display-4 text-warning mb-3"></i>
+                                    <h5 class="fw-bold text-dark text-uppercase mb-1"><%= proc.numero_processo %></h5>
+                                    <small class="text-muted mb-3"><i class="bi bi-building"></i> <%= proc.orgao %></small>
+                                    
+                                    <div class="mt-auto w-100">
+                                        <hr class="my-2 border-warning border-opacity-25">
+                                        <span class="text-success fw-bold fs-5"><%= proc.total_geral %> <small class="text-muted fs-6">em estoque</small></span>
+                                        <div class="small text-muted mt-1"><%= Object.keys(proc.malharias).length %> Oficina(s) com saldo</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+    <% } %>
 
 <% } %>
 
@@ -493,6 +544,28 @@
         document.getElementById('view-produtos-' + malhariaId + '-' + processoId).classList.remove('d-none');
     }
 
+    function alternarVisaoEstoque(visao) {
+        const btnOficina = document.getElementById('btn-tab-oficina');
+        const btnProcesso = document.getElementById('btn-tab-processo');
+        const contOficina = document.getElementById('visao-oficina-container');
+        const contProcesso = document.getElementById('visao-processo-container');
+
+        if (visao === 'oficina') {
+            btnOficina.classList.replace('btn-outline-primary', 'btn-primary');
+            btnProcesso.classList.replace('btn-primary', 'btn-outline-primary');
+            contOficina.classList.remove('d-none');
+            contProcesso.classList.add('d-none');
+            mostrarMalharias(); 
+        } else {
+            btnOficina.classList.replace('btn-primary', 'btn-outline-primary');
+            btnProcesso.classList.replace('btn-outline-primary', 'btn-primary');
+            contOficina.classList.add('d-none');
+            contProcesso.classList.remove('d-none');
+            ocultarTodasAsTelas();
+            document.getElementById('view-processos-root').classList.remove('d-none');
+        }
+    }
+
     function pesquisarCards(inputElement, containerId) {
         const termo = inputElement.value.toLowerCase().trim();
         const container = document.getElementById(containerId);
@@ -507,15 +580,15 @@
         if (val > max) input.value = max;
     }
 
-    function atualizarBotaoMultiplo(malhariaId, processoId) {
-        const inputs = document.querySelectorAll(`.input-transf-${malhariaId}-${processoId}`);
+    function atualizarBotaoMultiplo(malhariaId, processoId, prefix = 'oficina') {
+        const inputs = document.querySelectorAll(`.input-transf-${prefix}-${malhariaId}-${processoId}`);
         let totalItens = 0;
         inputs.forEach(input => {
             const val = parseInt(input.value);
             if (val > 0) totalItens += val;
         });
-        const btn = document.getElementById(`btn-transf-${malhariaId}-${processoId}`);
-        const badge = document.getElementById(`badge-transf-${malhariaId}-${processoId}`);
+        const btn = document.getElementById(`btn-transf-${prefix}-${malhariaId}-${processoId}`);
+        const badge = document.getElementById(`badge-transf-${prefix}-${malhariaId}-${processoId}`);
         if (totalItens > 0) {
             badge.innerText = totalItens;
             btn.classList.remove('d-none');
@@ -524,7 +597,7 @@
         }
     }
 
-    function abrirModalMultiplo(malhariaId, processoId, nomeProcesso, isSede) {
+    function abrirModalMultiplo(malhariaId, processoId, nomeProcesso, isSede, prefix = 'oficina') {
         document.getElementById('multi_malharia_id').value = malhariaId;
         document.getElementById('multi_processo_id').value = processoId;
         document.getElementById('multi_processo_nome').innerText = nomeProcesso;
@@ -539,7 +612,7 @@
             `;
         }
 
-        const inputs = document.querySelectorAll(`.input-transf-${malhariaId}-${processoId}`);
+        const inputs = document.querySelectorAll(`.input-transf-${prefix}-${malhariaId}-${processoId}`);
         const listaResumo = document.getElementById('lista_resumo_itens');
         listaResumo.innerHTML = ''; 
         let arrayTransferencias = [];

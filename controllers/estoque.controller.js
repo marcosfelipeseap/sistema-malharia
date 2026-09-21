@@ -17,6 +17,7 @@ exports.index = async (req, res) => {
         let todasTransferencias = await transferenciasService.getAllTransferencias();
         
         let estoque = {};
+        let estoquePorProcesso = {}; 
         let transferenciasPendentes = []; 
         let minhasPendencias = []; 
         let meuHistorico = [];
@@ -30,7 +31,6 @@ exports.index = async (req, res) => {
             estoque[m.id] = { id: m.id, nome: m.nome, tipo: m.tipo, processos: {}, total_geral: 0, isSede: false };
         });
 
-        // AGRUPANDO O ESTOQUE PELO ID ÚNICO DA LINHA DO PROCESSO (TAMANHO EXATO)
         todosRegistros.forEach(reg => {
             const malhariaId = reg.malharia_id;
             const malhariaPermitida = req.user.cargo === 'monitor' ? (req.user.malharias_permitidas || []).map(String).includes(String(malhariaId)) : true;
@@ -48,6 +48,7 @@ exports.index = async (req, res) => {
                         let tam = item.tamanho || (item.item ? item.item.tamanho : '');
                         let nomeItem = item.item ? item.item.nome : 'Desconhecido';
 
+                        // 1. ESTOQUE PADRÃO (Por Oficina)
                         estoque[malhariaId].total_geral += qtdProduzida;
 
                         if (!estoque[malhariaId].processos[procId]) {
@@ -62,6 +63,32 @@ exports.index = async (req, res) => {
                             };
                         }
                         estoque[malhariaId].processos[procId].itens[procItemId].total_produzido += qtdProduzida;
+
+                        // 2. ESTOQUE INVERSO (Por Processo - Gestor/Admin)
+                        if (req.user.nivel >= 3) {
+                            if (!estoquePorProcesso[procId]) {
+                                estoquePorProcesso[procId] = {
+                                    id: procId,
+                                    numero_processo: item.processo.numero_processo || 'S/N',
+                                    orgao: item.processo.orgao || 'Órgão não informado',
+                                    total_geral: 0,
+                                    malharias: {}
+                                };
+                            }
+                            estoquePorProcesso[procId].total_geral += qtdProduzida;
+
+                            if (!estoquePorProcesso[procId].malharias[malhariaId]) {
+                                estoquePorProcesso[procId].malharias[malhariaId] = {
+                                    id: malhariaId,
+                                    nome: estoque[malhariaId].nome,
+                                    isSede: estoque[malhariaId].isSede,
+                                    tipo: estoque[malhariaId].tipo,
+                                    total_geral: 0,
+                                    itens: {}
+                                };
+                            }
+                            estoquePorProcesso[procId].malharias[malhariaId].total_geral += qtdProduzida;
+                        }
                     }
                 });
             }
@@ -83,8 +110,8 @@ exports.index = async (req, res) => {
             const pertenceAoUsuario = req.user.cargo === 'monitor' ? (malhariaId === sedeId ? false : permitidas.includes(malhariaId)) : true;
             
             transf.nome_origem = malhariaId === sedeId ? 'MALHARIA SEDE' : (malharias.find(m => String(m.id) === String(malhariaId))?.nome || 'Oficina Desconhecida');
-
             transf.tamanho_exato = transf.item?.tamanho || '-';
+            
             if (transf.processo_item_id && transf.processo && transf.processo.processo_item) {
                 const pi = transf.processo.processo_item.find(p => String(p.id) === String(transf.processo_item_id));
                 if (pi && pi.tamanho) transf.tamanho_exato = pi.tamanho;
@@ -127,11 +154,21 @@ exports.index = async (req, res) => {
                 if (transf.status === 'aprovada' && tipoDestino === 'processo') {
                     estoque[malhariaId].processos[procId].itens[procItemId].entregue = (estoque[malhariaId].processos[procId].itens[procItemId].entregue || 0) + qtd;
                 }
+
+                if (req.user.nivel >= 3 && estoquePorProcesso[procId] && estoquePorProcesso[procId].malharias[malhariaId]) {
+                    estoquePorProcesso[procId].malharias[malhariaId].total_geral -= qtdAbaterOrigem;
+                    estoquePorProcesso[procId].total_geral -= qtdAbaterOrigem;
+
+                    if (estoquePorProcesso[procId].malharias[malhariaId].total_geral < 0) {
+                        const diff = 0 - estoquePorProcesso[procId].malharias[malhariaId].total_geral;
+                        estoquePorProcesso[procId].malharias[malhariaId].total_geral = 0;
+                        estoquePorProcesso[procId].total_geral += diff;
+                    }
+                }
             }
 
             if (transf.status === 'aprovada' && tipoDestino === 'sede') {
                 estoque[sedeId].total_geral += qtd;
-
                 if (!estoque[sedeId].processos[procId]) {
                     estoque[sedeId].processos[procId] = { id: procId, numero_processo: transf.processo ? transf.processo.numero_processo : 'S/N', orgao: transf.processo ? transf.processo.orgao : 'Órgão Desconhecido', itens: {} };
                 }
@@ -146,6 +183,26 @@ exports.index = async (req, res) => {
                     };
                 }
                 estoque[sedeId].processos[procId].itens[procItemId].total_produzido += qtd;
+
+                if (req.user.nivel >= 3) {
+                    if (!estoquePorProcesso[procId]) {
+                        estoquePorProcesso[procId] = {
+                            id: procId,
+                            numero_processo: transf.processo ? transf.processo.numero_processo : 'S/N',
+                            orgao: transf.processo ? transf.processo.orgao : 'Órgão Desconhecido',
+                            total_geral: 0,
+                            malharias: {}
+                        };
+                    }
+                    estoquePorProcesso[procId].total_geral += qtd;
+
+                    if (!estoquePorProcesso[procId].malharias[sedeId]) {
+                        estoquePorProcesso[procId].malharias[sedeId] = {
+                            id: sedeId, nome: 'MALHARIA SEDE', isSede: true, tipo: 'Centro de Distribuição', total_geral: 0, itens: {}
+                        };
+                    }
+                    estoquePorProcesso[procId].malharias[sedeId].total_geral += qtd;
+                }
             }
         });
 
@@ -156,11 +213,15 @@ exports.index = async (req, res) => {
             return a.nome.localeCompare(b.nome);
         });
 
+        let estoqueProcessosArray = Object.values(estoquePorProcesso);
+        estoqueProcessosArray.sort((a, b) => a.numero_processo.localeCompare(b.numero_processo));
+
         meuHistorico.sort((a, b) => b.timestamp_ordenacao - a.timestamp_ordenacao);
 
         res.render('estoque/index', { 
             title: 'Estoque Consolidado', 
             estoque: estoqueArray,
+            estoqueProcessosArray,
             transferenciasPendentes,
             minhasPendencias,
             meuHistorico
@@ -168,6 +229,156 @@ exports.index = async (req, res) => {
     } catch (error) {
         console.error("Erro ao carregar estoque:", error);
         res.redirect('/');
+    }
+};
+
+exports.detalhesProcesso = async (req, res) => {
+    try {
+        if (req.user.nivel < 3) {
+            return res.redirect('/estoque');
+        }
+
+        const processoId = req.params.id;
+        const malharias = await malhariasService.getAllMalharias();
+        const todosRegistros = await registrosService.getAllRegistros();
+        let todasTransferencias = await transferenciasService.getAllTransferencias();
+
+        const sedeId = 'sede-central-estoque';
+        
+        let processoDetalhe = {
+            id: processoId,
+            numero_processo: 'Desconhecido',
+            orgao: 'Desconhecido',
+            total_geral: 0,
+            total_entregue: 0,
+            total_transito: 0,
+            itens: {}
+        };
+
+        todosRegistros.forEach(reg => {
+            const malhariaId = reg.malharia_id;
+            
+            if (reg.itens && reg.itens.length > 0) {
+                reg.itens.forEach(item => {
+                    if (String(item.processo_id) === String(processoId)) {
+                        const qtdProduzida = parseInt(item.qtd_produzida, 10) || 0;
+                        if (qtdProduzida > 0) {
+                            processoDetalhe.numero_processo = item.processo?.numero_processo || 'S/N';
+                            processoDetalhe.orgao = item.processo?.orgao || 'Órgão não informado';
+                            
+                            const itemId = String(item.item_id);
+                            const procItemId = item.processo_item_id ? String(item.processo_item_id) : itemId;
+
+                            if (!processoDetalhe.itens[procItemId]) {
+                                processoDetalhe.itens[procItemId] = {
+                                    id: procItemId,
+                                    item_id: itemId,
+                                    nome: item.item ? item.item.nome : 'Desconhecido',
+                                    tamanho: item.tamanho || (item.item ? item.item.tamanho : '-'),
+                                    descricao: item.descricao || (item.item ? item.item.descricao : ''),
+                                    total_produzido_historico: 0,
+                                    total_disponivel: 0,
+                                    entregue_orgao: 0,
+                                    em_transito: 0,
+                                    locais: {} 
+                                };
+                            }
+
+                            if (!processoDetalhe.itens[procItemId].locais[malhariaId]) {
+                                const m = malharias.find(m => String(m.id) === String(malhariaId));
+                                processoDetalhe.itens[procItemId].locais[malhariaId] = {
+                                    nome: m ? m.nome : 'Oficina',
+                                    isSede: false,
+                                    quantidade: 0
+                                };
+                            }
+
+                            processoDetalhe.itens[procItemId].total_produzido_historico += qtdProduzida;
+                            processoDetalhe.itens[procItemId].total_disponivel += qtdProduzida;
+                            processoDetalhe.itens[procItemId].locais[malhariaId].quantidade += qtdProduzida;
+                            processoDetalhe.total_geral += qtdProduzida;
+                        }
+                    }
+                });
+            }
+        });
+
+        todasTransferencias.sort((a, b) => new Date(a.data_transferencia) - new Date(b.data_transferencia));
+
+        todasTransferencias.forEach(transf => {
+            if (String(transf.processo_id) === String(processoId)) {
+                const malhariaId = transf.malharia_origem_id ? String(transf.malharia_origem_id) : sedeId;
+                const itemId = String(transf.item_id);
+                const procItemId = transf.processo_item_id ? String(transf.processo_item_id) : itemId;
+                
+                const qtd = parseInt(transf.quantidade, 10) || 0;
+                const qtdSolicitada = parseInt(transf.quantidade_solicitada, 10) || qtd;
+                const tipoDestino = transf.tipo_destino || 'sede';
+
+                if (transf.status === 'rejeitada') return;
+                
+                if (!processoDetalhe.itens[procItemId]) {
+                    processoDetalhe.itens[procItemId] = {
+                        id: procItemId, item_id: itemId,
+                        nome: transf.item ? transf.item.nome : 'Item Transferido',
+                        tamanho: transf.item?.tamanho || '-',
+                        descricao: transf.item?.descricao || '',
+                        total_produzido_historico: 0, total_disponivel: 0, entregue_orgao: 0, em_transito: 0, locais: {}
+                    };
+                }
+
+                const qtdAbaterOrigem = transf.status === 'pendente' ? qtdSolicitada : qtd;
+
+                if (processoDetalhe.itens[procItemId].locais[malhariaId]) {
+                    processoDetalhe.itens[procItemId].locais[malhariaId].quantidade -= qtdAbaterOrigem;
+                    processoDetalhe.itens[procItemId].total_disponivel -= qtdAbaterOrigem;
+                    processoDetalhe.total_geral -= qtdAbaterOrigem;
+
+                    if (processoDetalhe.itens[procItemId].locais[malhariaId].quantidade < 0) {
+                        const diff = 0 - processoDetalhe.itens[procItemId].locais[malhariaId].quantidade;
+                        processoDetalhe.itens[procItemId].locais[malhariaId].quantidade = 0;
+                        processoDetalhe.itens[procItemId].total_disponivel += diff;
+                        processoDetalhe.total_geral += diff;
+                    }
+                }
+
+                if (transf.status === 'pendente') {
+                    processoDetalhe.itens[procItemId].em_transito += qtdAbaterOrigem;
+                    processoDetalhe.total_transito += qtdAbaterOrigem;
+                }
+
+                if (transf.status === 'aprovada') {
+                    if (tipoDestino === 'processo') {
+                        processoDetalhe.itens[procItemId].entregue_orgao += qtd;
+                        processoDetalhe.total_entregue += qtd;
+                    } else if (tipoDestino === 'sede') {
+                        if (!processoDetalhe.itens[procItemId].locais[sedeId]) {
+                            processoDetalhe.itens[procItemId].locais[sedeId] = { nome: 'MALHARIA SEDE', isSede: true, quantidade: 0 };
+                        }
+                        processoDetalhe.itens[procItemId].locais[sedeId].quantidade += qtd;
+                        processoDetalhe.itens[procItemId].total_disponivel += qtd;
+                        processoDetalhe.total_geral += qtd;
+                    }
+                }
+            }
+        });
+
+        Object.values(processoDetalhe.itens).forEach(item => {
+            Object.keys(item.locais).forEach(localKey => {
+                if (item.locais[localKey].quantidade <= 0) {
+                    delete item.locais[localKey];
+                }
+            });
+        });
+
+        res.render('estoque/detalhes_processo', {
+            title: `Detalhes do Processo - ${processoDetalhe.numero_processo}`,
+            processo: processoDetalhe
+        });
+
+    } catch (error) {
+        console.error("Erro ao carregar detalhes do processo:", error);
+        res.redirect('/estoque');
     }
 };
 
@@ -219,7 +430,7 @@ exports.transferir = async (req, res) => {
         const dadosInsert = itensTransferir.map(t => ({
             malharia_origem_id: origemDb,
             processo_id,
-            processo_item_id: t.processo_item_id || null, // CORREÇÃO PARA ID
+            processo_item_id: t.processo_item_id || null, 
             item_id: t.item_id,
             quantidade: parseInt(t.quantidade, 10),
             quantidade_solicitada: parseInt(t.quantidade, 10),
