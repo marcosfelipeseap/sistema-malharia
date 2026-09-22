@@ -2,6 +2,7 @@
 <html lang="pt-br">
   <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title><%- typeof title !== 'undefined' ? title : 'Painel de Produção' %></title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -84,6 +85,47 @@
       .notif-close { cursor: pointer; background: none; border: none; color: white; font-size: 24px; transition: 0.2s; }
       .notif-body { padding: 20px; overflow-y: auto; flex: 1; }
       .notif-footer { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-body); }
+
+      /* RESPONSIVIDADE PARA CELULAR */
+      @media (max-width: 768px) {
+        body { 
+            flex-direction: column; 
+            height: 100%; 
+            overflow: auto; 
+        }
+        .sidebar { 
+            width: 100%; 
+            height: auto; 
+            border-right: none; 
+            border-bottom: 1px solid var(--border); 
+            flex-shrink: 0; 
+        }
+        .logo { justify-content: center; }
+        .menu { 
+            display: flex; 
+            overflow-x: auto; 
+            padding: 10px; 
+            gap: 10px; 
+            white-space: nowrap; 
+        }
+        .menu::-webkit-scrollbar { display: none; }
+        
+        .nav-btn { 
+            width: auto; 
+            flex-shrink: 0; 
+            margin-bottom: 0; 
+            padding: 8px 12px; 
+        }
+        .mode-toggle { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 10px 20px; 
+        }
+        .mode-toggle .nav-btn { margin-bottom: 0; padding: 6px 12px; }
+        .main { padding: 15px; overflow-y: visible; }
+        .notif-box { width: 90%; max-height: 90vh; }
+      }
     </style>
   </head>
   <body>
