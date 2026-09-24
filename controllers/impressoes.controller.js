@@ -91,6 +91,11 @@ exports.store = async (req, res) => {
     try {
         const { data_registro, maquina_id, observacao, categorias, demandas, produtos, tamanhos, tipos_arquivo, modalidades, numeros_impressoes } = req.body;
         
+        // NOVA REGRA: Trava de observação obrigatória quando não há produção
+        if (!categorias && (!observacao || observacao.trim() === '')) {
+            return res.redirect(`/impressoes/create?maquina=${maquina_id}&data=${data_registro}`);
+        }
+
         // Proteção POST: Bloqueia gravação no banco se burlar front-end
         if (req.user.nivel < 3 && !validarHorarioBrasilia(data_registro)) {
             return res.redirect('/impressoes?data=' + data_registro);
@@ -149,6 +154,11 @@ exports.update = async (req, res) => {
     try {
         const { data_registro, maquina_id, observacao, categorias, demandas, produtos, tamanhos, tipos_arquivo, modalidades, numeros_impressoes } = req.body;
         
+        // NOVA REGRA: Trava de observação obrigatória quando não há produção
+        if (!categorias && (!observacao || observacao.trim() === '')) {
+            return res.redirect(`/impressoes/${req.params.id}/edit`);
+        }
+
         // Proteção POST: Bloqueia atualização no banco
         if (req.user.nivel < 3 && !validarHorarioBrasilia(data_registro)) {
             return res.redirect('/impressoes?data=' + data_registro);
