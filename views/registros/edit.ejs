@@ -48,48 +48,51 @@
                     <h5 class="card-title text-primary border-bottom pb-2 mt-4">Lista de Produção do Dia</h5>
             
                     <div class="row bg-light p-3 rounded mb-3 border align-items-center">
-                        <div class="col-md-8">
+                        <div class="col-md-8 mb-3 mb-md-0">
                             <h6 class="m-0 text-secondary fw-bold"><i class="bi bi-box-seam"></i> Produtos a Produzir</h6>
                              <small class="text-muted">
                                 Altere abaixo as quantidades registadas para o que efetivamente foi produzido hoje ou adicione novos produtos.<br><b class="text-danger">Atenção:</b> Caso não tenha havido nenhuma produção no dia, remova todos os produtos da lista e preencha a justificativa abaixo.
                              </small>
                         </div>
-                        <div class="col-md-4 text-end">
+                        <div class="col-md-4 text-center text-md-end">
                             <button type="button" class="btn btn-success" onclick="abrirModalBusca()">
                                  <i class="bi bi-search"></i> Buscar Produtos
                             </button>
                         </div>
                     </div>
 
-                     <table class="table table-bordered table-sm align-middle" id="tabelaProducao">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width: 60px;" class="text-center">Foto/Arte</th>
-                                <th>Órgão</th>
-                                <th>Produto</th>
-                                <th>Descrição</th>
-                                <th style="width: 150px;" class="text-center">Qtd Produzida</th>
-                                <th class="text-center" style="width: 80px;">Ações</th>
-                            </tr>
-                        </thead>
-                         <tbody>
-                        </tbody>
-                        <tfoot class="table-light">
-                            <tr>
-                                 <td colspan="4" class="text-end fw-bold align-middle">Meta Calculada:</td>
-                                <td colspan="2" class="align-middle">
-                                    <span id="displayMeta" class="badge bg-primary fs-5" style="cursor:help;" onclick="mostrarExplicacaoMeta()">0</span>
-                                    <span class="ms-2 text-muted" style="font-size: 0.8em; cursor:help;" onclick="mostrarExplicacaoMeta()">(Clique para entender)</span>
-                                    <input type="hidden" name="meta_calculada" id="meta_calculada" value="<%= registro.meta_calculada %>">
-                                    <input type="hidden" name="explicacao_meta" id="explicacao_meta" value="<%= registro.explicacao_meta %>">
-                                 </td>
-                            </tr>
-                            <tr>
-                                 <td colspan="4" class="text-end fw-bold align-middle">Total Produzido Hoje:</td>
-                                <td colspan="2" class="align-middle"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
-                            </tr>
-                         </tfoot>
-                    </table>
+                    <!-- ENVOLVIDO EM UMA DIV RESPONSIVA -->
+                    <div class="table-responsive">
+                         <table class="table table-bordered table-sm align-middle" id="tabelaProducao">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="min-width: 60px;" class="text-center">Foto/Arte</th>
+                                    <th style="min-width: 120px;">Órgão</th>
+                                    <th style="min-width: 150px;">Produto</th>
+                                    <th style="min-width: 200px;">Descrição</th>
+                                    <th style="min-width: 130px;" class="text-center">Qtd Produzida</th>
+                                    <th class="text-center" style="min-width: 70px;">Ações</th>
+                                </tr>
+                            </thead>
+                             <tbody>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                     <td colspan="4" class="text-end fw-bold align-middle">Meta Calculada:</td>
+                                    <td colspan="2" class="align-middle">
+                                        <span id="displayMeta" class="badge bg-primary fs-5" style="cursor:help;" onclick="mostrarExplicacaoMeta()">0</span>
+                                        <span class="ms-2 text-muted" style="font-size: 0.8em; cursor:help;" onclick="mostrarExplicacaoMeta()">(Clique para entender)</span>
+                                        <input type="hidden" name="meta_calculada" id="meta_calculada" value="<%= registro.meta_calculada %>">
+                                        <input type="hidden" name="explicacao_meta" id="explicacao_meta" value="<%= registro.explicacao_meta %>">
+                                     </td>
+                                </tr>
+                                <tr>
+                                     <td colspan="4" class="text-end fw-bold align-middle">Total Produzido Hoje:</td>
+                                    <td colspan="2" class="align-middle"><span id="displayTotalProduzido" class="fw-bold text-success fs-5">0</span></td>
+                                </tr>
+                             </tfoot>
+                        </table>
+                    </div>
 
                     <div id="boxJustificativa" class="mb-3 p-3 border rounded" style="display: none;">
                         <label id="justificativaLabel" class="form-label fw-bold"></label>
@@ -101,7 +104,7 @@
                         </select>
                     </div>
 
-                    <div class="mb-3">
+                    <div class="mb-3 mt-3">
                         <label id="labelObservacao" class="form-label fw-bold">Observações Adicionais</label>
                          <textarea class="form-control" name="observacao" rows="2"><%= registro.observacao || '' %></textarea>
                     </div>
@@ -293,15 +296,13 @@
         prod.id_unico = `${prod.processo_id}_${prod.item_id}_${prod.processo_item_id}`;
     });
 
-    $(document).ready(function() {
-        $('#malharia_id, #justificativa_id').select2({ theme: 'bootstrap-5', width: '100%' });
+    $(document).ready(function() {$('#malharia_id, #justificativa_id').select2({ theme: 'bootstrap-5', width: '100%' });
         $('#malharia_id').val('<%= registro.malharia_id %>').trigger('change');
         
         if('<%= registro.justificativa_id %>') {
             $('#justificativa_id').val('<%= registro.justificativa_id %>').trigger('change');
         }
 
-        // LÓGICA DO ASTERISCO NA OBSERVAÇÃO
         $('#justificativa_id').on('change', function() {
             const selectedText = $(this).find('option:selected').text().toLowerCase();
             const labelObs = document.getElementById('labelObservacao');
@@ -534,10 +535,12 @@
                         ${prod.tamanho ? `<span class="badge bg-secondary me-1">Tam: ${escapeHTML(prod.tamanho)}</span>` : ''}
                         ${escapeHTML(prod.descricao)}
                     </td>
-                    <td class="align-middle text-center" style="width: 150px;">
+                    <!-- ADICIONADO MIN-WIDTH AQUI -->
+                    <td class="align-middle text-center" style="min-width: 120px;">
                         <input type="number" class="form-control text-center fw-bold" name="qtds_produzidas[]" value="${prod.qtd}" min="0" oninput="atualizarQtd(${index}, this)">
                     </td>
-                    <td class="text-center align-middle" style="width: 80px;">
+                    <!-- ADICIONADO MIN-WIDTH AQUI -->
+                    <td class="text-center align-middle" style="min-width: 70px;">
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="removerProducao(${index})"><i class="bi bi-trash"></i></button>
                     </td>
                  </tr>
@@ -696,7 +699,6 @@
             return false;
         }
 
-        // NOVA LÓGICA DE VALIDAÇÃO: "OUTROS"
         const justificativaSelect = document.getElementById('justificativa_id');
         const boxJustificativa = document.getElementById('boxJustificativa');
         
