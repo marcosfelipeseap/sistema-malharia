@@ -1,7 +1,7 @@
 {
   "name": "Malharias SEAP",
-  "short_name": "Malharias",
-  "start_url": "/",
+  "short_name": "Malharias SEAP",
+  "start_url": "/?source=pwa",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#212529",
