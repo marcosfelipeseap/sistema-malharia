@@ -16,8 +16,8 @@
 </head>
 <body>
     
-    <!-- LOADER TOP-CENTER (Sem animações problemáticas, aparece instantaneamente) -->
-    <div id="top-loader" class="position-fixed w-100 d-none justify-content-center" style="top: 80px; z-index: 9999;">
+    <!-- LOADER TOP-CENTER CORRIGIDO -->
+    <div id="top-loader" class="position-fixed w-100 d-none justify-content-center" style="top: 140px; z-index: 1045;">
         <div class="bg-primary text-white rounded-pill px-4 py-2 shadow-lg d-flex align-items-center fw-bold border border-light" style="font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;">
             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             Processando...
@@ -118,11 +118,12 @@
         atualizarRelogio(); 
     </script>
 
-    <!-- SCRIPT DE CARREGAMENTO (INSTANTÂNEO E SEGURO) -->
+    <!-- SCRIPT DE CARREGAMENTO UNIVERSAL (FUNCIONA COM LINKS E FORMULÁRIOS NORMAIS) -->
     <script>
         function mostrarLoader() {
             const loader = document.getElementById('top-loader');
             if (loader) {
+                loader.style.setProperty('display', 'flex', 'important');
                 loader.classList.remove('d-none');
                 loader.classList.add('d-flex');
             }
@@ -131,43 +132,36 @@
         function ocultarLoader() {
             const loader = document.getElementById('top-loader');
             if (loader) {
+                loader.style.removeProperty('display');
                 loader.classList.remove('d-flex');
                 loader.classList.add('d-none');
             }
         }
 
-        // Navegação de páginas (Turbo fires these reliable events)
-        document.addEventListener("turbo:before-visit", mostrarLoader);
-        window.addEventListener("popstate", mostrarLoader);
-        
-        // Finalização da navegação
-        document.addEventListener("turbo:load", ocultarLoader);
-        document.addEventListener("turbo:render", ocultarLoader);
-        document.addEventListener("turbo:fetch-request-error", ocultarLoader);
+        // Garante que o loader some assim que a página carregar
+        window.addEventListener("pageshow", ocultarLoader);
+        window.addEventListener("DOMContentLoaded", ocultarLoader);
 
-        // Submissão de Formulários
-        document.addEventListener("turbo:submit-start", function(event) {
-            const submitter = event.detail.formSubmission.submitter;
-            if (submitter) {
-                if (!submitter.dataset.originalHtml) {
-                    submitter.dataset.originalHtml = submitter.innerHTML;
+        // Intercepta cliques em qualquer link interno para mostrar o loader antes de sair da página
+        document.addEventListener("click", function(event) {
+            const link = event.target.closest("a");
+            if (link) {
+                const href = link.getAttribute("href");
+                const target = link.getAttribute("target");
+                const isAnchor = href && href.startsWith("#");
+                const isJavascript = href && href.startsWith("javascript:");
+                const isExternal = href && (href.startsWith("http://") || href.startsWith("https://")) && !href.includes(window.location.host);
+
+                // Se for um link de navegação válido, mostra o aviso de carregamento
+                if (href && !isAnchor && !isJavascript && target !== "_blank" && !isExternal && !link.hasAttribute("download")) {
+                    mostrarLoader();
                 }
-                submitter.disabled = true;
-                submitter.style.minWidth = submitter.offsetWidth + 'px';
-                submitter.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Aguarde...`;
-            } else {
-                mostrarLoader();
             }
         });
 
-        // Restaura os botões ao terminar a submissão do formulário
-        document.addEventListener("turbo:submit-end", function(event) {
-            ocultarLoader();
-            const submitter = event.detail.formSubmission.submitter;
-            if (submitter && submitter.dataset.originalHtml) {
-                submitter.disabled = false;
-                submitter.innerHTML = submitter.dataset.originalHtml;
-            }
+        // Intercepta a submissão de formulários
+        document.addEventListener("submit", function(event) {
+            mostrarLoader();
         });
     </script>
 
