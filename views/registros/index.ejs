@@ -1,9 +1,10 @@
 <style>
-    .calendario-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-    .calendario-header { text-align: center; font-weight: bold; padding: 5px; background: #f8f9fa; border-radius: 4px; color: #495057;}
+    .calendario-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; width: 100%; box-sizing: border-box; }
+    .calendario-header { text-align: center; font-weight: bold; padding: 5px 2px; background: #f8f9fa; border-radius: 4px; color: #495057; font-size: 0.85rem;}
     .calendario-dia { 
-        border: 1px solid #e9ecef; min-height: 80px; padding: 8px; border-radius: 6px; 
+        border: 1px solid #e9ecef; min-height: 80px; padding: 6px; border-radius: 6px; 
         display:flex; flex-direction:column; background: #fff; transition: all 0.2s ease-in-out;
+        overflow: hidden;
     }
     
     .calendario-dia.interativo { cursor: pointer; }
@@ -13,14 +14,16 @@
     .calendario-dia.outro-mes { background-color: #f8f9fa; color: #adb5bd; border-style: dashed; pointer-events: none; }
     .dia-numero { font-weight: 700; font-size: 1.1em; color: #343a40; }
     .dia-ativo .dia-numero { color: #0d6efd; }
-    .badge-status { font-size: 0.75rem; padding: 4px; margin-top: auto; text-align: center; border-radius: 4px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+    .badge-status { font-size: 0.75rem; padding: 3px; margin-top: auto; text-align: center; border-radius: 4px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
     
     @media (max-width: 768px) {
         .calendario-grid { gap: 2px; }
-        .calendario-header { font-size: 0.75rem; padding: 3px 0; }
+        .calendario-header { font-size: 0.7rem; padding: 3px 0; }
         .calendario-dia { min-height: 52px; padding: 3px; border-radius: 4px; }
         .badge-status { font-size: 0.55rem; padding: 1px 2px; border-radius: 2px; }
         .dia-numero { font-size: 0.8rem; }
+        .card-header h5 { font-size: 0.9rem !important; }
+        .card-header .btn { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
     }
 
     .timer-aviso { font-size: 0.95rem; font-weight: 600; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 6px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 8px; }
@@ -101,7 +104,7 @@ ontemObj.setDate(ontemObj.getDate() - 1);
 const dataOntemBRT = getStrBRT(ontemObj);
 
 const horaAtual = agoraObj.getHours();
-const diaSemanaHoje = agoraObj.getDay(); // 1 = Segunda-feira
+const diaSemanaHoje = agoraObj.getDay(); 
 
 const isHoje = dataBusca === dataHojeBRT;
 const isOntemEditavel = (dataBusca === dataOntemBRT && horaAtual < 12);
@@ -160,12 +163,16 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
 <% } %>
 
 <div class="card shadow-sm mb-4 border-primary border-top border-3">
-    <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
-        <button class="btn btn-sm btn-outline-secondary px-3" onclick="mudarMes(-1)"><i class="bi bi-chevron-left"></i> Anterior</button>
-        <h5 class="mb-0 fw-bold text-primary text-uppercase" id="mesAnoAtual"></h5>
-        <button class="btn btn-sm btn-outline-secondary px-3" onclick="mudarMes(1)">Próximo <i class="bi bi-chevron-right"></i></button>
+    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-2">
+        <button class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="mudarMes(-1)">
+            <i class="bi bi-chevron-left"></i> <span class="d-none d-sm-inline">Anterior</span>
+        </button>
+        <h5 class="mb-0 fw-bold text-primary text-uppercase text-center fs-6" id="mesAnoAtual"></h5>
+        <button class="btn btn-sm btn-outline-secondary px-2 py-1" onclick="mudarMes(1)">
+            <span class="d-none d-sm-inline">Próximo</span> <i class="bi bi-chevron-right"></i>
+        </button>
     </div>
-    <div class="card-body p-2 p-md-3 bg-light">
+    <div class="card-body p-1 p-md-3 bg-light">
         <div id="calendarioGrid" class="calendario-grid"></div>
     </div>
     <div class="card-footer bg-white py-2 small text-muted d-flex gap-4 justify-content-center flex-wrap">
