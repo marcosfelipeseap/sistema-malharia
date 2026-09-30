@@ -3,6 +3,20 @@
 <head>
     <%- include('../partials/head') %>
     <link rel="icon" href="/img/logo.png" type="image/png">
+    
+    <!-- CSS INFALÍVEL PARA OCULTAR O BOTÃO DENTRO DO APP INSTALADO -->
+    <style>
+        @media all and (display-mode: standalone) {
+            .btn-instalar-pwa {
+                display: none !important;
+            }
+        }
+        @media all and (display-mode: fullscreen) {
+            .btn-instalar-pwa {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 <body>
     
@@ -152,15 +166,16 @@
             });
         }
 
-        // 2. Lógica para os botões "Instalar Aplicativo"
+        // 2. Lógica Reforçada para os botões "Instalar Aplicativo"
         let eventoPromptInstalacao;
         const botoesInstalar = document.querySelectorAll('.btn-instalar-pwa');
 
-        // Verifica se a app JÁ ESTÁ a correr como aplicação instalada (standalone) ou no iOS (navigator.standalone)
-        const estaInstalado = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        // Verifica se a app está a correr como janela standalone OU se o navegador já tem registo no localStorage de que foi instalado
+        const estaEmStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        const jaFoiInstalado = localStorage.getItem('malharias_pwa_instalado') === 'true';
 
-        if (!estaInstalado) {
-            // Escuta o evento que permite a instalação APENAS se não estiver instalado
+        if (!estaEmStandalone && !jaFoiInstalado) {
+            // Escuta o evento que permite a instalação APENAS se não estiver instalado nem a correr na app
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault(); // Impede o banner automático nativo
                 eventoPromptInstalacao = e;
@@ -171,7 +186,7 @@
                 });
             });
 
-            // Adiciona a ação de clique a todos os botões de instalar (desktop e mobile)
+            // Adiciona a ação de clique aos botões
             botoesInstalar.forEach(btn => {
                 btn.addEventListener('click', async () => {
                     if (!eventoPromptInstalacao) return;
@@ -179,16 +194,20 @@
                     eventoPromptInstalacao.prompt(); // Mostra o prompt do navegador
                     const { outcome } = await eventoPromptInstalacao.userChoice;
                     
-                    eventoPromptInstalacao = null; // Limpa o evento
+                    if (outcome === 'accepted') {
+                        // Grava no navegador que a app foi instalada para não mostrar mais o botão no site normal
+                        localStorage.setItem('malharias_pwa_instalado', 'true');
+                    }
                     
-                    // Esconde os botões após o utilizador responder ao prompt
+                    eventoPromptInstalacao = null; // Limpa o evento
                     botoesInstalar.forEach(b => b.style.setProperty('display', 'none', 'important'));
                 });
             });
         }
 
-        // Se a instalação for feita com sucesso neste exato momento
+        // Se a instalação for feita (por qualquer meio, até via menu do browser)
         window.addEventListener('appinstalled', () => {
+            localStorage.setItem('malharias_pwa_instalado', 'true');
             botoesInstalar.forEach(b => b.style.setProperty('display', 'none', 'important'));
             console.log('App instalado com sucesso.');
         });
