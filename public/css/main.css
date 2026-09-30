@@ -186,11 +186,14 @@ header.navbar {
     
     body { padding-top: var(--header-height); }
 
+    /* Centraliza a logo e ocupa 100% da largura apenas no celular */
     .navbar-brand {
-        width: auto; 
+        width: 100% !important; 
         background-color: transparent;
         box-shadow: none;
-        padding-right: 60px; 
+        padding-right: 0;
+        padding-left: 0;
+        margin: 0 auto !important;
     }
 
     main.col-md-9 {

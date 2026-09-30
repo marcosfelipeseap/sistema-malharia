@@ -27,7 +27,7 @@
     <!-- Cabeçalho Fixo e Limpo -->
     <header class="navbar navbar-dark sticky-top bg-dark flex-wrap flex-md-nowrap p-0 shadow align-items-center">
         
-        <!-- LOGO RESTAURADA -->
+        <!-- LOGO (À esquerda no desktop, centralizada via CSS no mobile) -->
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 d-flex flex-column align-items-center text-center" href="/">
             <img src="/img/logo.png" alt="Logo" style="max-height: 90px; margin-bottom: 5px;">
             <span class="fw-bold">Sistema Malharia</span>
@@ -69,14 +69,30 @@
             <span id="relogio-brasilia" class="text-white-50 mt-1" style="font-size: 0.85rem; letter-spacing: 0.5px;"></span>
         </div>
 
-        <!-- ÁREA DIREITA (MOBILE) - MENU E BOTÃO INSTALAR -->
-        <div class="position-absolute d-md-none end-0 me-3 d-flex align-items-center gap-2" style="top: 35px;">
-            <button class="btn btn-sm btn-info px-2 py-1 rounded-pill shadow-sm text-dark fw-bold btn-instalar-pwa d-flex align-items-center" style="display: none; font-size: 0.75rem;">
-                <i class="bi bi-download me-1"></i> Instalar Aplicativo
-            </button>
-            <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+        <!-- ÁREA DIREITA (MOBILE) - ALINHADA E COM BOTÃO DE INSTALAR REATIVADO -->
+        <div class="position-absolute d-md-none end-0 me-3 d-flex flex-column align-items-end gap-1" style="top: 50%; transform: translateY(-50%); z-index: 1040;">
+            <div class="d-flex align-items-center gap-1">
+                <button class="btn btn-sm btn-info px-2 py-1 rounded-pill shadow-sm text-dark fw-bold btn-instalar-pwa align-items-center" style="display: none; font-size: 0.70rem; height: 30px;">
+                    <i class="bi bi-download me-1"></i> Instalar
+                </button>
+                <button class="navbar-toggler collapsed bg-secondary text-white border-0 shadow-sm d-flex align-items-center justify-content-center" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-label="Abrir Menu" style="width: 32px; height: 30px; border-radius: 6px;">
+                    <span class="navbar-toggler-icon" style="width: 1.1em; height: 1.1em;"></span>
+                </button>
+            </div>
+
+            <% if (typeof user !== 'undefined' && user && user.cargo !== 'monitor' && user.cargo !== 'controlador') { %>
+                <% if (isInsumos) { %>
+                    <a href="/" class="text-decoration-none text-light d-flex align-items-center justify-content-center px-2 py-1 rounded-pill shadow-sm" 
+                       style="font-size: 0.70rem; height: 26px; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border: 1px solid rgba(255,255,255,0.2); width: 100%;">
+                        <i class="bi bi-shop me-1"></i> Malharias
+                    </a>
+                <% } else { %>
+                    <a href="/insumos" class="text-decoration-none text-light d-flex align-items-center justify-content-center px-2 py-1 rounded-pill shadow-sm" 
+                       style="font-size: 0.70rem; height: 26px; background: linear-gradient(135deg, #198754, #20c997); border: 1px solid rgba(255,255,255,0.2); width: 100%;">
+                        <i class="bi bi-boxes me-1"></i> Insumos
+                    </a>
+                <% } %>
+            <% } %>
         </div>
     </header>
 
@@ -118,7 +134,7 @@
         atualizarRelogio(); 
     </script>
 
-    <!-- SCRIPT DE CARREGAMENTO UNIVERSAL (FUNCIONA COM LINKS E FORMULÁRIOS NORMAIS) -->
+    <!-- SCRIPT DE CARREGAMENTO UNIVERSAL -->
     <script>
         function mostrarLoader() {
             const loader = document.getElementById('top-loader');
@@ -138,11 +154,9 @@
             }
         }
 
-        // Garante que o loader some assim que a página carregar
         window.addEventListener("pageshow", ocultarLoader);
         window.addEventListener("DOMContentLoaded", ocultarLoader);
 
-        // Intercepta cliques em qualquer link interno para mostrar o loader antes de sair da página
         document.addEventListener("click", function(event) {
             const link = event.target.closest("a");
             if (link) {
@@ -152,14 +166,12 @@
                 const isJavascript = href && href.startsWith("javascript:");
                 const isExternal = href && (href.startsWith("http://") || href.startsWith("https://")) && !href.includes(window.location.host);
 
-                // Se for um link de navegação válido, mostra o aviso de carregamento
                 if (href && !isAnchor && !isJavascript && target !== "_blank" && !isExternal && !link.hasAttribute("download")) {
                     mostrarLoader();
                 }
             }
         });
 
-        // Intercepta a submissão de formulários
         document.addEventListener("submit", function(event) {
             mostrarLoader();
         });
