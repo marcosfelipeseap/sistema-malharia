@@ -17,6 +17,7 @@
     <!-- Cabeçalho Fixo e Limpo -->
     <header class="navbar navbar-dark sticky-top bg-dark flex-wrap flex-md-nowrap p-0 shadow align-items-center">
         
+        <!-- LOGO RESTAURADA AO ORIGINAL PARA NÃO QUEBRAR O LAYOUT -->
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 d-flex flex-column align-items-center text-center" href="/">
             <img src="/img/logo.png" alt="Logo" style="max-height: 90px; margin-bottom: 5px;">
             <span class="fw-bold">Sistema Malharia</span>
@@ -32,8 +33,15 @@
             <%- include('../partials/topbar_ranking', { isMobile: false }) %>
         </div>
 
+        <!-- ÁREA DIREITA DO CABEÇALHO (DESKTOP) -->
         <div class="navbar-nav d-flex flex-column justify-content-center align-items-end px-4 text-light d-none d-md-flex order-2 order-md-3" style="min-width: 260px; padding-top: 8px; padding-bottom: 8px;">
             <div class="d-flex gap-2 mb-1">
+                
+                <!-- BOTÃO DE INSTALAÇÃO (DESKTOP) -->
+                <button class="btn btn-sm btn-info px-3 py-1 rounded-pill shadow-sm text-dark fw-bold btn-instalar-pwa align-items-center" style="display: none; font-size: 0.85rem;">
+                    <i class="bi bi-download me-1"></i> Instalar Aplicativo
+                </button>
+
                 <% if (typeof user !== 'undefined' && user && user.cargo !== 'monitor' && user.cargo !== 'controlador') { %>
                     <% if (isInsumos) { %>
                         <a href="/" class="text-decoration-none text-light d-flex align-items-center px-3 py-1 rounded-pill shadow-sm" 
@@ -51,9 +59,16 @@
             <span id="relogio-brasilia" class="text-white-50 mt-1" style="font-size: 0.85rem; letter-spacing: 0.5px;"></span>
         </div>
 
-        <button class="navbar-toggler position-absolute d-md-none collapsed end-0 me-3" style="top: 40px;" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <!-- ÁREA DIREITA (MOBILE) - MENU E BOTÃO INSTALAR -->
+        <div class="position-absolute d-md-none end-0 me-3 d-flex align-items-center gap-2" style="top: 35px;">
+            <!-- BOTÃO DE INSTALAÇÃO (MOBILE) COM TEXTO -->
+            <button class="btn btn-sm btn-info px-2 py-1 rounded-pill shadow-sm text-dark fw-bold btn-instalar-pwa d-flex align-items-center" style="display: none; font-size: 0.75rem;">
+                <i class="bi bi-download me-1"></i> Instalar Aplicativo
+            </button>
+            <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
     </header>
 
     <div class="container-fluid">
@@ -96,13 +111,11 @@
 
     <!-- SCRIPT DE CARREGAMENTO INTEGRADO COM O TURBO -->
     <script>
-        // Previne a tela travada no primeiro load
         document.addEventListener("DOMContentLoaded", function() {
             const loader = document.getElementById('app-loader');
             if (loader) loader.classList.add('hidden');
         });
 
-        // Quando o Turbo começa a buscar a próxima página (Usuário clicou no link)
         document.addEventListener("turbo:visit", function() {
             const loader = document.getElementById('app-loader');
             if (loader) {
@@ -111,7 +124,6 @@
             }
         });
 
-        // Quando o Turbo submete um formulário (Salvar, Cadastrar)
         document.addEventListener("turbo:submit-start", function() {
             const loader = document.getElementById('app-loader');
             if (loader) {
@@ -120,13 +132,59 @@
             }
         });
 
-        // Quando o Turbo termina de renderizar a nova tela
         document.addEventListener("turbo:load", function() {
             const loader = document.getElementById('app-loader');
             if (loader) {
                 loader.style.transition = 'opacity 0.2s ease';
                 loader.classList.add('hidden');
             }
+        });
+    </script>
+
+    <!-- SCRIPT DO SERVICE WORKER E DO BOTÃO DE INSTALAR (PWA) -->
+    <script>
+        // 1. Registo do Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('PWA: Service Worker registado.', reg.scope))
+                    .catch(err => console.log('PWA: Falha ao registar.', err));
+            });
+        }
+
+        // 2. Lógica para os botões "Instalar Aplicativo"
+        let eventoPromptInstalacao;
+        const botoesInstalar = document.querySelectorAll('.btn-instalar-pwa');
+
+        // Escuta o evento que permite a instalação
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); // Impede o banner automático nativo
+            eventoPromptInstalacao = e;
+            // Mostra todos os botões com a classe .btn-instalar-pwa
+            botoesInstalar.forEach(btn => {
+                btn.style.setProperty('display', 'inline-flex', 'important');
+            });
+        });
+
+        // Adiciona a ação de clique a todos os botões de instalar (desktop e mobile)
+        botoesInstalar.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!eventoPromptInstalacao) return;
+                
+                eventoPromptInstalacao.prompt(); // Mostra o prompt do navegador
+                const { outcome } = await eventoPromptInstalacao.userChoice;
+                
+                eventoPromptInstalacao = null; // Limpa o evento
+                
+                // Esconde os botões após o utilizador responder ao prompt
+                botoesInstalar.forEach(b => b.style.setProperty('display', 'none', 'important'));
+            });
+        });
+
+        // Se a instalação for feita com sucesso
+        window.addEventListener('appinstalled', () => {
+            botoesInstalar.forEach(b => b.style.setProperty('display', 'none', 'important'));
+            console.log('App instalado com sucesso.');
         });
     </script>
 </body>
