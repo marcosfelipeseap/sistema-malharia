@@ -16,9 +16,11 @@
     .badge-status { font-size: 0.75rem; padding: 4px; margin-top: auto; text-align: center; border-radius: 4px; font-weight: bold; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
     
     @media (max-width: 768px) {
-        .calendario-dia { min-height: 60px; padding: 4px; }
-        .badge-status { font-size: 0.6rem; padding: 2px; }
-        .dia-numero { font-size: 0.9em; }
+        .calendario-grid { gap: 2px; }
+        .calendario-header { font-size: 0.75rem; padding: 3px 0; }
+        .calendario-dia { min-height: 52px; padding: 3px; border-radius: 4px; }
+        .badge-status { font-size: 0.55rem; padding: 1px 2px; border-radius: 2px; }
+        .dia-numero { font-size: 0.8rem; }
     }
 
     .timer-aviso { font-size: 0.95rem; font-weight: 600; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 6px; padding: 10px 15px; display: inline-flex; align-items: center; gap: 8px; }
@@ -236,8 +238,8 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
                                         
                                         <span class="text-muted small fst-italic">
                                             <% 
-                                               let descResumo = item.descricao || (item.item ? item.item.descricao : '');
-                                               if (descResumo) { %> - <%= descResumo %> <% } 
+                                                let descResumo = item.descricao || (item.item ? item.item.descricao : '');
+                                                if (descResumo) { %> - <%= descResumo %> <% } 
                                             %>
                                         </span>
                                         (<%= item.qtd_produzida %> un)
@@ -615,12 +617,10 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
     function pad(n) { return n < 10 ? '0'+n : n; }
     function toDateStr(d) { return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
 
-    // Correção Definitiva do Bug das Datas
     const registrosMap = {};
     resumoRegistros.forEach(r => {
         const malIdStr = r.malharia_id ? String(r.malharia_id) : null;
         if (malIdStr && minhasMalhariasIds.includes(malIdStr)) {
-            // Apenas pega os 10 primeiros caracteres (YYYY-MM-DD), evitando timezone do JS
             let dataLimpa = r.data_registro ? r.data_registro.substring(0, 10) : null;
             if (dataLimpa) {
                 if (!registrosMap[dataLimpa]) registrosMap[dataLimpa] = new Set();

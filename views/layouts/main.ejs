@@ -69,26 +69,28 @@
             <span id="relogio-brasilia" class="text-white-50 mt-1" style="font-size: 0.85rem; letter-spacing: 0.5px;"></span>
         </div>
 
-        <!-- ÁREA DIREITA (MOBILE) - ALINHADA E COM BOTÃO DE INSTALAR REATIVADO -->
-        <div class="position-absolute d-md-none end-0 me-3 d-flex flex-column align-items-end gap-1" style="top: 50%; transform: translateY(-50%); z-index: 1040;">
-            <div class="d-flex align-items-center gap-1">
-                <button class="btn btn-sm btn-info px-2 py-1 rounded-pill shadow-sm text-dark fw-bold btn-instalar-pwa align-items-center" style="display: none; font-size: 0.70rem; height: 30px;">
-                    <i class="bi bi-download me-1"></i> Instalar
-                </button>
-                <button class="navbar-toggler collapsed bg-secondary text-white border-0 shadow-sm d-flex align-items-center justify-content-center" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-label="Abrir Menu" style="width: 32px; height: 30px; border-radius: 6px;">
-                    <span class="navbar-toggler-icon" style="width: 1.1em; height: 1.1em;"></span>
-                </button>
-            </div>
+        <!-- BOTÃO DE ABRIR O MENU LATERAL (MOBILE - ESQUERDA E MAIOR) -->
+        <div class="position-absolute d-md-none start-0 ms-2 d-flex align-items-center" style="top: 50%; transform: translateY(-50%); z-index: 1040;">
+            <button class="navbar-toggler collapsed bg-secondary text-white border-0 shadow-sm d-flex align-items-center justify-content-center" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-label="Abrir Menu" style="width: 44px; height: 42px; border-radius: 8px;">
+                <span class="navbar-toggler-icon" style="width: 1.3em; height: 1.3em;"></span>
+            </button>
+        </div>
+
+        <!-- ÁREA DIREITA (MOBILE) - INSTALAR E ALTERNAR -->
+        <div class="position-absolute d-md-none end-0 me-2 d-flex flex-column align-items-end gap-1" style="top: 50%; transform: translateY(-50%); z-index: 1040;">
+            <button class="btn btn-sm btn-info px-2 py-1 rounded-pill shadow-sm text-dark fw-bold btn-instalar-pwa align-items-center" style="display: none; font-size: 0.70rem; height: 30px;">
+                <i class="bi bi-download me-1"></i> Instalar
+            </button>
 
             <% if (typeof user !== 'undefined' && user && user.cargo !== 'monitor' && user.cargo !== 'controlador') { %>
                 <% if (isInsumos) { %>
                     <a href="/" class="text-decoration-none text-light d-flex align-items-center justify-content-center px-2 py-1 rounded-pill shadow-sm" 
-                       style="font-size: 0.70rem; height: 26px; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border: 1px solid rgba(255,255,255,0.2); width: 100%;">
+                       style="font-size: 0.70rem; height: 26px; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border: 1px solid rgba(255,255,255,0.2);">
                         <i class="bi bi-shop me-1"></i> Malharias
                     </a>
                 <% } else { %>
                     <a href="/insumos" class="text-decoration-none text-light d-flex align-items-center justify-content-center px-2 py-1 rounded-pill shadow-sm" 
-                       style="font-size: 0.70rem; height: 26px; background: linear-gradient(135deg, #198754, #20c997); border: 1px solid rgba(255,255,255,0.2); width: 100%;">
+                       style="font-size: 0.70rem; height: 26px; background: linear-gradient(135deg, #198754, #20c997); border: 1px solid rgba(255,255,255,0.2);">
                         <i class="bi bi-boxes me-1"></i> Insumos
                     </a>
                 <% } %>
