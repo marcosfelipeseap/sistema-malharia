@@ -123,13 +123,15 @@
         atualizarRelogio(); 
     </script>
 
-    <!-- SCRIPT DE CARREGAMENTO INTEGRADO COM O TURBO -->
+    <!-- SCRIPT DE CARREGAMENTO INTEGRADO COM O TURBO (COM SPINNER NOS BOTÕES) -->
     <script>
+        // 1. Previne a tela travada no primeiro load
         document.addEventListener("DOMContentLoaded", function() {
             const loader = document.getElementById('app-loader');
             if (loader) loader.classList.add('hidden');
         });
 
+        // 2. Transições de página comuns (cliques em links)
         document.addEventListener("turbo:visit", function() {
             const loader = document.getElementById('app-loader');
             if (loader) {
@@ -138,14 +140,42 @@
             }
         });
 
-        document.addEventListener("turbo:submit-start", function() {
+        // 3. Submissão de Formulários: Adiciona Spinner no próprio botão clicado
+        document.addEventListener("turbo:submit-start", function(event) {
+            // Esconde o loader de tela inteira para ações de formulário, pois usaremos o botão
             const loader = document.getElementById('app-loader');
-            if (loader) {
-                loader.style.transition = 'none';
-                loader.classList.remove('hidden');
+            if (loader) loader.classList.add('hidden');
+
+            // Encontra o botão exato que foi clicado
+            const submitter = event.detail.formSubmission.submitter;
+            
+            if (submitter) {
+                // Guarda o HTML original do botão caso precise ser restaurado
+                if (!submitter.dataset.originalHtml) {
+                    submitter.dataset.originalHtml = submitter.innerHTML;
+                }
+                
+                // Desativa o botão
+                submitter.disabled = true;
+                
+                // Mantém a largura atual do botão para não encolher de forma esquisita
+                submitter.style.minWidth = submitter.offsetWidth + 'px';
+                
+                // Insere o spinner do Bootstrap e o texto de carregamento
+                submitter.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Aguarde...`;
             }
         });
 
+        // 4. Finalização da ação (Restaura os botões se houver erro ou redirecionamento na mesma página)
+        document.addEventListener("turbo:submit-end", function(event) {
+            const submitter = event.detail.formSubmission.submitter;
+            if (submitter && submitter.dataset.originalHtml) {
+                submitter.disabled = false;
+                submitter.innerHTML = submitter.dataset.originalHtml;
+            }
+        });
+
+        // 5. Quando o Turbo termina de carregar a nova tela
         document.addEventListener("turbo:load", function() {
             const loader = document.getElementById('app-loader');
             if (loader) {
