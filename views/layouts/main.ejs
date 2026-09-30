@@ -4,34 +4,30 @@
     <%- include('../partials/head') %>
     <link rel="icon" href="/img/logo.png" type="image/png">
     
-    <!-- CSS INFALÍVEL PARA OCULTAR O BOTÃO DENTRO DO APP INSTALADO -->
     <style>
+        /* CSS INFALÍVEL PARA OCULTAR O BOTÃO DENTRO DO APP INSTALADO */
         @media all and (display-mode: standalone) {
-            .btn-instalar-pwa {
-                display: none !important;
-            }
+            .btn-instalar-pwa { display: none !important; }
         }
         @media all and (display-mode: fullscreen) {
-            .btn-instalar-pwa {
-                display: none !important;
-            }
+            .btn-instalar-pwa { display: none !important; }
         }
     </style>
 </head>
 <body>
     
-    <!-- TELA DE CARREGAMENTO (OCULTA POR PADRÃO) -->
-    <div id="app-loader" class="app-loader hidden">
-        <div class="spinner-border text-primary" role="status" style="width: 3.5rem; height: 3.5rem;">
-            <span class="visually-hidden">Carregando...</span>
+    <!-- LOADER TOP-CENTER (Sem animações problemáticas, aparece instantaneamente) -->
+    <div id="top-loader" class="position-fixed w-100 d-none justify-content-center" style="top: 80px; z-index: 9999;">
+        <div class="bg-primary text-white rounded-pill px-4 py-2 shadow-lg d-flex align-items-center fw-bold border border-light" style="font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Processando...
         </div>
-        <div class="mt-3 fw-bold text-secondary" style="font-size: 1.1rem;">Carregando...</div>
     </div>
 
     <!-- Cabeçalho Fixo e Limpo -->
     <header class="navbar navbar-dark sticky-top bg-dark flex-wrap flex-md-nowrap p-0 shadow align-items-center">
         
-        <!-- LOGO RESTAURADA AO ORIGINAL PARA NÃO QUEBRAR O LAYOUT -->
+        <!-- LOGO RESTAURADA -->
         <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3 fs-6 d-flex flex-column align-items-center text-center" href="/">
             <img src="/img/logo.png" alt="Logo" style="max-height: 90px; margin-bottom: 5px;">
             <span class="fw-bold">Sistema Malharia</span>
@@ -75,7 +71,6 @@
 
         <!-- ÁREA DIREITA (MOBILE) - MENU E BOTÃO INSTALAR -->
         <div class="position-absolute d-md-none end-0 me-3 d-flex align-items-center gap-2" style="top: 35px;">
-            <!-- BOTÃO DE INSTALAÇÃO (MOBILE) COM TEXTO -->
             <button class="btn btn-sm btn-info px-2 py-1 rounded-pill shadow-sm text-dark fw-bold btn-instalar-pwa d-flex align-items-center" style="display: none; font-size: 0.75rem;">
                 <i class="bi bi-download me-1"></i> Instalar Aplicativo
             </button>
@@ -123,123 +118,100 @@
         atualizarRelogio(); 
     </script>
 
-    <!-- SCRIPT DE CARREGAMENTO INTEGRADO COM O TURBO (COM SPINNER NOS BOTÕES) -->
+    <!-- SCRIPT DE CARREGAMENTO (INSTANTÂNEO E SEGURO) -->
     <script>
-        // 1. Previne a tela travada no primeiro load
-        document.addEventListener("DOMContentLoaded", function() {
-            const loader = document.getElementById('app-loader');
-            if (loader) loader.classList.add('hidden');
-        });
-
-        // 2. Transições de página comuns (cliques em links)
-        document.addEventListener("turbo:visit", function() {
-            const loader = document.getElementById('app-loader');
+        function mostrarLoader() {
+            const loader = document.getElementById('top-loader');
             if (loader) {
-                loader.style.transition = 'none';
-                loader.classList.remove('hidden');
+                loader.classList.remove('d-none');
+                loader.classList.add('d-flex');
             }
-        });
+        }
 
-        // 3. Submissão de Formulários: Adiciona Spinner no próprio botão clicado
+        function ocultarLoader() {
+            const loader = document.getElementById('top-loader');
+            if (loader) {
+                loader.classList.remove('d-flex');
+                loader.classList.add('d-none');
+            }
+        }
+
+        // Navegação de páginas (Turbo fires these reliable events)
+        document.addEventListener("turbo:before-visit", mostrarLoader);
+        window.addEventListener("popstate", mostrarLoader);
+        
+        // Finalização da navegação
+        document.addEventListener("turbo:load", ocultarLoader);
+        document.addEventListener("turbo:render", ocultarLoader);
+        document.addEventListener("turbo:fetch-request-error", ocultarLoader);
+
+        // Submissão de Formulários
         document.addEventListener("turbo:submit-start", function(event) {
-            // Esconde o loader de tela inteira para ações de formulário, pois usaremos o botão
-            const loader = document.getElementById('app-loader');
-            if (loader) loader.classList.add('hidden');
-
-            // Encontra o botão exato que foi clicado
             const submitter = event.detail.formSubmission.submitter;
-            
             if (submitter) {
-                // Guarda o HTML original do botão caso precise ser restaurado
                 if (!submitter.dataset.originalHtml) {
                     submitter.dataset.originalHtml = submitter.innerHTML;
                 }
-                
-                // Desativa o botão
                 submitter.disabled = true;
-                
-                // Mantém a largura atual do botão para não encolher de forma esquisita
                 submitter.style.minWidth = submitter.offsetWidth + 'px';
-                
-                // Insere o spinner do Bootstrap e o texto de carregamento
                 submitter.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Aguarde...`;
+            } else {
+                mostrarLoader();
             }
         });
 
-        // 4. Finalização da ação (Restaura os botões se houver erro ou redirecionamento na mesma página)
+        // Restaura os botões ao terminar a submissão do formulário
         document.addEventListener("turbo:submit-end", function(event) {
+            ocultarLoader();
             const submitter = event.detail.formSubmission.submitter;
             if (submitter && submitter.dataset.originalHtml) {
                 submitter.disabled = false;
                 submitter.innerHTML = submitter.dataset.originalHtml;
             }
         });
-
-        // 5. Quando o Turbo termina de carregar a nova tela
-        document.addEventListener("turbo:load", function() {
-            const loader = document.getElementById('app-loader');
-            if (loader) {
-                loader.style.transition = 'opacity 0.2s ease';
-                loader.classList.add('hidden');
-            }
-        });
     </script>
 
     <!-- SCRIPT DO SERVICE WORKER E DO BOTÃO DE INSTALAR (PWA) -->
     <script>
-        // 1. Registo do Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('PWA: Service Worker registado.', reg.scope))
                     .catch(err => console.log('PWA: Falha ao registar.', err));
             });
         }
 
-        // 2. Lógica Reforçada para os botões "Instalar Aplicativo"
         let eventoPromptInstalacao;
         const botoesInstalar = document.querySelectorAll('.btn-instalar-pwa');
-
-        // Verifica se a app está a correr como janela standalone OU se o navegador já tem registo no localStorage de que foi instalado
         const estaEmStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
         const jaFoiInstalado = localStorage.getItem('malharias_pwa_instalado') === 'true';
 
         if (!estaEmStandalone && !jaFoiInstalado) {
-            // Escuta o evento que permite a instalação APENAS se não estiver instalado nem a correr na app
             window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault(); // Impede o banner automático nativo
+                e.preventDefault();
                 eventoPromptInstalacao = e;
-                
-                // Mostra todos os botões com a classe .btn-instalar-pwa
-                botoesInstalar.forEach(btn => {
-                    btn.style.setProperty('display', 'inline-flex', 'important');
-                });
+                botoesInstalar.forEach(btn => btn.style.setProperty('display', 'inline-flex', 'important'));
             });
 
-            // Adiciona a ação de clique aos botões
             botoesInstalar.forEach(btn => {
                 btn.addEventListener('click', async () => {
                     if (!eventoPromptInstalacao) return;
                     
-                    eventoPromptInstalacao.prompt(); // Mostra o prompt do navegador
+                    eventoPromptInstalacao.prompt();
                     const { outcome } = await eventoPromptInstalacao.userChoice;
                     
                     if (outcome === 'accepted') {
-                        // Grava no navegador que a app foi instalada para não mostrar mais o botão no site normal
                         localStorage.setItem('malharias_pwa_instalado', 'true');
                     }
                     
-                    eventoPromptInstalacao = null; // Limpa o evento
+                    eventoPromptInstalacao = null;
                     botoesInstalar.forEach(b => b.style.setProperty('display', 'none', 'important'));
                 });
             });
         }
 
-        // Se a instalação for feita (por qualquer meio, até via menu do browser)
         window.addEventListener('appinstalled', () => {
             localStorage.setItem('malharias_pwa_instalado', 'true');
             botoesInstalar.forEach(b => b.style.setProperty('display', 'none', 'important'));
-            console.log('App instalado com sucesso.');
         });
     </script>
 </body>
