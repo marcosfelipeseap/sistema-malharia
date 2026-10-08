@@ -50,6 +50,22 @@ function removerDuplicatas(array) {
     return Array.from(map.values());
 }
 
+// Nova função: Garante apenas 1 registo por data e malharia (ignora cliques duplos guardados no banco)
+function removerRegistrosDuplicadosDoMesmoDia(array) {
+    if (!Array.isArray(array)) return array;
+    const map = new Map();
+    array.forEach(reg => {
+        if (reg && reg.data_registro && reg.malharia_id) {
+            const chave = `${reg.data_registro}_${reg.malharia_id}`;
+            // Como a query retorna o mais recente primeiro, mantemos só o primeiro que entrar no Map
+            if (!map.has(chave)) {
+                map.set(chave, reg);
+            }
+        }
+    });
+    return Array.from(map.values());
+}
+
 exports.index = async (req, res) => {
     if (req.user.nivel < 3) return res.redirect('/registros/painel');
 
@@ -64,6 +80,9 @@ exports.index = async (req, res) => {
             todasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
             registros = registros.filter(r => permitidas.includes(r.malharia_id));
         }
+
+        // Blindagem contra registros duplicados no mesmo dia
+        registros = removerRegistrosDuplicadosDoMesmoDia(registros);
 
         const totalMalharias = todasMalharias.length;
         const malhariasComRegistroIds = registros.map(r => r.malharia_id);
@@ -130,6 +149,10 @@ exports.painelDiario = async (req, res) => {
         }
 
         let meusRegistros = registrosHoje.filter(r => minhasMalharias.map(m=>m.id).includes(r.malharia_id));
+        
+        // Blindagem contra registros duplicados no mesmo dia
+        meusRegistros = removerRegistrosDuplicadosDoMesmoDia(meusRegistros);
+
         const malhariasComRegistroIds = meusRegistros.map(r => r.malharia_id);
 
         const malhariasPendentes = minhasMalharias.filter(m => !malhariasComRegistroIds.includes(m.id));
@@ -159,6 +182,9 @@ exports.historico = async (req, res) => {
         const permitidas = req.user.malharias_permitidas || [];
         todasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
         registros = registros.filter(r => permitidas.includes(r.malharia_id));
+
+        // Blindagem contra registros duplicados no mesmo dia
+        registros = removerRegistrosDuplicadosDoMesmoDia(registros);
 
         const totalMalharias = todasMalharias.length;
         const malhariasComRegistroIds = registros.map(r => r.malharia_id);
@@ -236,6 +262,9 @@ exports.relatorios = async (req, res) => {
             });
         }
 
+        // Blindagem contra registros duplicados no mesmo dia
+        registros = removerRegistrosDuplicadosDoMesmoDia(registros);
+
         res.render('registros/relatorios', {
             title: 'Histórico de Relatórios',
             registros,
@@ -265,12 +294,16 @@ exports.historicoPorMalharia = async (req, res) => {
         const malharia = await malhariasService.getMalhariaById(malharia_id);
         if (!malharia) return res.redirect('/registros');
 
-        const registros = await registrosService.getRegistrosByMalharia(malharia_id);
+        let registros = await registrosService.getRegistrosByMalharia(malharia_id);
+        
+        // Blindagem contra registros duplicados no mesmo dia
+        registros = removerRegistrosDuplicadosDoMesmoDia(registros);
 
         res.render('registros/historico_malharia', {
             title: `Histórico: ${malharia.nome}`,
             malharia,
-            registros
+            registros,
+            user: req.user
         });
     } catch (error) {
         console.error("Erro ao carregar histórico da malharia:", error);
@@ -378,7 +411,16 @@ exports.edit = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         const { id } = req.params;
-        const { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, processo_item_ids, itens_ids, qtds_produzidas } = req.body;
+        let { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, processo_item_ids, itens_ids, qtds_produzidas } = req.body;
+
+        // 1. Vai buscar o registo original para garantir que temos a data, caso o campo no frontend esteja disabled
+        const registroExistente = await registrosService.getRegistroById(id);
+        if (!registroExistente) return res.redirect('/registros');
+
+        // 2. Se a data não vier no formulário, mantemos a data original do registo
+        if (!data_registro || data_registro === 'undefined') {
+            data_registro = registroExistente.data_registro;
+        }
 
         if (req.user.nivel < 3) {
             if (!validarHorarioBrasilia(data_registro)) {
@@ -386,7 +428,15 @@ exports.update = async (req, res) => {
             }
         }
 
-        const dadosRegistro = { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id: justificativa_id || null, observacao };
+        const dadosRegistro = { 
+            data_registro, 
+            malharia_id, 
+            qtd_internos, 
+            meta_calculada, 
+            explicacao_meta, 
+            justificativa_id: justificativa_id || null, 
+            observacao 
+        };
 
         let itensProduzidos = [];
         if (Array.isArray(processos_ids)) {
@@ -410,9 +460,11 @@ exports.update = async (req, res) => {
         await registrosService.updateRegistroComItens(id, dadosRegistro, itensProduzidos);
         
         if (req.user.nivel < 3) return res.redirect('/registros/painel');
+        
+        // Redireciona corretamente para a data que acabou de ser editada
         res.redirect(`/registros?data=${data_registro}`);
     } catch (error) {
-        console.error(error);
+        console.error("Erro no update:", error);
         res.redirect(`/registros`); 
     }
 };

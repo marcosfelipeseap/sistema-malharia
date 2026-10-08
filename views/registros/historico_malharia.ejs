@@ -138,7 +138,7 @@
                                     <i class="bi bi-card-list"></i> Detalhes
                                 </button>
 
-                                <% if (user.nivel >= 3) { %>
+                                <% if (user && user.nivel >= 3) { %>
                                     <a href="/registros/<%= reg.id %>/edit" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil-square"></i> Editar</a>
                                 <% } %>
                             </div>
@@ -234,7 +234,11 @@
     function abrirModalDetalhes(registroId) {
         const conteudoOriginal = document.getElementById('detalhes-html-' + registroId).innerHTML;
         document.getElementById('detalhesModalBody').innerHTML = conteudoOriginal;
-        new bootstrap.Modal(document.getElementById('modalDetalhesRegistro')).show();
+        
+        // CORREÇÃO: Usa getOrCreateInstance para evitar instâncias repetidas e travamento na tela
+        const modalEl = document.getElementById('modalDetalhesRegistro');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
     }
 
     // Variáveis e Lógica do Gráfico + Filtros
