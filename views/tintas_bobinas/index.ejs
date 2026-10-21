@@ -32,6 +32,7 @@
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                                 <ul class="dropdown-menu shadow-sm">
+                                    <li><a class="dropdown-item" href="/tintas-bobinas/movimentacoes?item_id=<%= item.id %>"><i class="bi bi-clock-history me-2"></i>Histórico do Item</a></li>
                                     <li><a class="dropdown-item" href="#" onclick="editarItem('<%= item.id %>', '<%= item.nome %>', '<%= item.estoque_minimo %>')"><i class="bi bi-pencil me-2"></i>Editar Item</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger" href="#" onclick="confirmarExclusao('/tintas-bobinas/itens/<%= item.id %>/delete', 'Deseja excluir este item e todas as suas variações e estoques?')"><i class="bi bi-trash me-2"></i>Excluir Item Completo</a></li>
@@ -54,6 +55,7 @@
                                                 <div class="position-absolute top-0 end-0 p-2 dropdown">
                                                     <button class="btn btn-sm btn-link text-muted p-0 shadow-none" type="button" data-bs-toggle="dropdown"><i class="bi bi-three-dots-vertical"></i></button>
                                                     <ul class="dropdown-menu shadow-sm">
+                                                        <li><a class="dropdown-item" href="/tintas-bobinas/movimentacoes?grupo_id=<%= grupo.id %>"><i class="bi bi-clock-history me-2"></i>Ver Histórico</a></li>
                                                         <li><a class="dropdown-item" href="#" onclick="editarGrupo('<%= grupo.id %>', '<%= grupo.nome %>')"><i class="bi bi-pencil me-2"></i>Renomear</a></li>
                                                         <li><hr class="dropdown-divider"></li>
                                                         <li><a class="dropdown-item text-danger" href="#" onclick="confirmarExclusao('/tintas-bobinas/grupos/<%= grupo.id %>/delete', 'Deseja excluir esta variação?')"><i class="bi bi-trash me-2"></i>Excluir</a></li>
@@ -280,7 +282,7 @@
             </td>
             <td><input type="date" class="form-control form-control-sm text-center" name="datas_movimentacao[]" value="${hoje}" required></td>
             <td><input type="number" class="form-control form-control-sm text-center fw-bold" name="quantidades[]" min="1" value="1" required></td>
-            <td><input type="text" class="form-control form-control-sm input-forn" name="fornecedores[]" placeholder="(Opcional no Uso)" disabled></td>
+            <td><input type="text" class="form-control form-control-sm input-forn" name="fornecedores[]" placeholder="(Opcional no Uso)" readonly></td>
             <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removerLinhaMovimentacao(this)"><i class="bi bi-x-lg"></i></button></td>
         `;
         tbody.appendChild(tr);
@@ -291,12 +293,12 @@
         const inputForn = tr.querySelector('.input-forn');
         
         if (selectEl.value === 'entrada') {
-            inputForn.disabled = false;
+            inputForn.readOnly = false; // Modificado para readOnly
             inputForn.required = true;
             inputForn.placeholder = "Obrigatório na Entrada";
             selectEl.classList.replace('text-danger', 'text-success'); // Efeito visual
         } else {
-            inputForn.disabled = true;
+            inputForn.readOnly = true; // Modificado para readOnly
             inputForn.required = false;
             inputForn.value = "";
             inputForn.placeholder = "(Opcional no Uso)";

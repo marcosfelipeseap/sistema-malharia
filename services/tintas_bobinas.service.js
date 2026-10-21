@@ -56,18 +56,29 @@ exports.deleteGrupo = async (id) => {
     return true;
 };
 
-exports.getMovimentacoes = async () => {
+exports.getMovimentacoes = async (filtros = {}) => {
     const { data, error } = await supabase.schema('malharia')
         .from('tb_movimentacoes')
         .select(`
             *,
             usuario:criado_por(nome),
-            grupo:grupo_id(nome, item:item_id(nome))
+            grupo:grupo_id(nome, item:item_id(id, nome))
         `)
         .order('data_movimentacao', { ascending: false })
         .order('criado_em', { ascending: false });
     if (error) throw error;
-    return data;
+    
+    let resultado = data;
+
+    // Filtros para mostrar apenas um item ou grupo específico, se necessário
+    if (filtros.item_id) {
+        resultado = resultado.filter(mov => mov.grupo && mov.grupo.item && mov.grupo.item.id === filtros.item_id);
+    }
+    if (filtros.grupo_id) {
+        resultado = resultado.filter(mov => mov.grupo_id === filtros.grupo_id);
+    }
+    
+    return resultado;
 };
 
 // ATUALIZADO: Salva múltiplas entradas/usos de uma vez e ajusta o estoque

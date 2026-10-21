@@ -61,9 +61,12 @@ exports.deleteGrupo = async (req, res) => {
 
 exports.movimentacoesIndex = async (req, res) => {
     try {
-        const movimentacoes = await tbService.getMovimentacoes();
+        const { item_id, grupo_id } = req.query;
+        const movimentacoes = await tbService.getMovimentacoes({ item_id, grupo_id });
         res.render('tintas_bobinas/movimentacoes', {
-            title: 'Histórico Global', movimentacoes, user: req.user
+            title: (item_id || grupo_id) ? 'Histórico Específico' : 'Histórico Global', 
+            movimentacoes, 
+            user: req.user
         });
     } catch (error) {
         console.error(error);
@@ -71,7 +74,7 @@ exports.movimentacoesIndex = async (req, res) => {
     }
 };
 
-// ATUALIZADO: Trata requisições com múltiplas linhas de uma vez
+// ATUALIZADO: Trata requisições com múltiplas linhas de uma vez e ignora erros de campos que faltem
 exports.storeMovimentacao = async (req, res) => {
     try {
         const { grupo_id, tipos, quantidades, datas_movimentacao, fornecedores } = req.body;
@@ -84,13 +87,15 @@ exports.storeMovimentacao = async (req, res) => {
                         tipo: tipos[i],
                         quantidade: quantidades[i],
                         data_movimentacao: datas_movimentacao[i],
-                        fornecedor: fornecedores[i] || ''
+                        fornecedor: (fornecedores && fornecedores[i]) ? fornecedores[i] : ''
                     });
                 }
             } else {
                 movimentacoes.push({
-                    tipo: tipos, quantidade: quantidades,
-                    data_movimentacao: datas_movimentacao, fornecedor: fornecedores || ''
+                    tipo: tipos, 
+                    quantidade: quantidades,
+                    data_movimentacao: datas_movimentacao, 
+                    fornecedor: fornecedores || ''
                 });
             }
         }
