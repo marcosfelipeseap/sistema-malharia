@@ -70,22 +70,42 @@ const enriquecerRegistros = (dados) => {
 };
 
 exports.getAllRegistros = async () => {
-    const { data, error } = await supabase
-        .schema('malharia')
-        .from(TABLE_REGISTRO)
-        .select(`
-            *, 
-            malharia:malharia_id (nome), 
-            justificativa:justificativa_id (nome), 
-            itens:registro_diario_item(
-                processo_id, processo_item_id, item_id, qtd_produzida, 
-                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
-                item:item_id(id, nome)
-            )
-        `).order('data_registro', { ascending: false });
+    let todosRegistros = [];
+    let from = 0;
+    const limit = 999;
+    let buscarMais = true;
+
+    while (buscarMais) {
+        const { data, error } = await supabase
+            .schema('malharia')
+            .from(TABLE_REGISTRO)
+            .select(`
+                *, 
+                malharia:malharia_id (nome), 
+                justificativa:justificativa_id (nome), 
+                itens:registro_diario_item(
+                    processo_id, processo_item_id, item_id, qtd_produzida, 
+                    processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                    item:item_id(id, nome)
+                )
+            `)
+            .order('data_registro', { ascending: false })
+            .range(from, from + limit);
+            
+        if (error) throw error; 
         
-    if (error) throw error; 
-    let dadosComUser = await enriquecerComUsuarios(data);
+        if (data && data.length > 0) {
+            todosRegistros.push(...data);
+        }
+        
+        if (!data || data.length <= limit) {
+            buscarMais = false;
+        } else {
+            from += limit + 1;
+        }
+    }
+
+    let dadosComUser = await enriquecerComUsuarios(todosRegistros);
     return enriquecerRegistros(dadosComUser);
 };
 
@@ -180,9 +200,6 @@ exports.updateRegistroComItens = async (id, dadosRegistro, itensProduzidos) => {
     return true; 
 };
 
-// =========================================================
-// CORREÇÃO DO LIMITE DE 1000 LINHAS DO SUPABASE NO CALENDÁRIO
-// =========================================================
 exports.getResumoRegistros = async () => { 
     let todosRegistros = [];
     let from = 0;
@@ -202,11 +219,10 @@ exports.getResumoRegistros = async () => {
             todosRegistros.push(...data);
         }
         
-        // Se a busca retornar menos que o limite, significa que acabou e o laço para
         if (!data || data.length <= limit) {
             buscarMais = false;
         } else {
-            from += limit + 1; // Prepara para buscar o próximo bloco de 1000
+            from += limit + 1; 
         }
     }
     return todosRegistros; 
@@ -231,49 +247,87 @@ exports.deleteFeriado = async (id) => {
 };
 
 exports.getRegistrosByMalharia = async (malhariaId) => {
-    const { data, error } = await supabase
-        .schema('malharia')
-        .from(TABLE_REGISTRO)
-        .select(`
-            *, 
-            malharia:malharia_id (id, nome, tipo), 
-            justificativa:justificativa_id (nome), 
-            itens:registro_diario_item(
-                processo_id, processo_item_id, item_id, qtd_produzida, 
-                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
-                item:item_id(id, nome)
-            )
-        `)
-        .eq('malharia_id', malhariaId)
-        .order('data_registro', { ascending: false });
+    let todosRegistros = [];
+    let from = 0;
+    const limit = 999;
+    let buscarMais = true;
+
+    while (buscarMais) {
+        const { data, error } = await supabase
+            .schema('malharia')
+            .from(TABLE_REGISTRO)
+            .select(`
+                *, 
+                malharia:malharia_id (id, nome, tipo), 
+                justificativa:justificativa_id (nome), 
+                itens:registro_diario_item(
+                    processo_id, processo_item_id, item_id, qtd_produzida, 
+                    processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                    item:item_id(id, nome)
+                )
+            `)
+            .eq('malharia_id', malhariaId)
+            .order('data_registro', { ascending: false })
+            .range(from, from + limit);
+            
+        if (error) throw error; 
         
-    if (error) throw error; 
-    let dadosComUser = await enriquecerComUsuarios(data);
+        if (data && data.length > 0) {
+            todosRegistros.push(...data);
+        }
+        
+        if (!data || data.length <= limit) {
+            buscarMais = false;
+        } else {
+            from += limit + 1;
+        }
+    }
+
+    let dadosComUser = await enriquecerComUsuarios(todosRegistros);
     return enriquecerRegistros(dadosComUser);
 };
 
-
 exports.getRegistrosFiltrados = async (dataInicio, dataFim) => {
-    let query = supabase
-        .schema('malharia')
-        .from(TABLE_REGISTRO)
-        .select(`
-            *, 
-            malharia:malharia_id (id, nome, tipo), 
-            justificativa:justificativa_id (nome), 
-            itens:registro_diario_item(
-                processo_id, processo_item_id, item_id, qtd_produzida, 
-                processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
-                item:item_id(id, nome)
-            )
-        `)
-        .order('data_registro', { ascending: false });
+    let todosRegistros = [];
+    let from = 0;
+    const limit = 999;
+    let buscarMais = true;
 
-    if (dataInicio) query = query.gte('data_registro', dataInicio);
-    if (dataFim) query = query.lte('data_registro', dataFim);
+    while (buscarMais) {
+        let query = supabase
+            .schema('malharia')
+            .from(TABLE_REGISTRO)
+            .select(`
+                *, 
+                malharia:malharia_id (id, nome, tipo), 
+                justificativa:justificativa_id (nome), 
+                itens:registro_diario_item(
+                    processo_id, processo_item_id, item_id, qtd_produzida, 
+                    processo:processo_id(id, numero_processo, orgao, processo_item(id, item_id, descricao, tamanho), imagens:processo_imagem(*)), 
+                    item:item_id(id, nome)
+                )
+            `)
+            .order('data_registro', { ascending: false });
 
-    const { data, error } = await query;
-    if (error) throw error; 
-    let dadosComUser = await enriquecerComUsuarios(data);
+        if (dataInicio) query = query.gte('data_registro', dataInicio);
+        if (dataFim) query = query.lte('data_registro', dataFim);
+
+        query = query.range(from, from + limit);
+
+        const { data, error } = await query;
+        if (error) throw error; 
+
+        if (data && data.length > 0) {
+            todosRegistros.push(...data);
+        }
+
+        if (!data || data.length <= limit) {
+            buscarMais = false;
+        } else {
+            from += limit + 1;
+        }
+    }
+
+    let dadosComUser = await enriquecerComUsuarios(todosRegistros);
     return enriquecerRegistros(dadosComUser);
 };
