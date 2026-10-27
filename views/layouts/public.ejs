@@ -89,7 +89,6 @@
       .notif-body { padding: 20px; overflow-y: auto; flex: 1; }
       .notif-footer { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-body); }
 
-      /* ESTILO DO LOADER (PUBLIC) */
       .app-loader {
           position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
           background-color: var(--bg-body); z-index: 99999;
@@ -104,7 +103,6 @@
       }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-      /* RESPONSIVIDADE PARA CELULAR */
       @media (max-width: 768px) {
         body { flex-direction: column; height: 100%; overflow: auto; }
         .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; }
@@ -121,7 +119,6 @@
   </head>
   <body>
 
-    <!-- TELA DE CARREGAMENTO NO PUBLIC (OCULTA POR PADRÃO) -->
     <div id="app-loader" class="app-loader hidden">
         <div class="loader-spinner"></div>
         <div style="margin-top: 15px; font-weight: 600; color: var(--text-muted);">Carregando...</div>
@@ -134,7 +131,8 @@
       </div>
 
       <div class="menu">
-        <button id="btn-page1" class="nav-btn active" onclick="showPage('page1')"><span class="material-icons">today</span> Diário</button>
+        <button id="btn-pageApresentacao" class="nav-btn active" onclick="showPage('pageApresentacao')"><span class="material-icons">assessment</span> Apresentação</button>
+        <button id="btn-page1" class="nav-btn" onclick="showPage('page1')"><span class="material-icons">today</span> Diário</button>
         <button id="btn-pageOficina" class="nav-btn" onclick="showPage('pageOficina')"><span class="material-icons">store</span> Relatório da Oficina</button>
         <button id="btn-page2" class="nav-btn" onclick="showPage('page2')"><span class="material-icons">show_chart</span> Desempenho</button>
         <button id="btn-page3" class="nav-btn" onclick="showPage('page3')"><span class="material-icons">military_tech</span> Detalhes</button>
@@ -187,34 +185,36 @@
       function getThemeColor(varName) { return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
 
       function showPage(pageId) {
-          document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-          document.getElementById(pageId).classList.add('active');
+          // Oculta explicitamente todas as seções conhecidas
+          const pages = ['pageApresentacao', 'page1', 'pageOficina', 'page2', 'page3', 'page4', 'page5', 'page6'];
+          pages.forEach(id => {
+              let el = document.getElementById(id);
+              if (el) {
+                  el.style.display = 'none';
+                  el.classList.remove('active');
+              }
+          });
 
+          // Exibe apenas a página solicitada
+          let targetPage = document.getElementById(pageId);
+          if (targetPage) {
+              targetPage.style.display = 'block';
+              targetPage.classList.add('active');
+          }
+
+          // Atualiza o botão ativo na barra lateral
           document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
           let btnAtivo = document.getElementById('btn-' + pageId);
           if (btnAtivo) btnAtivo.classList.add('active');
 
+          // Dispara as funções de renderização de cada página correspondente
+          if (pageId === 'pageApresentacao' && typeof renderPageApresentacao === 'function') renderPageApresentacao();
           if (pageId === 'pageOficina' && typeof renderPageOficina === 'function') renderPageOficina();
           if (pageId === 'page2' && typeof setupChips === 'function') setupChips();
           if (pageId === 'page3' && typeof renderPage3 === 'function') renderPage3();
           if (pageId === 'page4' && typeof setupDemanda === 'function') setupDemanda();
           if (pageId === 'page5' && typeof initProcesses === 'function') initProcesses(processosData);
           if (pageId === 'page6' && typeof initCronograma === 'function') initCronograma();
-      }
-
-      function openModal(title, items) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalList').innerHTML = items.map(i => `<div style="padding: 10px; background: var(--bg-body); border-radius: 6px; border: 1px solid var(--border); font-size: 13px;">${i}</div>`).join(''); document.getElementById('genericModal').style.display = 'flex'; }
-      function closeModal() { document.getElementById('genericModal').style.display = 'none'; }
-      function openWhatsModal(text) { document.getElementById('whatsTextarea').value = text; document.getElementById('whatsOverlay').style.display = 'flex'; }
-      function closeWhatsModal() { document.getElementById('whatsOverlay').style.display = 'none'; }
-
-      function copyWhatsText() {
-          navigator.clipboard.writeText(document.getElementById('whatsTextarea').value).then(() => {
-              let btn = document.getElementById('btnCopyWhats');
-              let origHtml = btn.innerHTML;
-              btn.innerHTML = '<i class="bi bi-check-lg" style="margin-right: 6px;"></i> Copiado!';
-              btn.style.background = '#388E3C';
-              setTimeout(() => { btn.innerHTML = origHtml; btn.style.background = ''; }, 2000);
-          });
       }
 
       function toggleDarkMode() {
@@ -224,12 +224,12 @@
           document.getElementById('modeText').innerText = isDark ? 'Modo Claro' : 'Modo Escuro';
           localStorage.setItem('darkMode', isDark ? 'true' : 'false');
           
-          if (document.getElementById('pageOficina').classList.contains('active') && typeof renderPageOficina === 'function') renderPageOficina();
-          if (document.getElementById('page3').classList.contains('active') && typeof renderPage3 === 'function') renderPage3();
-          if (document.getElementById('page6').classList.contains('active') && typeof initCronograma === 'function') initCronograma();
+          if (document.getElementById('pageApresentacao') && document.getElementById('pageApresentacao').classList.contains('active') && typeof renderPageApresentacao === 'function') renderPageApresentacao();
+          if (document.getElementById('pageOficina') && document.getElementById('pageOficina').classList.contains('active') && typeof renderPageOficina === 'function') renderPageOficina();
+          if (document.getElementById('page3') && document.getElementById('page3').classList.contains('active') && typeof renderPage3 === 'function') renderPage3();
+          if (document.getElementById('page6') && document.getElementById('page6').classList.contains('active') && typeof initCronograma === 'function') initCronograma();
       }
 
-      // INTEGRADO COM O TURBO: Verifica ao carregar e a cada visita
       document.addEventListener("turbo:load", function() {
           if (localStorage.getItem('darkMode') === 'true') {
               document.body.classList.add('dark-mode');
@@ -244,10 +244,12 @@
           }
       });
 
-      // SCRIPT DE CARREGAMENTO (LOADER) DO TURBO
       document.addEventListener("DOMContentLoaded", function() {
           const loader = document.getElementById('app-loader');
           if (loader) loader.classList.add('hidden');
+
+          // Inicializa abrindo a página de Apresentação por padrão
+          showPage('pageApresentacao');
       });
 
       document.addEventListener("turbo:visit", function() {

@@ -26,11 +26,11 @@ exports.diarioPublico = async (req, res) => {
 
         let [registros, feriadosRaw, malhariasRaw, processosRaw, itensDisponiveis, rankingRaw] = await Promise.all([
             registrosService.getRegistrosFiltrados(null, formatData(hojeObj)), 
-            registrosService.getFeriados(),                                    
-            malhariasService.getAllMalharias(),                                
-            processosService.getAllProcessos(),                                
-            processosService.getAllItensDisponiveis(),                         
-            rankingService.getRankingPerformance(mesAtual, anoAtual)           
+            registrosService.getFeriados(),                            
+            malhariasService.getAllMalharias(),                           
+            processosService.getAllProcessos(),                           
+            processosService.getAllItensDisponiveis(),                          
+            rankingService.getRankingPerformance(mesAtual, anoAtual)            
         ]);
         
         registros = removerDuplicatasRegistros(registros);
@@ -47,6 +47,7 @@ exports.diarioPublico = async (req, res) => {
             malhariasRaw.forEach(m => {
                 malhariasMap[m.id] = (m.itens && Array.isArray(m.itens)) ? m.itens.length : 0;
                 infoOficinasEstatico.push({
+                    id: m.id,
                     nome: m.nome,
                     remunerados: m.remunerados || 0
                 });
@@ -64,7 +65,19 @@ exports.diarioPublico = async (req, res) => {
             
             let numMaquinas = reg.malharia_id && malhariasMap[reg.malharia_id] !== undefined ? malhariasMap[reg.malharia_id] : 'Não informado';
             
-            const baseData = { data: dataFormatada, oficina: oficinaNome, metaOficina: reg.meta_calculada || 0, justificativa: reg.justificativa ? reg.justificativa.nome : '', observacao: reg.observacao || '', maquinas: numMaquinas, internos: reg.qtd_internos || 0, internosVinc: reg.qtd_internos || 0, dateObj: dataObj };
+            const baseData = { 
+                data: dataFormatada, 
+                oficina: oficinaNome, 
+                oficinaId: reg.malharia_id,
+                metaOficina: reg.meta_calculada || 0, 
+                justificativa: reg.justificativa ? reg.justificativa.nome : '', 
+                observacao: reg.observacao || '', 
+                maquinas: numMaquinas, 
+                internos: reg.qtd_internos || 0, 
+                internosVinc: reg.qtd_internos || 0, 
+                dateObj: dataObj,
+                dataOriginal: reg.data_registro
+            };
 
             if (reg.itens && reg.itens.length > 0) {
                 reg.itens.forEach(it => {
@@ -110,7 +123,6 @@ exports.diarioPublico = async (req, res) => {
         });
 
         const feriados = feriadosRaw.map(f => ({ data: f.data_feriado.split('-').reverse().join('/'), descricao: f.descricao, oficina: f.malharia ? f.malharia.nome : 'Todas' }));
-
         const demandasFormatadas = Object.values(demandasMap).map(d => ({ id: d.id, orgao: d.orgao, numero: d.numero, itens: Object.values(d.itensMap) }));
 
         const formatDateBR = (dateStr) => {
@@ -119,13 +131,6 @@ exports.diarioPublico = async (req, res) => {
                 let clean = dateStr.toString().split('T')[0];
                 let parts = clean.split('-');
                 if (parts.length === 3) { return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`; }
-                if (clean.includes('/')) {
-                    let p2 = clean.split('/');
-                    if (p2.length === 3) {
-                        if (p2[2].length === 4) return `${p2[0].padStart(2, '0')}/${p2[1].padStart(2, '0')}/${p2[2]}`;
-                        if (p2[0].length === 4) return `${p2[2].padStart(2, '0')}/${p2[1].padStart(2, '0')}/${p2[0]}`;
-                    }
-                }
                 return dateStr;
             } catch(e) { return dateStr; }
         };
@@ -162,7 +167,6 @@ exports.diarioPublico = async (req, res) => {
             processosMapeados.push({ nProcesso: p.numero_processo || '', tipoDemanda: p.tipo_demanda || 'Geral', orgao: p.orgao || 'Órgão não especificado', produtosBasicos: [...produtosBasicosSet], status: p.status || 'Entrega não iniciada', situacao: p.situacao || 'Pendente', linkSei: p.link_sei || '', obs: p.observacao || '', qtdAutorizada: p.totais ? p.totais.autorizado : 0, qtdEntregue: p.totais ? p.totais.entregue : 0, qtdFaltante: p.totais ? p.totais.faltante : 0, itens: itensFormatados });
         });
 
-        // ENVIO DA VARIÁVEL USER PARA O EJS
         res.render('dashboard/index', {
             layout: 'layouts/public',
             title: 'Painel Público - Produção',
@@ -173,7 +177,7 @@ exports.diarioPublico = async (req, res) => {
             scheduleJSON: JSON.stringify(Object.values(cronogramaDataMap)),
             rankingJSON: JSON.stringify(rankingRaw), 
             infoOficinasEstaticoJSON: JSON.stringify(infoOficinasEstatico),
-            user: req.user || res.locals.user || null // <--- ESTA É A LINHA MÁGICA QUE FALTAVA!
+            user: req.user || res.locals.user || null 
         });
 
     } catch (error) {

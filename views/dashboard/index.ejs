@@ -94,6 +94,9 @@
         if (document.getElementById('page6') && document.getElementById('page6').classList.contains('active')) {
             if (typeof initCronograma === 'function') initCronograma();
         }
+        if (document.getElementById('pageApresentacao') && document.getElementById('pageApresentacao').classList.contains('active')) {
+            if (typeof renderPageApresentacao === 'function') renderPageApresentacao();
+        }
     }
 
     function resetGlobalFilter() {
@@ -203,7 +206,8 @@
     });
 </script>
 
-<!-- INCLUSÃO DAS 7 PÁGINAS MODULARES -->
+<!-- INCLUSÃO DE TODAS AS PÁGINAS MODULARES (PARA O MENU LATERAL FUNCIONAR) -->
+<%- include('apresentacao') %>
 <%- include('diario') %>
 <%- include('raiox') %>
 <%- include('desempenho') %>

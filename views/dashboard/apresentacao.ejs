@@ -1,0 +1,281 @@
+<!-- =========================================================
+     PÁGINA: APRESENTAÇÃO (VISUAL EXECUTIVO / LEIGOS)
+     ========================================================= -->
+<div id="pageApresentacao" class="page active" style="display: block;">
+  
+  <!-- Cabeçalho Executivo Limpo -->
+  <div style="background: linear-gradient(135deg, var(--primary), #0D47A1); color: white; padding: 30px; border-radius: 16px; margin-bottom: 30px; box-shadow: var(--shadow);">
+    <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: white;">Painel Geral de Produção</h2>
+    <p style="font-size: 14px; margin: 0; opacity: 0.9;">Acompanhe o volume consolidado de peças fabricadas, médias mensais e o desempenho geral das oficinas.</p>
+  </div>
+
+  <!-- Cards de Resumo Principal (Foco em Peças) -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px;">
+    
+    <div style="background: var(--surface); padding: 24px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border); border-left: 6px solid var(--primary);">
+      <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; letter-spacing: 0.5px;">Total Geral Produzido</span>
+      <h3 id="apresTotalGeral" style="font-size: 32px; font-weight: 800; color: var(--primary); margin: 8px 0 4px 0;">0</h3>
+      <span style="font-size: 13px; color: var(--text-muted); display: block;">peças fabricadas no total</span>
+    </div>
+
+    <div style="background: var(--surface); padding: 24px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border); border-left: 6px solid #3B82F6;">
+      <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; letter-spacing: 0.5px;">Média Mensal</span>
+      <h3 id="apresMediaMensalGeral" style="font-size: 32px; font-weight: 800; color: #3B82F6; margin: 8px 0 4px 0;">0</h3>
+      <span style="font-size: 13px; color: var(--text-muted); display: block;">média de peças por mês</span>
+    </div>
+
+  </div>
+
+  <!-- Grade de Tabelas Executivas (Topo) -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;">
+    
+    <!-- Bloco 1: Total de Peças por Item (Geral) -->
+    <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border);">
+      <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">
+        <span class="material-icons" style="color: var(--primary); font-size: 20px;">inventory_2</span> 
+        Total de Peças por Item
+      </h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px;">Soma de todas as peças produzidas de cada produto em todas as oficinas.</p>
+      
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+              <th style="padding: 10px;">Item</th>
+              <th style="padding: 10px; text-align: right;">Quantidade</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaGeralItens">
+            <!-- Preenchido via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bloco 2: Média por Mês -->
+    <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border);">
+      <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">
+        <span class="material-icons" style="color: #3B82F6; font-size: 20px;">calendar_today</span> 
+        Histórico de Peças por Mês
+      </h3>
+      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 18px;">Volume geral de peças entregues mês a mês.</p>
+      
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+              <th style="padding: 10px;">Mês / Ano</th>
+              <th style="padding: 10px; text-align: right;">Quantidade</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaMediaMes">
+            <!-- Preenchido via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bloco 3: Produção no Período Selecionado (Com Filtro Próprio e Total Embaixo) -->
+  <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border); margin-top: 25px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+      <div>
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+          <span class="material-icons" style="color: #10B981; font-size: 20px;">filter_alt</span> 
+          Produção no Período Selecionado
+        </h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Selecione um mês específico ou defina um intervalo de datas para análise.</p>
+      </div>
+
+      <!-- Controles de Filtro Interno -->
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <div>
+          <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 2px;">Mês Específico</label>
+          <input type="month" id="apresFiltroMes" onchange="mudarFiltroMesApresentacao()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+        </div>
+        <div>
+          <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 2px;">Data Inicial</label>
+          <input type="date" id="apresFiltroInicio" onchange="limparMesSePersonalizado()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+        </div>
+        <div>
+          <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 2px;">Data Final</label>
+          <input type="date" id="apresFiltroFim" onchange="limparMesSePersonalizado()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+        </div>
+        <div style="align-self: flex-end;">
+          <button class="btn-notif btn-notif-pri" onclick="aplicarFiltroApresentacao()" style="padding: 7px 14px; font-size: 12px; height: 35px;">Filtrar</button>
+        </div>
+      </div>
+    </div>
+    
+    <div style="overflow-x: auto; margin-bottom: 20px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+            <th style="padding: 10px;">Item</th>
+            <th style="padding: 10px; text-align: right;">Quantidade</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaFiltroPersonalizado">
+          <!-- Preenchido via JS -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TOTAL NO PERÍODO SELECIONADO MAIS EMBAIXO -->
+    <div style="background: var(--bg-body); padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
+      <span style="font-size: 13px; font-weight: 600; color: var(--text-main); text-transform: uppercase;">Total de Peças no Período Selecionado:</span>
+      <h3 id="apresTotalFiltrado" style="font-size: 22px; font-weight: 800; color: #10B981; margin: 0;">0 peças</h3>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  function mudarFiltroMesApresentacao() {
+    const mesVal = document.getElementById('apresFiltroMes').value;
+    if (mesVal) {
+      // Define automaticamente o primeiro e o último dia do mês escolhido
+      const [ano, mes] = mesVal.split('-');
+      const primeiroDia = `${ano}-${mes}-01`;
+      const ultimoDia = new Date(ano, mes, 0).toISOString().split('T')[0];
+      
+      document.getElementById('apresFiltroInicio').value = primeiroDia;
+      document.getElementById('apresFiltroFim').value = ultimoDia;
+      renderPageApresentacao();
+    }
+  }
+
+  function limparMesSePersonalizado() {
+    document.getElementById('apresFiltroMes').value = '';
+    renderPageApresentacao();
+  }
+
+  function aplicarFiltroApresentacao() {
+    renderPageApresentacao();
+  }
+
+  function renderPageApresentacao() {
+    const pageEl = document.getElementById('pageApresentacao');
+    if (!pageEl || !pageEl.classList.contains('active')) return;
+
+    // Obtém datas dos inputs internos da página de Apresentação
+    let startInput = document.getElementById('apresFiltroInicio').value;
+    let endInput = document.getElementById('apresFiltroFim').value;
+
+    let startDate = startInput ? new Date(startInput + 'T00:00:00') : new Date(2020, 0, 1);
+    let endDate = endInput ? new Date(endInput + 'T23:59:59') : new Date(2100, 11, 31);
+
+    let mapaGeralItens = {};
+    let mapaGeralMes = {}; 
+    let mapaFiltradoItens = {};
+
+    let totalGeralQtd = 0;
+    let totalFiltradoQtd = 0;
+
+    rawData.forEach(r => {
+      const qtd = r.producaoDia || 0;
+      if (!r.item || r.item === 'Nenhum' || qtd <= 0) return;
+
+      const nomeItem = r.item.trim();
+
+      // 1. Total Geral por Item
+      if (!mapaGeralItens[nomeItem]) {
+        mapaGeralItens[nomeItem] = { item: nomeItem, qtd: 0 };
+      }
+      mapaGeralItens[nomeItem].qtd += qtd;
+      totalGeralQtd += qtd;
+
+      // 2. Média por Mês
+      if (r.dataOriginal) {
+        const anoMes = r.dataOriginal.substring(0, 7); 
+        if (!mapaGeralMes[anoMes]) {
+          mapaGeralMes[anoMes] = { anoMes, qtd: 0 };
+        }
+        mapaGeralMes[anoMes].qtd += qtd;
+      }
+
+      // 3. Filtro Interno de Data Ativo
+      if (r.dateObj >= startDate && r.dateObj <= endDate) {
+        if (!mapaFiltradoItens[nomeItem]) {
+          mapaFiltradoItens[nomeItem] = { item: nomeItem, qtd: 0 };
+        }
+        mapaFiltradoItens[nomeItem].qtd += qtd;
+        totalFiltradoQtd += qtd;
+      }
+    });
+
+    // Atualiza os Cards Superiores
+    document.getElementById('apresTotalGeral').innerText = totalGeralQtd.toLocaleString('pt-BR');
+    
+    // Atualiza o Total Embaixo do Bloco Filtrado
+    document.getElementById('apresTotalFiltrado').innerText = totalFiltradoQtd.toLocaleString('pt-BR') + ' peças';
+
+    // Tabela 1: Total Geral por Item
+    let tbodyGeral = document.getElementById('tabelaGeralItens');
+    tbodyGeral.innerHTML = '';
+    const itensGeralOrdenados = Object.values(mapaGeralItens).sort((a, b) => b.qtd - a.qtd);
+    
+    if (itensGeralOrdenados.length === 0) {
+      tbodyGeral.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted);">Nenhum registro encontrado.</td></tr>`;
+    } else {
+      itensGeralOrdenados.forEach(i => {
+        tbodyGeral.innerHTML += `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 12px 10px; font-weight: 600;">${i.item}</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: var(--primary);">${i.qtd.toLocaleString('pt-BR')} peças</td>
+          </tr>`;
+      });
+    }
+
+    // Tabela 2: Média por Mês
+    let tbodyMes = document.getElementById('tabelaMediaMes');
+    tbodyMes.innerHTML = '';
+    const mesesArray = Object.values(mapaGeralMes).sort((a, b) => b.anoMes.localeCompare(a.anoMes));
+    
+    if (mesesArray.length === 0) {
+      tbodyMes.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted);">Sem dados mensais.</td></tr>`;
+    } else {
+      let totalMesesUnicos = mesesArray.length || 1;
+      let somaTotalGeral = Object.values(mapaGeralItens).reduce((acc, curr) => acc + curr.qtd, 0);
+      document.getElementById('apresMediaMensalGeral').innerText = Math.round(somaTotalGeral / totalMesesUnicos).toLocaleString('pt-BR');
+
+      mesesArray.slice(0, 10).forEach(m => {
+        const dateStr = new Date(m.anoMes + '-01T00:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const formatadoBonito = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+        tbodyMes.innerHTML += `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 12px 10px; font-weight: 600; text-transform: capitalize;">${formatadoBonito}</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #3B82F6;">${m.qtd.toLocaleString('pt-BR')} peças</td>
+          </tr>`;
+      });
+    }
+
+    // Tabela 3: Filtro Personalizado
+    let tbodyFiltro = document.getElementById('tabelaFiltroPersonalizado');
+    tbodyFiltro.innerHTML = '';
+    const itensFiltradosOrdenados = Object.values(mapaFiltradoItens).sort((a, b) => b.qtd - a.qtd);
+
+    if (itensFiltradosOrdenados.length === 0) {
+      tbodyFiltro.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted);">Nenhum dado encontrado no período selecionado.</td></tr>`;
+    } else {
+      itensFiltradosOrdenados.forEach(i => {
+        tbodyFiltro.innerHTML += `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 12px 10px; font-weight: 600;">${i.item}</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #10B981;">${i.qtd.toLocaleString('pt-BR')} peças</td>
+          </tr>`;
+      });
+    }
+  }
+
+  // Executa a renderização ao carregar a página de apresentação
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof renderPageApresentacao === 'function') {
+      renderPageApresentacao();
+    }
+  });
+</script>
