@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title><%- typeof title !== 'undefined' ? title : 'Painel de Produção' %></title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -17,167 +18,274 @@
 
     <style>
       :root {
-        --bg-body: #F0F4F8;
-        --surface: #FFFFFF;
-        --sidebar-bg: #FFFFFF;
-        --primary: #1565C0;
-        --primary-light: #E3F2FD;
-        --text-main: #333333;
-        --text-muted: #666666;
-        --border: #E0E0E0;
-        --shadow: 0 4px 12px rgba(0,0,0,0.05);
-        --chart-grid: #f0f0f0;
-        --card-border: 1px solid #E0E0E0;
-        --success-bg: #E8F5E9; --success-text: #2E7D32;
-        --danger-bg: #FFEBEE; --danger-text: #C62828;
-        --neutral-bg: #F5F5F5; --neutral-text: #757575;
-        --alert-bg: #FFEB3B; --alert-text: #000000;
-        --insumo-bg: #673AB7; --insumo-text: #FFFFFF;
-        --warning-bg: #FFF9C4; --warning-text: #FBC02D; --warning-text-dark: #F57F17;
+        /* 1. ESTRUTURA E FUNDO (Padrão Catálogo) */
+        --bg-body: #f8fafc; 
+        --surface: #ffffff; 
+        --sidebar-bg: #001E7A;
+        
+        /* 2. TEXTOS PADRÃO */
+        --text-main: #1e293b; 
+        --text-muted: #64748b; 
+        
+        /* 3. CORES DA MARCA */
+        --primary: #001E7A; 
+        --primary-light: #e0e7ff;
+        
+        /* 4. BORDAS E SOMBRAS */
+        --border: #e2e8f0; 
+        --shadow: 0 2px 5px rgba(0,0,0,0.05);
+        --chart-grid: #e2e8f0;
+        --card-border: none;
+        
+        /* 5. CORES DE STATUS E ALERTAS */
+        --success-bg: #e8f5e9; --success-text: #1b5e20;
+        --danger-bg: #ffebee; --danger-text: #b71c1c;
+        --neutral-bg: #f5f5f5; --neutral-text: #424242;
+        --alert-bg: #fff3cd; --alert-text: #856404;
+        --insumo-bg: #e3f2fd; --insumo-text: #0d47a1;
+        --warning-bg: #fff3e0; --warning-text: #e65100; --warning-text-dark: #e65100;
       }
 
       body.dark-mode {
-        --bg-body: #121212;
-        --surface: #1E1E1E;
-        --sidebar-bg: #1E1E1E;
-        --primary: #90CAF9;
-        --primary-light: #263238;
-        --text-main: #E0E0E0;
-        --text-muted: #B0B0B0;
-        --border: #333333;
-        --shadow: 0 4px 12px rgba(0,0,0,0.3);
-        --chart-grid: #333333;
-        --card-border: 1px solid #333;
+        --bg-body: #121416;
+        --surface: #1c2126;
+        --sidebar-bg: #1c2126;
+        --primary: #b0bec5;
+        --primary-light: #23292e;
+        --text-main: #f0f2f5;
+        --text-muted: #a0abb5;
+        --border: #2a3138;
+        --shadow: 0 10px 30px rgba(0,0,0,0.3);
+        --chart-grid: #37474f;
+        --card-border: none;
+        
         --success-bg: rgba(46, 125, 50, 0.2); --success-text: #81C784;
         --danger-bg: rgba(198, 40, 40, 0.2); --danger-text: #E57373;
         --neutral-bg: rgba(117, 117, 117, 0.2); --neutral-text: #BDBDBD;
-        --alert-bg: #FDD835; --alert-text: #000000;
-        --insumo-bg: #512DA8;
-        --warning-bg: rgba(253, 216, 53, 0.2); --warning-text: #FFF59D; --warning-text-dark: #FDD835;
+        --alert-bg: rgba(253, 216, 53, 0.2); --alert-text: #FFF59D;
+        --insumo-bg: rgba(13, 71, 161, 0.3); --insumo-text: #90CAF9;
+        --warning-bg: rgba(255, 152, 0, 0.1); --warning-text: #FFB74D; --warning-text-dark: #FFB74D;
       }
 
+      /* RESET GERAL E TIPOGRAFIA */
       * { box-sizing: border-box; }
-      body { font-family: 'Poppins', sans-serif; margin: 0; background: var(--bg-body); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; transition: 0.3s; }
+      body { 
+        font-family: 'Poppins', sans-serif; 
+        margin: 0; 
+        background: var(--bg-body); 
+        color: var(--text-main); 
+        display: flex; 
+        height: 100vh; 
+        overflow: hidden; 
+        transition: background-color 0.3s, color 0.3s; 
+      }
 
-      .sidebar { width: 260px; background: var(--sidebar-bg); display: flex; flex-direction: column; border-right: 1px solid var(--border); z-index: 10; transition: 0.3s; }
-      .logo { padding: 25px 20px; font-size: 16px; font-weight: 700; color: var(--primary); display: flex; align-items: center; border-bottom: 1px solid var(--border); gap: 10px; }
-      .menu { flex: 1; padding: 20px; overflow-y: auto; }
-      .nav-btn { width: 100%; background: none; border: none; padding: 12px 16px; text-align: left; font-size: 14px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-radius: 8px; display: flex; align-items: center; gap: 12px; margin-bottom: 5px; transition: 0.2s; text-decoration: none; }
-      .nav-btn:hover { background: var(--primary-light); color: var(--primary); }
-      .nav-btn.active { background: var(--primary); color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+      /* =========================================
+         NOVO MENU LATERAL (SIDEBAR) ESTILO DASHBOARD
+         ========================================= */
+      .sidebar { 
+        width: 320px; 
+        background: var(--sidebar-bg); 
+        display: flex; 
+        flex-direction: column; 
+        border-right: 1px solid var(--border); 
+        z-index: 1000; 
+        transition: 0.3s; 
+        padding-top: 25px;
+      }
       
-      .mode-toggle { padding: 20px; border-top: 1px solid var(--border); }
-      .toggle-btn { display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-muted); font-size: 14px; }
+      .logo { 
+        width: 100%; 
+        display: flex; 
+        justify-content: center; 
+        align-items: center; 
+        padding-bottom: 20px; 
+        margin-bottom: 5px; 
+        border-bottom: 1px solid rgba(255,255,255,0.1); 
+      }
+      .logo img { height: 80px; max-width: 85%; object-fit: contain; }
 
-      .main { flex: 1; padding: 30px; overflow-y: auto; }
+      .menu { 
+        flex: 1; 
+        padding: 20px 0; 
+        overflow-y: auto; 
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      
+      .nav-btn { 
+        width: calc(100% - 40px); 
+        margin: 0 20px; 
+        height: 54px; 
+        border-radius: 14px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: flex-start; 
+        padding-left: 15px; 
+        color: #ffffff; 
+        cursor: pointer; 
+        transition: 0.3s all ease; 
+        border: none; 
+        text-decoration: none; 
+        background: transparent;
+      }
+      .nav-btn:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+      .nav-btn.active { 
+        background: #ffffff !important; 
+        color: var(--sidebar-bg) !important; 
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25); 
+      }
+      .nav-btn .material-icons { font-size: 28px; min-width: 34px; }
+      .nav-btn span:not(.material-icons) { 
+        margin-left: 15px; 
+        font-size: 1.05rem; 
+        font-weight: 600; 
+        text-transform: uppercase; 
+        letter-spacing: 0.3px; 
+      }
+      
+      .mode-toggle { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+
+      /* =========================================
+         ÁREA PRINCIPAL E ELEMENTOS COMUNS
+         ========================================= */
+      .main { flex: 1; padding: 30px; overflow-y: auto; overflow-x: hidden; position: relative; }
       .page { display: none; animation: fadeIn 0.4s ease; }
       .page.active { display: block; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; } }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-      h2 { color: var(--text-main); margin-bottom: 20px; font-weight: 600; }
-      input, select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text-main); outline: none; }
-      .btn-notif { padding: 10px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: 0.2s;}
-      .btn-notif-sec { background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border); }
-      .btn-notif-sec:hover { background: var(--border); }
-      .btn-notif-pri { background: #4CAF50; color: white; }
+      h2 { color: var(--text-main); margin-bottom: 20px; font-weight: 700; text-transform: uppercase; }
+      input, select { padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text-main); outline: none; font-family: inherit; font-size: 0.95rem; font-weight: 500; transition: 0.2s;}
+      input:focus, select:focus { border-color: var(--primary); }
+      
+      .btn-notif { padding: 10px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; border: none; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-family: 'Poppins', sans-serif; text-transform: uppercase; }
+      .btn-notif-sec { background: var(--surface); color: var(--text-main); border: 1px solid var(--border); }
+      .btn-notif-sec:hover { border-color: var(--primary); color: var(--primary); }
+      .btn-notif-pri { background: var(--primary); color: white; }
+      .btn-notif-pri:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0, 30, 122, 0.2); }
 
-      .notif-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); z-index: 10500; display: none; align-items: center; justify-content: center; }
-      .notif-box { background: var(--surface); width: 95%; max-width: 600px; max-height: 85vh; border-radius: 16px; display: flex; flex-direction: column; box-shadow: 0 15px 50px rgba(0,0,0,0.5); overflow: hidden; border: 1px solid var(--border); color: var(--text-main); }
-      .notif-header { padding: 20px; background: var(--primary); color: #fff; display: flex; justify-content: space-between; align-items: center; }
-      .notif-header h5 { margin: 0; font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px;}
-      .notif-close { cursor: pointer; background: none; border: none; color: white; font-size: 24px; transition: 0.2s; }
-      .notif-body { padding: 20px; overflow-y: auto; flex: 1; }
-      .notif-footer { padding: 15px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-body); }
+      /* CARDS MODERNOS (Padrão Catálogo) */
+      .chart-card, .detail-card, .event-card, .panel-list {
+        background: var(--surface);
+        border-radius: 20px !important;
+        border: none !important;
+        box-shadow: var(--shadow) !important;
+      }
 
+      /* MODAIS */
+      .notif-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); z-index: 10500; display: none; align-items: center; justify-content: center; }
+      .notif-box { background: var(--surface); width: 95%; max-width: 600px; max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0,0,0,0.2); overflow: hidden; border: 1px solid var(--border); color: var(--text-main); animation: fadeEffect 0.3s; }
+      .notif-header { padding: 20px 25px; background: var(--surface); color: var(--text-main); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+      .notif-header h5 { margin: 0; font-size: 1.2rem; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; gap: 10px;}
+      .notif-close { cursor: pointer; background: none; border: none; color: var(--text-muted); font-size: 24px; transition: 0.2s; }
+      .notif-close:hover { color: var(--danger-text); transform: scale(1.1); }
+      .notif-body { padding: 25px; overflow-y: auto; flex: 1; }
+      .notif-footer { padding: 15px 25px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; background: var(--bg-body); }
+
+      /* LOADER DE TRANSIÇÃO */
       .app-loader {
           position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
           background-color: var(--bg-body); z-index: 99999;
           display: flex; flex-direction: column; align-items: center; justify-content: center;
-          opacity: 1; visibility: visible; transition: opacity 0.2s ease;
+          opacity: 1; visibility: visible; transition: opacity 0.4s ease;
       }
       .app-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
       .loader-spinner {
-          width: 50px; height: 50px; border: 5px solid var(--border);
+          width: 60px; height: 60px; border: 5px solid var(--border);
           border-top: 5px solid var(--primary); border-radius: 50%;
-          animation: spin 1s linear infinite;
+          animation: spin 1s linear infinite; margin-bottom: 20px;
       }
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-      @media (max-width: 768px) {
+      /* RESPONSIVO MOBILE */
+      @media (max-width: 1199px) {
         body { flex-direction: column; height: 100%; overflow: auto; }
-        .sidebar { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-        .logo { justify-content: center; }
-        .menu { display: flex; overflow-x: auto; padding: 10px; gap: 10px; white-space: nowrap; }
+        .sidebar { width: 100%; height: auto; border-right: none; flex-shrink: 0; padding-top: 10px; padding-bottom: 0; }
+        .logo img { height: 60px; }
+        .menu { flex-direction: row; overflow-x: auto; padding: 10px; gap: 10px; margin: 0; }
         .menu::-webkit-scrollbar { display: none; }
-        .nav-btn { width: auto; flex-shrink: 0; margin-bottom: 0; padding: 8px 12px; }
-        .mode-toggle { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; }
-        .mode-toggle .nav-btn { margin-bottom: 0; padding: 6px 12px; }
-        .main { padding: 15px; overflow-y: visible; }
+        .nav-btn { width: auto; flex-shrink: 0; margin: 0; height: 45px; padding: 0 15px; border-radius: 12px; }
+        .nav-btn .material-icons { font-size: 20px; min-width: auto; margin-right: 8px; }
+        .nav-btn span:not(.material-icons) { margin-left: 0; font-size: 0.85rem; }
+        
+        .mode-toggle { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; }
+        .mode-toggle .nav-btn { height: 40px; }
+        .main { padding: 15px; overflow-y: visible; width: 100vw; max-width: 100vw; }
         .notif-box { width: 90%; max-height: 90vh; }
       }
     </style>
   </head>
   <body>
 
+    <!-- LOADER -->
     <div id="app-loader" class="app-loader hidden">
         <div class="loader-spinner"></div>
-        <div style="margin-top: 15px; font-weight: 600; color: var(--text-muted);">Carregando...</div>
+        <div style="font-weight: 700; color: var(--text-muted); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.5px;">CARREGANDO DADOS...</div>
     </div>
 
+    <!-- SIDEBAR -->
     <div class="sidebar">
       <div class="logo">
-          <img src="/img/logo.png" alt="Logo" style="height: 30px;">
-          <span>PAINEL PÚBLICO</span>
+          <!-- O ideal é usar a logo branca já que o fundo é escuro -->
+          <img src="/img/logo.png" alt="Logo">
       </div>
 
       <div class="menu">
-        <button id="btn-pageApresentacao" class="nav-btn active" onclick="showPage('pageApresentacao')"><span class="material-icons">assessment</span> Apresentação</button>
-        <button id="btn-page1" class="nav-btn" onclick="showPage('page1')"><span class="material-icons">today</span> Diário</button>
-        <button id="btn-pageOficina" class="nav-btn" onclick="showPage('pageOficina')"><span class="material-icons">store</span> Relatório da Oficina</button>
-        <button id="btn-page2" class="nav-btn" onclick="showPage('page2')"><span class="material-icons">show_chart</span> Desempenho</button>
-        <button id="btn-page3" class="nav-btn" onclick="showPage('page3')"><span class="material-icons">military_tech</span> Detalhes</button>
-        <button id="btn-page4" class="nav-btn" onclick="showPage('page4')"><span class="material-icons">trending_up</span> Demanda</button>
-        <button id="btn-page5" class="nav-btn" onclick="showPage('page5')"><span class="material-icons">folder_shared</span> Processos</button>
-        <button id="btn-page6" class="nav-btn" onclick="showPage('page6')"><span class="material-icons">calendar_month</span> Cronograma</button>
+        <button id="btn-pageApresentacao" class="nav-btn active" onclick="showPage('pageApresentacao')"><span class="material-icons">assessment</span> <span>Apresentação</span></button>
+        <button id="btn-page1" class="nav-btn" onclick="showPage('page1')"><span class="material-icons">today</span> <span>Diário</span></button>
+        <button id="btn-pageOficina" class="nav-btn" onclick="showPage('pageOficina')"><span class="material-icons">store</span> <span>Relatório da Oficina</span></button>
+        <button id="btn-page2" class="nav-btn" onclick="showPage('page2')"><span class="material-icons">show_chart</span> <span>Desempenho</span></button>
+        <button id="btn-page3" class="nav-btn" onclick="showPage('page3')"><span class="material-icons">military_tech</span> <span>Detalhes</span></button>
+        <button id="btn-page4" class="nav-btn" onclick="showPage('page4')"><span class="material-icons">trending_up</span> <span>Demanda</span></button>
+        <button id="btn-page5" class="nav-btn" onclick="showPage('page5')"><span class="material-icons">folder_shared</span> <span>Processos</span></button>
+        <button id="btn-page6" class="nav-btn" onclick="showPage('page6')"><span class="material-icons">calendar_month</span> <span>Cronograma</span></button>
+        <button id="btn-pageFardamento" class="nav-btn" onclick="showPage('pageFardamento')"><span class="material-icons">checkroom</span> <span>Fard. Interno</span></button>
+        <button id="btn-pageFardamentoSeap" class="nav-btn" onclick="showPage('pageFardamentoSeap')"><span class="material-icons">badge</span> <span>Fard. SEAP</span></button>
       </div>
       
       <div class="mode-toggle">
         <% if (typeof user !== 'undefined' && user) { %>
-            <a href="/registros" class="nav-btn" style="color: var(--primary); font-weight: 600; margin-bottom: 8px; border: 1px solid var(--primary-light); text-decoration: none;">
+            <a href="/registros" class="nav-btn" style="background: rgba(255,255,255,0.1); margin-bottom: 8px;">
                 <span class="material-icons">admin_panel_settings</span> <span>Acessar Sistema</span>
             </a>
-            <a href="/auth/logout" class="nav-btn" style="color: #d32f2f; font-weight: 600; margin-bottom: 15px; border: 1px solid rgba(211, 47, 47, 0.3); text-decoration: none;">
+            <a href="/auth/logout" class="nav-btn" style="background: rgba(211, 47, 47, 0.2); color: #ffcdd2; margin-bottom: 15px;">
                 <span class="material-icons">logout</span> <span>Sair</span>
             </a>
         <% } else { %>
-            <a href="/auth/login" class="nav-btn" style="color: var(--primary); font-weight: 600; margin-bottom: 15px; border: 1px solid var(--primary-light); text-decoration: none;">
+            <a href="/auth/login" class="nav-btn" style="background: rgba(255,255,255,0.1); margin-bottom: 15px;">
                 <span class="material-icons">login</span> <span>Fazer Login</span>
             </a>
         <% } %>
         
-        <div class="toggle-btn" onclick="toggleDarkMode()">
+        <div class="nav-btn" onclick="toggleDarkMode()" style="justify-content: center;">
           <span class="material-icons" id="modeIcon">dark_mode</span><span id="modeText">Modo Escuro</span>
         </div>
       </div>
     </div>
 
+    <!-- ÁREA PRINCIPAL ONDE AS VIEWS SERÃO RENDERIZADAS -->
     <div class="main">
       <%- body %>
     </div>
 
+    <!-- MODAL GENÉRICO E MODAL WHATSAPP MANTIDOS -->
     <div id="genericModal" class="notif-overlay">
         <div class="notif-box">
             <div class="notif-header"><h5 id="modalTitle">Detalhes</h5><button type="button" class="notif-close" onclick="closeModal()">&times;</button></div>
             <div class="notif-body"><div id="modalList" style="display: flex; flex-direction: column; gap: 8px;"></div></div>
-            <div class="notif-footer"><button class="btn-notif btn-notif-sec" onclick="closeModal()">Fechar</button></div>
+            <div class="notif-footer"><button class="btn-notif btn-notif-sec" onclick="closeModal()">FECHAR</button></div>
         </div>
     </div>
 
     <div class="notif-overlay" id="whatsOverlay">
         <div class="notif-box">
-            <div class="notif-header" style="background: #128C7E;"><h5><i class="bi bi-whatsapp" style="margin-right: 8px;"></i> Relatório</h5><button type="button" class="notif-close" onclick="closeWhatsModal()">&times;</button></div>
-            <div class="notif-body"><textarea id="whatsTextarea" style="width: 100%; height: 300px; border: 1px solid var(--border); border-radius: 8px; padding: 10px; background: var(--bg-body); color: var(--text-main); resize: none;" readonly></textarea></div>
-            <div class="notif-footer"><button class="btn-notif btn-notif-sec" onclick="closeWhatsModal()">Fechar</button><button class="btn-notif btn-notif-pri" id="btnCopyWhats" onclick="copyWhatsText()"><i class="bi bi-whatsapp" style="margin-right: 6px;"></i> Copiar</button></div>
+            <div class="notif-header" style="background: #128C7E; color: white;">
+                <h5 style="color: white;"><i class="bi bi-whatsapp" style="margin-right: 8px;"></i> Relatório</h5>
+                <button type="button" class="notif-close" style="color: white;" onclick="closeWhatsModal()">&times;</button>
+            </div>
+            <div class="notif-body"><textarea id="whatsTextarea" style="width: 100%; height: 300px; border: 1px solid var(--border); border-radius: 12px; padding: 15px; background: var(--bg-body); color: var(--text-main); resize: none; font-family: inherit;" readonly></textarea></div>
+            <div class="notif-footer"><button class="btn-notif btn-notif-sec" onclick="closeWhatsModal()">FECHAR</button><button class="btn-notif" style="background: #25D366; color: white; border: none;" id="btnCopyWhats" onclick="copyWhatsText()"><i class="bi bi-whatsapp" style="margin-right: 6px;"></i> COPIAR</button></div>
         </div>
     </div>
 
@@ -185,8 +293,7 @@
       function getThemeColor(varName) { return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
 
       function showPage(pageId) {
-          // Oculta explicitamente todas as seções conhecidas
-          const pages = ['pageApresentacao', 'page1', 'pageOficina', 'page2', 'page3', 'page4', 'page5', 'page6'];
+          const pages = ['pageApresentacao', 'page1', 'pageOficina', 'page2', 'page3', 'page4', 'page5', 'page6', 'pageFardamento', 'pageFardamentoSeap'];
           pages.forEach(id => {
               let el = document.getElementById(id);
               if (el) {
@@ -195,19 +302,16 @@
               }
           });
 
-          // Exibe apenas a página solicitada
           let targetPage = document.getElementById(pageId);
           if (targetPage) {
               targetPage.style.display = 'block';
-              targetPage.classList.add('active');
+              setTimeout(() => targetPage.classList.add('active'), 10);
           }
 
-          // Atualiza o botão ativo na barra lateral
-          document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+          document.querySelectorAll('.sidebar .nav-btn').forEach(btn => btn.classList.remove('active'));
           let btnAtivo = document.getElementById('btn-' + pageId);
           if (btnAtivo) btnAtivo.classList.add('active');
 
-          // Dispara as funções de renderização de cada página correspondente
           if (pageId === 'pageApresentacao' && typeof renderPageApresentacao === 'function') renderPageApresentacao();
           if (pageId === 'pageOficina' && typeof renderPageOficina === 'function') renderPageOficina();
           if (pageId === 'page2' && typeof setupChips === 'function') setupChips();
@@ -215,6 +319,8 @@
           if (pageId === 'page4' && typeof setupDemanda === 'function') setupDemanda();
           if (pageId === 'page5' && typeof initProcesses === 'function') initProcesses(processosData);
           if (pageId === 'page6' && typeof initCronograma === 'function') initCronograma();
+          if (pageId === 'pageFardamento' && typeof initFardamento === 'function') initFardamento();
+          if (pageId === 'pageFardamentoSeap' && typeof initFardamentoSeap === 'function') initFardamentoSeap();
       }
 
       function toggleDarkMode() {
@@ -247,8 +353,6 @@
       document.addEventListener("DOMContentLoaded", function() {
           const loader = document.getElementById('app-loader');
           if (loader) loader.classList.add('hidden');
-
-          // Inicializa abrindo a página de Apresentação por padrão
           showPage('pageApresentacao');
       });
 

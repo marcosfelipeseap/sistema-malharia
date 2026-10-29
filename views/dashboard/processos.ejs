@@ -7,23 +7,23 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       background: var(--surface);
-      padding: 15px;
-      border-radius: 12px;
-      border: var(--card-border);
+      padding: 20px 25px;
+      border-radius: 20px;
+      border: none;
       box-shadow: var(--shadow);
     }
 
     .search-global-container {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       display: flex;
       gap: 10px;
       align-items: center;
       background: var(--surface);
-      padding: 12px 15px;
-      border-radius: 12px;
-      border: var(--card-border);
+      padding: 15px 20px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
       box-shadow: var(--shadow);
     }
     .search-global-container input {
@@ -32,24 +32,29 @@
       background: transparent;
       color: var(--text-main);
       outline: none;
-      font-size: 14px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 500;
     }
 
     .dropdown-check { position: relative; }
     .dropdown-btn {
       width: 100%;
-      padding: 8px 12px;
+      padding: 10px 15px;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 12px;
       background: var(--surface);
       color: var(--text-main);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 12px;
+      font-size: 0.85rem;
       user-select: none;
+      font-weight: 600;
+      transition: 0.2s;
     }
+    .dropdown-btn:hover { border-color: var(--primary); }
     .dropdown-content {
       display: none;
       position: absolute;
@@ -58,113 +63,121 @@
       width: 100%;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      max-height: 250px;
+      border-radius: 12px;
+      max-height: 280px;
       overflow-y: auto;
       z-index: 100;
-      box-shadow: var(--shadow);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
       padding-top: 5px;
+      margin-top: 5px;
     }
-    .dropdown-content.show { display: block; }
+    .dropdown-content.show { display: block; animation: fadeEffect 0.2s; }
 
     .dropdown-search {
         width: 90%;
-        margin: 5px 5%;
-        padding: 6px;
-        font-size: 12px;
+        margin: 10px 5%;
+        padding: 8px 12px;
+        font-size: 0.85rem;
         border: 1px solid var(--border);
-        border-radius: 4px;
+        border-radius: 8px;
         background: var(--bg-body);
         color: var(--text-main);
         outline: none;
+        font-family: inherit;
+        font-weight: 500;
     }
+    .dropdown-search:focus { border-color: var(--primary); }
 
-    .check-list-container { max-height: 200px; overflow-y: auto; }
+    .check-list-container { max-height: 200px; overflow-y: auto; padding-bottom: 10px; }
     .check-item { 
         display: flex; 
         align-items: center; 
-        padding: 8px 10px; 
+        padding: 10px 15px; 
         cursor: pointer; 
-        font-size: 12px; 
+        font-size: 0.85rem; 
         color: var(--text-muted); 
-        border-bottom: 1px solid var(--border); 
+        border-bottom: 1px dashed var(--border); 
+        font-weight: 500;
+        transition: 0.2s;
     }
-    .check-item:hover { background: var(--primary-light); color: var(--primary); }
-    .check-item input { margin-right: 8px; cursor: pointer;}
+    .check-item:last-child { border-bottom: none; }
+    .check-item:hover { background: var(--primary-light); color: var(--primary); font-weight: 700; }
+    .check-item input { margin-right: 10px; cursor: pointer; width: 16px; height: 16px; accent-color: var(--primary); }
 
     .process-table-container {
       background: var(--surface);
-      border-radius: 12px;
-      border: var(--card-border);
+      border-radius: 20px;
+      border: none;
       box-shadow: var(--shadow);
       overflow-x: auto;
     }
-    .process-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .process-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     .process-table th {
-      background: var(--primary-light);
-      color: var(--primary);
-      padding: 12px 15px;
+      background: var(--surface);
+      color: var(--text-muted);
+      padding: 20px 15px;
       text-align: left;
-      font-weight: 600;
+      font-weight: 800;
       border-bottom: 2px solid var(--border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
     }
-    .process-table td { padding: 12px 15px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+    .process-table td { padding: 15px; border-bottom: 1px dashed var(--border); color: var(--text-main); font-weight: 500;}
     .proc-row { cursor: pointer; transition: 0.2s; }
     .proc-row:hover { background: var(--bg-body); }
     .proc-row.expanded { background: var(--primary-light); }
 
     .child-row { display: none; background: var(--bg-body); }
-    .child-row.show { display: table-row; }
-    .child-content { padding: 15px; }
+    .child-row.show { display: table-row; animation: fadeEffect 0.3s; }
+    .child-content { padding: 20px; }
 
-    .prod-table { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); }
-    .prod-table th { background: var(--primary-light); color: var(--primary); padding: 8px; border-bottom: 1px solid var(--border); text-align: left; }
-    .prod-table td { padding: 8px; border-bottom: 1px solid var(--border); color: var(--text-main); }
+    .prod-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+    .prod-table th { background: var(--primary-light); color: var(--primary); padding: 12px 15px; border-bottom: 1px solid var(--border); text-align: left; font-weight: 700; text-transform: uppercase; font-size: 0.75rem; }
+    .prod-table td { padding: 12px 15px; border-bottom: 1px dashed var(--border); color: var(--text-main); font-weight: 500; }
+    .prod-table tr:last-child td { border-bottom: none; }
 
     /* CORES DE STATUS RIGOROSAS (Com !important para blindar) */
-    .pill { padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; text-align: center; }
+    .pill { padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; display: inline-block; text-align: center; letter-spacing: 0.5px; }
     
-    /* 1. Vermelho — Entrega não iniciada */
     .pill-nao-iniciada { background: #FFEBEE !important; color: #D32F2F !important; border: 1px solid #EF9A9A !important; } 
-    
-    /* 2. Amarelo Vivo — Parcialmente entregue */
     .pill-parcial { background: #FFF8E1 !important; color: #F57F17 !important; border: 1px solid #FBC02D !important; } 
-    
-    /* 3. Verde — Demanda concluída */
     .pill-concluida { background: #E8F5E9 !important; color: #2E7D32 !important; border: 1px solid #A5D6A7 !important; } 
   </style>
 
-  <h2>Controle de Processos</h2>
+  <h2 style="font-size: 1.6rem; margin-bottom: 25px;">Controle de Processos</h2>
 
   <div class="search-global-container">
-      <span class="material-icons" style="font-size:20px; color:var(--text-muted)">search</span>
+      <span class="material-icons" style="font-size:24px; color:var(--text-muted)">search</span>
       <input type="text" id="globalSearch" placeholder="Pesquisar por processo, órgão, produto ou observação..." onkeyup="handleGlobalSearch()">
+      <button class="btn-notif btn-notif-sec" onclick="limparFiltrosProcessos()" style="padding: 8px 15px; font-size: 0.75rem; height: 38px; background: var(--bg-body); border-radius: 8px; white-space: nowrap;">
+        LIMPAR FILTROS
+      </button>
   </div>
 
   <div class="filter-multi-container">
       <div class="dropdown-check" id="dd-nprocesso">
-          <label style="font-size:11px;font-weight:700;color:var(--text-muted)">Nº PROCESSO</label>
-          <div class="dropdown-btn" onclick="toggleDropdown('list-nprocesso')">Selecionar... <span class="material-icons" style="font-size:16px">expand_more</span></div>
+          <label style="font-size:0.7rem;font-weight:800;color:var(--text-muted);display:block;margin-bottom:6px;">Nº PROCESSO</label>
+          <div class="dropdown-btn" onclick="toggleDropdown('list-nprocesso')">Selecionar... <span class="material-icons" style="font-size:18px">expand_more</span></div>
           <div id="list-nprocesso" class="dropdown-content"></div>
       </div>
       <div class="dropdown-check" id="dd-demanda">
-          <label style="font-size:11px;font-weight:700;color:var(--text-muted)">TIPO DE DEMANDA</label>
-          <div class="dropdown-btn" onclick="toggleDropdown('list-demanda')">Selecionar... <span class="material-icons" style="font-size:16px">expand_more</span></div>
+          <label style="font-size:0.7rem;font-weight:800;color:var(--text-muted);display:block;margin-bottom:6px;">TIPO DE DEMANDA</label>
+          <div class="dropdown-btn" onclick="toggleDropdown('list-demanda')">Selecionar... <span class="material-icons" style="font-size:18px">expand_more</span></div>
           <div id="list-demanda" class="dropdown-content"></div>
       </div>
       <div class="dropdown-check" id="dd-orgao">
-          <label style="font-size:11px;font-weight:700;color:var(--text-muted)">ÓRGÃO</label>
-          <div class="dropdown-btn" onclick="toggleDropdown('list-orgao')">Selecionar... <span class="material-icons" style="font-size:16px">expand_more</span></div>
+          <label style="font-size:0.7rem;font-weight:800;color:var(--text-muted);display:block;margin-bottom:6px;">ÓRGÃO</label>
+          <div class="dropdown-btn" onclick="toggleDropdown('list-orgao')">Selecionar... <span class="material-icons" style="font-size:18px">expand_more</span></div>
           <div id="list-orgao" class="dropdown-content"></div>
       </div>
       <div class="dropdown-check" id="dd-produto">
-          <label style="font-size:11px;font-weight:700;color:var(--text-muted)">PRODUTO</label>
-          <div class="dropdown-btn" onclick="toggleDropdown('list-produto')">Selecionar... <span class="material-icons" style="font-size:16px">expand_more</span></div>
+          <label style="font-size:0.7rem;font-weight:800;color:var(--text-muted);display:block;margin-bottom:6px;">PRODUTO</label>
+          <div class="dropdown-btn" onclick="toggleDropdown('list-produto')">Selecionar... <span class="material-icons" style="font-size:18px">expand_more</span></div>
           <div id="list-produto" class="dropdown-content"></div>
       </div>
       <div class="dropdown-check" id="dd-status">
-          <label style="font-size:11px;font-weight:700;color:var(--text-muted)">STATUS</label>
-          <div class="dropdown-btn" onclick="toggleDropdown('list-status')">Selecionar... <span class="material-icons" style="font-size:16px">expand_more</span></div>
+          <label style="font-size:0.7rem;font-weight:800;color:var(--text-muted);display:block;margin-bottom:6px;">STATUS</label>
+          <div class="dropdown-btn" onclick="toggleDropdown('list-status')">Selecionar... <span class="material-icons" style="font-size:18px">expand_more</span></div>
           <div id="list-status" class="dropdown-content"></div>
       </div>
   </div>
@@ -173,7 +186,7 @@
       <table class="process-table">
           <thead>
               <tr>
-                  <th style="width:30px"></th>
+                  <th style="width:40px"></th>
                   <th>Nº PROCESSO</th>
                   <th>TIPO DE DEMANDA</th>
                   <th>ÓRGÃO</th>
@@ -213,8 +226,26 @@
     if(!data) return;
     processRawData = data;
     updateAllDropdowns();
-    let page5 = document.getElementById('page5');
-    if (page5 && page5.classList.contains('active')) renderPage5();
+    // A correção principal está aqui: removemos a checagem da classe 'active'
+    // para garantir que a renderização inicial não seja cancelada pelo delay da animação.
+    renderPage5();
+  }
+
+  function limparFiltrosProcessos() {
+    p5Filters = { 
+        nProcesso: [], 
+        tipoDemanda: [], 
+        orgao: [], 
+        produtosBasicos: [], 
+        status: [],
+        searchTerm: "" 
+    };
+    
+    let globalSearchInput = document.getElementById('globalSearch');
+    if (globalSearchInput) globalSearchInput.value = '';
+    
+    updateAllDropdowns();
+    renderPage5();
   }
 
   function handleGlobalSearch() {
@@ -254,9 +285,6 @@
       }
   }
 
-  // =========================================================================
-  // FUNÇÃO PARA CORRIGIR TEXTOS BUGADOS DO BANCO PARA EXIBIÇÃO
-  // =========================================================================
   function getVisualStatusName(statusStr) {
       if (!statusStr) return 'ENTREGA NÃO INICIADA';
       let s = statusStr.toUpperCase().trim();
@@ -318,15 +346,15 @@
     listDiv.className = 'check-list-container';
     
     if(uniqueValues.length === 0) {
-        listDiv.innerHTML = '<div style="padding:8px; color:var(--text-muted); font-style:italic">Vazio</div>';
+        listDiv.innerHTML = '<div style="padding:10px 15px; color:var(--text-muted); font-style:italic; font-size:0.85rem;">Vazio</div>';
     } else {
         uniqueValues.forEach(val => {
             let isChecked = p5Filters[key].includes(val);
-            let displayVal = key === 'status' ? getVisualStatusName(val) : val; // Corrige no Filtro
+            let displayVal = key === 'status' ? getVisualStatusName(val) : val; 
             
             let div = document.createElement('div');
             div.className = 'check-item';
-            div.innerHTML = `<input type="checkbox" value="${val}" ${isChecked ? 'checked' : ''}> ${displayVal}`;
+            div.innerHTML = `<input type="checkbox" value="${val}" ${isChecked ? 'checked' : ''}> <span>${displayVal}</span>`;
             div.querySelector('input').onchange = function() { updateProcessFilters(key, this); };
             div.onclick = function(e) {
                 if(e.target.tagName !== 'INPUT') {
@@ -358,27 +386,19 @@
     }
   }
 
-  // =========================================================================
-  // SISTEMA DE PRIORIDADE E CORES BLINDADO
-  // =========================================================================
-  
-  // 1 = Vermelho (Não iniciada) | 2 = Amarelo (Parcialmente) | 3 = Verde (Concluída)
   function getStatusPriority(statusStr) {
       if (!statusStr) return 1;
       let s = statusStr.toLowerCase().trim();
-      
       if (s.includes('concluída') || s.includes('concluida') || s.includes('ok')) return 3;
-      
       if (s.includes('parcial') || s.includes('parcia') || s.includes('andamento')) return 2;
-      
       return 1; 
   }
 
   function getStatusClass(statusStr) {
       let priority = getStatusPriority(statusStr);
-      if (priority === 3) return 'pill-concluida'; // Verde
-      if (priority === 2) return 'pill-parcial';   // Amarelo
-      return 'pill-nao-iniciada';                  // Vermelho
+      if (priority === 3) return 'pill-concluida'; 
+      if (priority === 2) return 'pill-parcial';   
+      return 'pill-nao-iniciada';                  
   }
 
   function renderPage5() {
@@ -424,7 +444,6 @@
             let currentStatusPrio = groups[sanitizedProc].basePriority;
             let rowStatusPrio = getStatusPriority(r.status);
             
-            // Rebaixa o status global do processo se houver item incompleto
             if (rowStatusPrio < currentStatusPrio) {
                 groups[sanitizedProc].status = r.status;
                 groups[sanitizedProc].basePriority = rowStatusPrio;
@@ -439,49 +458,47 @@
 
     let groupArray = Object.values(groups);
     
-    // =========================================================================
-    // ORDENAÇÃO EXPLÍCITA: 1 (Vermelho) -> 2 (Amarelo) -> 3 (Verde)
-    // =========================================================================
     groupArray.sort((a, b) => {
         let prioA = a.basePriority;
         let prioB = b.basePriority;
         
         if (prioA !== prioB) {
-            return prioA - prioB; // Prioridade de cores
+            return prioA - prioB; 
         }
         
-        // Desempate: Ordena pelo número do processo de forma decrescente
         return (b.sanitized || '').localeCompare(a.sanitized || '');
     });
 
     if (groupArray.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted)">Nenhum processo encontrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted); font-weight: 500;">Nenhum processo encontrado.</td></tr>';
         return;
     }
 
     groupArray.forEach((g, idx) => {
         let rowId = 'proc-' + idx;
         let stClass = getStatusClass(g.status);
-        let statusVisual = getVisualStatusName(g.status); // Aplica a correção de nome ("Parcialmente")
+        let statusVisual = getVisualStatusName(g.status); 
 
         let processoHtml = g.nProcesso;
         if (g.linkSei) {
-            processoHtml = `<a href="${g.linkSei}" target="_blank" onclick="event.stopPropagation()" style="color:var(--primary); text-decoration:none; display:inline-flex; align-items:center; gap:3px;" title="Abrir processo no SEI">
-                                ${g.nProcesso} <span class="material-icons" style="font-size:14px">open_in_new</span>
+            processoHtml = `<a href="${g.linkSei}" target="_blank" onclick="event.stopPropagation()" style="color:var(--primary); text-decoration:none; display:inline-flex; align-items:center; gap:4px; font-weight: 800;" title="Abrir processo no SEI">
+                                ${g.nProcesso} <span class="material-icons" style="font-size:16px">open_in_new</span>
                             </a>`;
+        } else {
+            processoHtml = `<span style="font-weight: 800; color: var(--primary);">${g.nProcesso}</span>`;
         }
 
         let tr = document.createElement('tr');
         tr.className = 'proc-row';
         tr.onclick = function() { toggleRow(this, rowId); };
         tr.innerHTML = `
-            <td style="text-align:center"><span class="material-icons" style="font-size:16px; color:var(--text-muted)">expand_more</span></td>
-            <td><strong>${processoHtml}</strong></td>
+            <td style="text-align:center"><span class="material-icons" style="font-size:20px; color:var(--text-muted)">expand_more</span></td>
+            <td>${processoHtml}</td>
             <td>${g.tipoDemanda}</td>
-            <td>${g.orgao}</td>
-            <td style="font-weight:700">${g.totalAutorizado}</td>
-            <td style="color:var(--success-text); font-weight: 700;">${g.totalEntregue}</td>
-            <td style="color:var(--danger-text); font-weight: 700;">${g.totalFaltante}</td>
+            <td style="font-weight: 600;">${g.orgao}</td>
+            <td style="font-weight:800; font-size: 1rem;">${g.totalAutorizado}</td>
+            <td style="color:var(--success-text); font-weight: 800; font-size: 1rem;">${g.totalEntregue}</td>
+            <td style="color:var(--danger-text); font-weight: 800; font-size: 1rem;">${g.totalFaltante}</td>
             <td><span class="pill ${stClass}">${statusVisual}</span></td>
         `;
         tbody.appendChild(tr);
@@ -499,18 +516,18 @@
             let itemStatusVisual = getVisualStatusName(item.status);
             
             childHtml += `<tr>
-                <td style="font-weight: 600;">${item.produto}</td>
+                <td style="font-weight: 700;">${item.produto}</td>
                 <td>${item.dataEntrada}</td>
                 <td>${item.qtdSolicitada}</td>
-                <td style="font-weight: 700;">${item.qtdAutorizada}</td>
-                <td style="color:var(--success-text); font-weight:700">${item.qtdEntregue}</td>
-                <td style="color:var(--danger-text); font-weight:700">${item.qtdFaltante}</td>
-                <td>${item.prazo}</td>
+                <td style="font-weight: 800; font-size: 1rem;">${item.qtdAutorizada}</td>
+                <td style="color:var(--success-text); font-weight:800; font-size: 1rem;">${item.qtdEntregue}</td>
+                <td style="color:var(--danger-text); font-weight:800; font-size: 1rem;">${item.qtdFaltante}</td>
+                <td style="font-weight: 600;">${item.prazo}</td>
                 <td>
-                    <span style="display:block; font-size: 11px; margin-bottom:4px; font-style: italic; color:var(--text-muted)">${item.situacao}</span>
-                    <span class="pill ${itemStatusClass}" style="font-size: 10px; padding: 2px 6px;">${itemStatusVisual}</span>
+                    <span style="display:block; font-size: 0.75rem; margin-bottom:6px; font-weight: 600; color:var(--text-muted)">${item.situacao}</span>
+                    <span class="pill ${itemStatusClass}" style="font-size: 0.7rem; padding: 4px 8px;">${itemStatusVisual}</span>
                 </td>
-                <td>${item.obs}</td>
+                <td style="font-size: 0.8rem; color: var(--text-muted);">${item.obs}</td>
             </tr>`;
         });
         childHtml += `</tbody></table></div>`;

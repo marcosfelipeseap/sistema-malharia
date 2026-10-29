@@ -1,0 +1,363 @@
+<div id="pageFardamentoSeap" class="page">
+  <style>
+    /* As classes CSS são idênticas ao fardamento.ejs, aproveitamos a estrutura modular */
+    .fardamento-container { display: flex; flex-direction: column; gap: 20px; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+    .filter-group input, .filter-group select { padding: 10px 14px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; background: var(--input-bg, #fff); color: var(--text-main); font-size: 0.85rem; font-family: 'Poppins', sans-serif; outline: none; cursor: pointer; transition: 0.2s;}
+    .filter-group input:focus, .filter-group select:focus { border-color: var(--primary); }
+
+    .highlight-total { background: linear-gradient(135deg, var(--primary), #0a4b9c); color: #ffffff; padding: 25px 30px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow); margin-bottom: 25px; flex-wrap: wrap; gap: 15px;}
+    .highlight-total .ht-label { font-size: 1.1rem; font-weight: 700; text-transform: uppercase; opacity: 0.9; letter-spacing: 0.5px; }
+    .highlight-total .ht-value { font-size: 2.5rem; font-weight: 800; display: flex; align-items: baseline; gap: 8px; }
+    .highlight-total .ht-un { font-size: 1.2rem; font-weight: 600; opacity: 0.8; }
+
+    .fardamento-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+    
+    .f-card { background: var(--surface); border: 1px solid var(--border, #e2e8f0); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+    .f-card:hover { transform: translateY(-3px); border-color: var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .f-card::after { content: 'Ver detalhes ➔'; position: absolute; bottom: 15px; right: 15px; font-size: 0.75rem; font-weight: 700; color: var(--primary); opacity: 0; transition: 0.2s; }
+    .f-card:hover::after { opacity: 1; }
+
+    .f-card-header { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px dashed var(--border, #e2e8f0); padding-bottom: 8px; }
+    .f-card-val { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
+    .f-card-cor { font-size: 0.9rem; color: var(--text-main); font-weight: 600; }
+    
+    .fardamento-list { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow); border: 1px solid var(--border, #e2e8f0); overflow-x: auto; }
+    .f-table-header-seap { display: grid; grid-template-columns: 120px 1fr 100px 100px 1.5fr 1.5fr; background: rgba(0,0,0,0.02); padding: 15px 20px; font-weight: 700; font-size: 0.85rem; color: var(--text-muted); border-bottom: 1px solid var(--border, #e2e8f0); text-transform: uppercase; min-width: 800px;}
+    
+    .f-table-row-seap { display: grid; grid-template-columns: 120px 1fr 100px 100px 1.5fr 1.5fr; padding: 12px 20px; font-size: 0.85rem; border-bottom: 1px dashed var(--border, #e2e8f0); transition: 0.2s; align-items: center; color: var(--text-main); font-weight: 500; min-width: 800px;}
+    .f-table-row-seap:hover { background: rgba(0,0,0,0.02); }
+    .f-table-row-seap:last-child { border-bottom: none; }
+    
+    .f-empty { padding: 30px; text-align: center; color: var(--text-muted); font-style: italic; font-weight: 600;}
+
+    .fard-view { animation: fadeEffect 0.3s ease; }
+
+    .destinos-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+    .dest-card { background: rgba(0,0,0,0.02); border: 1px solid var(--border, #e2e8f0); padding: 12px 18px; border-radius: 12px; display: flex; flex-direction: column; min-width: 140px; }
+    .dest-name { font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dest-val { font-size: 1.2rem; font-weight: 800; color: var(--text-main); }
+    
+    .checkbox-wrapper { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-main); font-weight: 600; height: 100%; padding-top: 16px; }
+    .checkbox-wrapper input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+  </style>
+
+  <div class="fardamento-container">
+    <div class="top-bar" id="fardSeapHeader" style="background: var(--surface); padding: 20px 25px; border-radius: 20px; box-shadow: var(--shadow); margin-bottom: 15px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div>
+          <span style="font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; color: var(--text-main); text-transform: uppercase;">
+            <span class="material-icons">badge</span> Fardamento Servidor SEAP
+          </span>
+        </div>
+        
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-start;">
+          <div class="filter-group">
+            <label>Início</label>
+            <input type="date" id="fardSeapStart" onchange="renderFardamentoSeap()">
+          </div>
+          <div class="filter-group">
+            <label>Fim</label>
+            <input type="date" id="fardSeapEnd" onchange="renderFardamentoSeap()">
+          </div>
+          
+          <div class="filter-group">
+            <label>Destino</label>
+            <select id="fardSeapFilterDestino" onchange="renderFardamentoSeap()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Tamanho</label>
+            <select id="fardSeapFilterTamanho" onchange="renderFardamentoSeap()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+
+          <label class="checkbox-wrapper">
+            <input type="checkbox" id="fardSeapGroupByTamanho" checked onchange="renderFardamentoSeap()">
+            Diferenciar por Tamanho
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div id="fardSeapMainView" class="fard-view">
+      
+      <div class="highlight-total">
+        <div>
+          <div class="ht-label">Total de Peças Entregues - SEAP</div>
+          <div style="font-size: 0.85rem; opacity: 0.8; margin-top: 5px; font-weight: 500;">Baseado nos filtros selecionados</div>
+        </div>
+        <div class="ht-value">
+          <span id="fardSeapTotalGeralNum">0</span> 
+          <span class="ht-un">peças</span>
+        </div>
+      </div>
+
+      <h3 style="margin-bottom: 0; font-size: 1.2rem; font-weight: 800; color: var(--text-main); text-transform: uppercase;">Resumo por Destino</h3>
+      <div id="fardSeapCards" class="fardamento-cards" style="margin-top: 15px;"></div>
+
+      <h3 style="margin-top: 30px; margin-bottom: 0; font-size: 1.2rem; font-weight: 800; color: var(--text-main); text-transform: uppercase;">Histórico Geral do Período</h3>
+      <div class="fardamento-list" style="margin-top: 15px;">
+        <div class="f-table-header-seap">
+          <div>Data</div>
+          <div>Tipo</div>
+          <div>Tam.</div>
+          <div style="text-align: center;">Qtd</div>
+          <div>Destino</div>
+          <div>Observação</div>
+        </div>
+        <div id="fardSeapTableBody"></div>
+      </div>
+    </div>
+
+    <div id="fardSeapDetailView" class="fard-view" style="display: none;">
+      <button class="btn-notif btn-notif-sec" onclick="closeFardamentoSeapDetails()" style="margin-bottom: 20px; font-weight: 700; width: fit-content;">
+        <span class="material-icons" style="font-size: 18px; margin-right: 5px;">arrow_back</span> Voltar ao Resumo
+      </button>
+      
+      <div class="chart-card" style="padding: 25px; margin-bottom: 25px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border, #e2e8f0); padding-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+          <div>
+            <h2 id="fardSeapDetailTitle" style="margin: 0; color: var(--primary); font-size: 1.4rem; font-weight: 800; text-transform: uppercase;"></h2>
+            <div id="fardSeapDetailSubtitle" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px; font-weight: 500;"></div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Entregue</div>
+            <div id="fardSeapDetailTotal" style="font-size: 2rem; font-weight: 800; color: var(--primary);"></div>
+          </div>
+        </div>
+        
+        <div style="margin-top: 15px;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Subtotais por Tamanho</div>
+          <div id="fardSeapDetailTamanhos" class="destinos-container"></div>
+        </div>
+      </div>
+
+      <div class="fardamento-list">
+        <div class="f-table-header-seap">
+          <div>Data</div>
+          <div>Tipo</div>
+          <div>Tam.</div>
+          <div style="text-align: center;">Qtd</div>
+          <div>Destino</div>
+          <div>Observação</div>
+        </div>
+        <div id="fardSeapDetailTableBody"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let rawFardamentoSeap = [];
+    let currentPeriodDataSeap = []; 
+    let isFardamentoSeapLoaded = false;
+
+    window.preloadFardamentoSeap = function(data) {
+      if(data.error) { console.error(data.error); return; }
+      
+      rawFardamentoSeap = data.map(r => {
+        let p = r.data.split('/');
+        return { ...r, dateObj: new Date(p[2], p[1]-1, p[0]) };
+      }).sort((a,b) => b.dateObj - a.dateObj); 
+      
+      isFardamentoSeapLoaded = true;
+      
+      populateFiltersSeap();
+      setupFardamentoSeapDates();
+    };
+
+    window.initFardamentoSeap = function() {
+      if (isFardamentoSeapLoaded) {
+        closeFardamentoSeapDetails(); 
+        renderFardamentoSeap();
+      }
+    };
+
+    function populateFiltersSeap() {
+      let destinos = [...new Set(rawFardamentoSeap.map(r => r.destino).filter(Boolean))].sort();
+      let tamanhos = [...new Set(rawFardamentoSeap.map(r => r.tamanho).filter(Boolean))].sort();
+
+      let selectDestino = document.getElementById('fardSeapFilterDestino');
+      let selectTamanho = document.getElementById('fardSeapFilterTamanho');
+
+      if(!selectDestino || !selectTamanho) return;
+
+      selectDestino.innerHTML = '<option value="">Todos</option>';
+      selectTamanho.innerHTML = '<option value="">Todos</option>';
+
+      destinos.forEach(d => { selectDestino.innerHTML += `<option value="${d}">${d}</option>`; });
+      tamanhos.forEach(t => { selectTamanho.innerHTML += `<option value="${t}">${t}</option>`; });
+    }
+
+    function setupFardamentoSeapDates() {
+      let now = new Date();
+      let firstDay = new Date(now.getFullYear(), 0, 1); 
+      
+      let toISO = d => {
+        let m = String(d.getMonth() + 1).padStart(2, '0');
+        let day = String(d.getDate()).padStart(2, '0');
+        return `${d.getFullYear()}-${m}-${day}`;
+      };
+      
+      let fardSeapStart = document.getElementById('fardSeapStart');
+      let fardSeapEnd = document.getElementById('fardSeapEnd');
+      
+      if(fardSeapStart) fardSeapStart.value = toISO(firstDay);
+      if(fardSeapEnd) fardSeapEnd.value = toISO(now);
+    }
+
+    window.renderFardamentoSeap = function() {
+      closeFardamentoSeapDetails();
+
+      let startVal = document.getElementById('fardSeapStart').value;
+      let endVal = document.getElementById('fardSeapEnd').value;
+      let filterDestino = document.getElementById('fardSeapFilterDestino').value;
+      let filterTamanho = document.getElementById('fardSeapFilterTamanho').value;
+      let differentiateSize = document.getElementById('fardSeapGroupByTamanho').checked;
+      
+      if(!startVal || !endVal) return;
+      
+      let sParts = startVal.split('-');
+      let eParts = endVal.split('-');
+      
+      let start = new Date(sParts[0], sParts[1]-1, sParts[2]);
+      let end = new Date(eParts[0], eParts[1]-1, eParts[2], 23, 59, 59); 
+
+      currentPeriodDataSeap = rawFardamentoSeap.filter(r => {
+        let inDate = r.dateObj >= start && r.dateObj <= end;
+        let matchDestino = filterDestino === "" || r.destino === filterDestino;
+        let matchTamanho = filterTamanho === "" || r.tamanho === filterTamanho;
+        return inDate && matchDestino && matchTamanho;
+      });
+
+      let cardsCont = document.getElementById('fardSeapCards');
+      let tableCont = document.getElementById('fardSeapTableBody');
+      let totalElement = document.getElementById('fardSeapTotalGeralNum'); 
+      
+      cardsCont.innerHTML = '';
+      tableCont.innerHTML = '';
+
+      let totalGeralNoPeriodo = currentPeriodDataSeap.reduce((acc, curr) => acc + curr.quantidade, 0);
+      totalElement.innerText = totalGeralNoPeriodo;
+
+      if (currentPeriodDataSeap.length === 0) {
+        cardsCont.innerHTML = '<div style="color:var(--text-muted); font-weight:600;">Sem entregas registradas para estes filtros.</div>';
+        tableCont.innerHTML = '<div class="f-empty">Nenhum registro encontrado.</div>';
+        return;
+      }
+
+      let groups = {};
+      currentPeriodDataSeap.forEach(r => {
+        let destKey = r.destino ? r.destino.trim() : 'NÃO INFORMADO';
+        let key = differentiateSize ? `${destKey} - ${r.tamanho}` : `${destKey}`;
+        
+        if (!groups[key]) {
+          groups[key] = { 
+            destino: destKey, 
+            tamanho: differentiateSize ? r.tamanho : 'Todos os Tamanhos', 
+            qtd: 0,
+            filtroTamanho: differentiateSize ? r.tamanho : null 
+          };
+        }
+        groups[key].qtd += r.quantidade;
+      });
+
+      Object.values(groups).sort((a,b) => b.qtd - a.qtd).forEach(g => {
+        let card = document.createElement('div');
+        card.className = 'f-card';
+        card.onclick = () => showFardamentoSeapDetails(g.destino, g.filtroTamanho, g.qtd);
+        card.innerHTML = `
+          <div class="f-card-header">${g.destino}</div>
+          <div class="f-card-cor">Tam: <span style="font-weight:800">${g.tamanho}</span></div>
+          <div style="margin-top: 10px;">
+              <span class="f-card-val">${g.qtd}</span> <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted)">un.</span>
+          </div>
+        `;
+        cardsCont.appendChild(card);
+      });
+
+      let tableHtml = '';
+      currentPeriodDataSeap.forEach(r => {
+        tableHtml += `
+          <div class="f-table-row-seap">
+            <div style="font-weight:700">${r.data}</div>
+            <div>${r.tipo}</div>
+            <div>${r.tamanho}</div>
+            <div style="font-weight:800; color:var(--primary); text-align:center;">${r.quantidade}</div>
+            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.destino}">${r.destino || '-'}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">${r.observacao || '-'}</div>
+          </div>
+        `;
+      });
+      tableCont.innerHTML = tableHtml;
+    };
+
+    window.showFardamentoSeapDetails = function(destino, tamanho, totalQtd) {
+      document.getElementById('fardSeapMainView').style.display = 'none';
+      document.getElementById('fardSeapDetailView').style.display = 'block';
+
+      document.getElementById('fardSeapDetailTitle').innerText = destino;
+      
+      if(tamanho) {
+        document.getElementById('fardSeapDetailSubtitle').innerHTML = `Variação de Tamanho: <b>${tamanho}</b>`;
+      } else {
+        document.getElementById('fardSeapDetailSubtitle').innerHTML = `<b>Todos os Tamanhos</b> agrupados`;
+      }
+      
+      document.getElementById('fardSeapDetailTotal').innerText = `${totalQtd} un.`;
+
+      let detailData = currentPeriodDataSeap.filter(r => {
+        let destCheck = r.destino ? r.destino.trim() : 'NÃO INFORMADO';
+        if(tamanho) return destCheck === destino && r.tamanho === tamanho;
+        return destCheck === destino;
+      });
+      
+      let tamanhosGrp = {};
+      detailData.forEach(r => {
+        let tName = r.tamanho ? r.tamanho.trim() : 'NÃO INFORMADO';
+        if(tName === '') tName = 'NÃO INFORMADO';
+        if(!tamanhosGrp[tName]) tamanhosGrp[tName] = 0;
+        tamanhosGrp[tName] += r.quantidade;
+      });
+
+      let sizeCont = document.getElementById('fardSeapDetailTamanhos');
+      sizeCont.innerHTML = '';
+      
+      Object.keys(tamanhosGrp).sort((a,b) => tamanhosGrp[b] - tamanhosGrp[a]).forEach(tName => {
+        let div = document.createElement('div');
+        div.className = 'dest-card';
+        div.innerHTML = `
+          <div class="dest-name" title="${tName}">Tamanho ${tName}</div>
+          <div class="dest-val">${tamanhosGrp[tName]} <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">un</span></div>
+        `;
+        sizeCont.appendChild(div);
+      });
+
+      let tableCont = document.getElementById('fardSeapDetailTableBody');
+      let tableHtml = '';
+
+      detailData.forEach(r => {
+        tableHtml += `
+          <div class="f-table-row-seap">
+            <div style="font-weight:700">${r.data}</div>
+            <div>${r.tipo}</div>
+            <div>${r.tamanho}</div>
+            <div style="font-weight:800; color:var(--primary); text-align:center;">${r.quantidade}</div>
+            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${r.destino}">${r.destino || '-'}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted); font-style:italic;">${r.observacao || '-'}</div>
+          </div>
+        `;
+      });
+      tableCont.innerHTML = tableHtml;
+    };
+
+    window.closeFardamentoSeapDetails = function() {
+      document.getElementById('fardSeapDetailView').style.display = 'none';
+      document.getElementById('fardSeapMainView').style.display = 'block';
+    };
+  </script>
+</div>

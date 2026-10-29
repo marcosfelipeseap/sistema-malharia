@@ -2,25 +2,25 @@
      PAGE 1 — DIÁRIO DE PRODUÇÃO
      ========================================================= -->
 <div id="page1" class="page active">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-    <h2 id="page1Title" style="margin-bottom:0;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; flex-wrap:wrap; gap:15px;">
+    <h2 id="page1Title" style="margin-bottom:0; font-size: 1.6rem;">
       Diário de Produção
     </h2>
 
     <div style="display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap;">
-      <button class="btn-notif btn-notif-pri" onclick="generateDiarioRelatorio()" style="padding:8px 15px; font-size:13px; height:37px; border: none; background: #25D366; color: #fff; border-radius: 6px; font-weight: 600; cursor: pointer;">
-        <i class="bi bi-whatsapp" style="margin-right:5px;"></i> Relatório
+      <button class="btn-notif" onclick="generateDiarioRelatorio()" style="padding:0 20px; height:44px; border: none; background: #25D366; color: #fff; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); transition: 0.2s;">
+        <i class="bi bi-whatsapp" style="font-size: 1.1rem;"></i> RELATÓRIO
       </button>
 
-      <div class="filter-group" style="display: flex; flex-direction: column; gap: 4px;">
-        <label style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Data de Acompanhamento</label>
-        <input type="date" id="dailyDate" onchange="renderPage1()" style="padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text-main);">
+      <div class="filter-group" style="display: flex; flex-direction: column; gap: 5px;">
+        <label style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">Data de Acompanhamento</label>
+        <input type="date" id="dailyDate" onchange="renderPage1()" style="height: 44px; width: 160px;">
       </div>
     </div>
   </div>
 
-  <div id="dailySummary" class="p1-summary-row" style="display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap;"></div>
-  <div id="dailyCards" class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px;"></div>
+  <div id="dailySummary" class="p1-summary-row" style="display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;"></div>
+  <div id="dailyCards" class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px;"></div>
 </div>
 
 <script>
@@ -86,36 +86,36 @@ function renderPage1() {
         }
     });
 
-    document.getElementById('page1Title').innerHTML = `Diário de Produção ${isWeekendDay ? `<span style="font-size:14px; background:var(--warning-bg); color:var(--warning-text-dark); padding:4px 8px; border-radius:4px; margin-left:10px; font-weight:600;">Fim de Semana</span>` : ''}`;
+    document.getElementById('page1Title').innerHTML = `Diário de Produção ${isWeekendDay ? `<span style="font-size:0.85rem; background:var(--warning-bg); color:var(--warning-text-dark); padding:6px 12px; border-radius:8px; margin-left:15px; font-weight:700; text-transform: uppercase; vertical-align: middle;">Fim de Semana</span>` : ''}`;
 
     listOk.sort(); listInsumo.sort(); listFail.sort(); listMissing.sort();
     listFeriado.sort((a, b) => a.oficina.localeCompare(b.oficina));
 
     summaryCont.innerHTML = `
-        <div class="p1-stat-card" style="border-left:5px solid var(--success-text); background: var(--surface); padding: 15px; border-radius: 8px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
-            <div style="font-size:12px; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Satisfatório</div>
-            <div class="p1-stat-val" style="color:var(--success-text); font-size: 24px; font-weight: bold;">${listOk.length}</div>
+        <div class="p1-stat-card" style="border-left:6px solid var(--success-text); background: var(--surface); padding: 20px; border-radius: 16px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
+            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom: 5px;">Satisfatório</div>
+            <div class="p1-stat-val" style="color:var(--success-text); font-size: 28px; font-weight: 800; line-height: 1;">${listOk.length}</div>
         </div>
-        <div class="p1-stat-card" style="border-left:5px solid var(--warning-text-dark); background: var(--surface); padding: 15px; border-radius: 8px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
-            <div style="font-size:12px; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Sem Insumo</div>
-            <div class="p1-stat-val" style="color:var(--warning-text-dark); font-size: 24px; font-weight: bold;">${listInsumo.length}</div>
+        <div class="p1-stat-card" style="border-left:6px solid var(--warning-text-dark); background: var(--surface); padding: 20px; border-radius: 16px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
+            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom: 5px;">Sem Insumo</div>
+            <div class="p1-stat-val" style="color:var(--warning-text-dark); font-size: 28px; font-weight: 800; line-height: 1;">${listInsumo.length}</div>
         </div>
-        <div class="p1-stat-card" style="border-left:5px solid var(--danger-text); background: var(--surface); padding: 15px; border-radius: 8px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
-            <div style="font-size:12px; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Insuficiente</div>
-            <div class="p1-stat-val" style="color:var(--danger-text); font-size: 24px; font-weight: bold;">${listFail.length}</div>
+        <div class="p1-stat-card" style="border-left:6px solid var(--danger-text); background: var(--surface); padding: 20px; border-radius: 16px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
+            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom: 5px;">Insuficiente</div>
+            <div class="p1-stat-val" style="color:var(--danger-text); font-size: 28px; font-weight: 800; line-height: 1;">${listFail.length}</div>
         </div>
-        <div class="p1-stat-card" style="border-left:5px solid #00ACC1; background: var(--surface); padding: 15px; border-radius: 8px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
-            <div style="font-size:12px; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Feriado</div>
-            <div class="p1-stat-val" style="color:#00ACC1; font-size: 24px; font-weight: bold;">${listFeriado.length}</div>
+        <div class="p1-stat-card" style="border-left:6px solid #00ACC1; background: var(--surface); padding: 20px; border-radius: 16px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
+            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom: 5px;">Feriado</div>
+            <div class="p1-stat-val" style="color:#00ACC1; font-size: 28px; font-weight: 800; line-height: 1;">${listFeriado.length}</div>
         </div>
-        <div class="p1-stat-card" style="border-left:5px solid var(--neutral-text); background: var(--surface); padding: 15px; border-radius: 8px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
-            <div style="font-size:12px; text-transform:uppercase; color:var(--text-muted); font-weight:600;">Não Informado</div>
-            <div class="p1-stat-val" style="color:var(--neutral-text); font-size: 24px; font-weight: bold;">${listMissing.length}</div>
+        <div class="p1-stat-card" style="border-left:6px solid var(--neutral-text); background: var(--surface); padding: 20px; border-radius: 16px; flex: 1; min-width: 140px; box-shadow: var(--shadow);">
+            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom: 5px;">Não Informado</div>
+            <div class="p1-stat-val" style="color:var(--neutral-text); font-size: 28px; font-weight: 800; line-height: 1;">${listMissing.length}</div>
         </div>
     `;
 
     if (!listOk.length && !listInsumo.length && !listFail.length && !listMissing.length && !listFeriado.length) {
-        cont.innerHTML = `<div style="color:var(--text-muted)">Sem registros.</div>`;
+        cont.innerHTML = `<div style="color:var(--text-muted); font-weight: 500; font-size: 1.1rem;">Nenhum registro para esta data.</div>`;
         return;
     }
 
@@ -129,16 +129,16 @@ function renderPage1() {
         let itemsHtml = g.items.map(i => {
             if (i.item === 'Nenhum') return ''; 
             let tagsHtml = '';
-            if (i.tamanho) tagsHtml += `<span style="background:var(--primary-light); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:600;">Tam: ${i.tamanho}</span>`;
-            if (i.processoNome && i.processoNome !== '-') tagsHtml += `<span style="background:var(--neutral-bg); color:var(--neutral-text); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:600;">Órgão: ${i.processoNome}</span>`;
+            if (i.tamanho) tagsHtml += `<span style="background:var(--primary-light); color:var(--primary); padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform: uppercase;">Tam: ${i.tamanho}</span>`;
+            if (i.processoNome && i.processoNome !== '-') tagsHtml += `<span style="background:var(--neutral-bg); color:var(--neutral-text); padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform: uppercase;">Órgão: ${i.processoNome}</span>`;
 
             return `
-                <div class="item-row" style="display: flex; flex-direction: column; padding: 10px 0; border-bottom: 1px dashed var(--border);">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <div style="font-size: 13px;"><b>${i.item}</b> <span style="color:var(--text-muted);">(${i.tipo})</span></div>
-                        <div style="font-size: 14px; font-weight: 700; color:var(--text-main);">${i.producaoDia}</div>
+                <div class="item-row" style="display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px dashed var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">${i.item} <span style="color:var(--text-muted); font-weight: 500;">(${i.tipo})</span></div>
+                        <div style="font-size: 1.1rem; font-weight: 800; color:var(--primary);">${i.producaoDia}</div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         ${tagsHtml}
                     </div>
                 </div>
@@ -158,43 +158,45 @@ function renderPage1() {
 
         let card = document.createElement('div');
         card.className = 'card';
-        card.style.background = 'var(--surface)'; card.style.borderRadius = '12px'; card.style.overflow = 'hidden'; card.style.boxShadow = 'var(--shadow)'; card.style.border = 'var(--card-border)';
+        card.style.background = 'var(--surface)'; card.style.borderRadius = '20px'; card.style.overflow = 'hidden'; card.style.boxShadow = 'var(--shadow)';
 
         let cardHtml = `
-            <div class="card-header" style="padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--primary-light);">
+            <div class="card-header" style="padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--primary-light);">
                 <div style="display:flex; flex-direction:column; justify-content:center;">
-                    <span style="font-weight:700; color:var(--primary); font-size: 16px;">${of}</span>
-                    <div style="font-size:11px; color:var(--text-muted); font-weight:500; margin-top:4px; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-weight:800; color:var(--primary); font-size: 1.1rem; text-transform: uppercase;">${of}</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-top:6px; display:flex; flex-direction:column; gap:2px; text-transform: uppercase;">
                         <span>Máquinas: ${infoMaq}</span><span>Internos: ${infoInt}</span>
                     </div>
                 </div>
-                <span style="font-size:12px; padding:6px 12px; background: ${statusColor}; color: ${statusTextColor}; border-radius: 20px; font-weight: bold; letter-spacing:0.5px;">${statusText}</span>
+                <span style="font-size:0.7rem; padding:6px 12px; background: ${statusColor}; color: ${statusTextColor}; border-radius: 20px; font-weight: 800; letter-spacing:0.5px;">${statusText}</span>
             </div>
             
-            <div class="card-body" style="padding:15px">
-                <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:flex-end;">
+            <div class="card-body" style="padding:20px">
+                <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:flex-end;">
                     <div>
-                        <small style="font-weight:600; color:var(--text-muted); display: block;">PRODUÇÃO</small>
-                        <div style="font-size:28px; font-weight:700; line-height:1.1; color:var(--text-main);">${g.prod}</div>
-                        <small style="font-weight:600; color:var(--text-muted);">PERFORMANCE</small>
+                        <small style="font-weight:700; color:var(--text-muted); display: block; font-size: 0.7rem; text-transform: uppercase;">PRODUÇÃO</small>
+                        <div style="font-size:2.2rem; font-weight:800; line-height:1; color:var(--text-main); margin-bottom: 4px;">${g.prod}</div>
+                        <small style="font-weight:700; color:var(--text-muted); font-size: 0.7rem; text-transform: uppercase;">PERFORMANCE</small>
                     </div>
                     <div style="text-align:right">
-                        <small style="color:var(--text-muted); display: block; font-weight: 600;">META</small>
-                        <div style="font-size:20px; color:var(--text-muted); font-weight: bold;">${g.meta}</div>
-                        <div style="font-size:16px; font-weight:900; color: ${statusTextColor};">${perc}%</div>
+                        <small style="color:var(--text-muted); display: block; font-weight: 700; font-size: 0.7rem; text-transform: uppercase;">META</small>
+                        <div style="font-size:1.4rem; color:var(--text-muted); font-weight: 800; line-height:1.2; margin-bottom: 4px;">${g.meta}</div>
+                        <div style="font-size:1.2rem; font-weight:800; color: ${statusTextColor}; line-height:1;">${perc}%</div>
                     </div>
                 </div>
         `;
 
-        if (itemsHtml !== '') cardHtml += `<div style="background:var(--bg-body); padding:10px 15px; border-radius:8px; margin-bottom:10px;">${itemsHtml}</div>`;
+        if (itemsHtml !== '') {
+            cardHtml += `<div style="background:var(--bg-body); padding:10px 20px; border-radius:12px; margin-bottom:15px; border: 1px solid var(--border);">${itemsHtml}</div>`;
+        }
 
         if (uniqJust.length > 0 || uniqObs.length > 0) {
             let infoBg = !bateu ? 'var(--danger-bg)' : 'var(--neutral-bg)';
             let infoBorder = !bateu ? 'var(--danger-text)' : 'var(--border)';
             let infoText = !bateu ? 'var(--danger-text)' : 'var(--text-muted)';
             
-            cardHtml += `<div style="border:1px solid ${infoBorder}; background: ${infoBg}; border-radius:8px; padding:10px; font-size:12px; margin-top:10px; color:${infoText};">`;
-            if (uniqJust.length > 0) cardHtml += `<div style="margin-bottom: ${uniqObs.length > 0 ? '6px' : '0'}"><span style="font-weight:700;">Justificativa:</span> ${uniqJust.join(', ')}</div>`;
+            cardHtml += `<div style="border-left: 4px solid ${infoBorder}; background: ${infoBg}; border-radius:0 12px 12px 0; padding:15px; font-size:0.85rem; margin-top:10px; color:${infoText};">`;
+            if (uniqJust.length > 0) cardHtml += `<div style="margin-bottom: ${uniqObs.length > 0 ? '8px' : '0'}"><span style="font-weight:700;">Justificativa:</span> ${uniqJust.join(', ')}</div>`;
             if (uniqObs.length > 0) cardHtml += `<div><span style="font-weight:700; color:var(--text-main);">Obs:</span> <span style="color:var(--text-muted);">${uniqObs.join(' | ')}</span></div>`;
             cardHtml += `</div>`;
         }
@@ -206,29 +208,29 @@ function renderPage1() {
     listFeriado.forEach(f => {
         let card = document.createElement('div');
         card.className = 'card';
-        card.style.background = 'var(--surface)'; card.style.borderRadius = '12px'; card.style.overflow = 'hidden'; card.style.boxShadow = 'var(--shadow)'; card.style.border = 'var(--card-border)';
+        card.style.background = 'var(--surface)'; card.style.borderRadius = '20px'; card.style.overflow = 'hidden'; card.style.boxShadow = 'var(--shadow)';
         card.innerHTML = `
-            <div class="card-header" style="background:#E0F7FA; padding: 15px; border-bottom:1px solid #B2EBF2; display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-header" style="background:#E0F7FA; padding: 20px; border-bottom:1px solid #B2EBF2; display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; flex-direction:column; justify-content:center;">
-                    <span style="font-weight:700; color:#00838F; font-size: 16px;">${f.oficina}</span>
-                    <div style="font-size:11px; color:#00ACC1; font-weight:500; margin-top:4px; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-weight:800; color:#00838F; font-size: 1.1rem; text-transform: uppercase;">${f.oficina}</span>
+                    <div style="font-size:0.75rem; color:#00ACC1; font-weight:700; margin-top:6px; display:flex; flex-direction:column; gap:2px; text-transform: uppercase;">
                         <span>Máquinas: N/A</span><span>Internos: N/A</span>
                     </div>
                 </div>
-                <span style="font-size:12px; padding:6px 12px; background: #00ACC1; color: #FFFFFF; border-radius: 20px; font-weight: bold; letter-spacing:0.5px;">FERIADO</span>
+                <span style="font-size:0.7rem; padding:6px 12px; background: #00ACC1; color: #FFFFFF; border-radius: 20px; font-weight: 800; letter-spacing:0.5px;">FERIADO</span>
             </div>
-            <div class="card-body" style="padding:15px; opacity:0.8;">
+            <div class="card-body" style="padding:20px; opacity:0.8;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-end;">
                     <div>
-                        <small style="font-weight:600; color:var(--text-muted); display: block;">PRODUÇÃO</small>
-                        <div style="font-size:28px; font-weight:700; line-height:1.1; color:var(--text-muted);">0</div>
+                        <small style="font-weight:700; color:var(--text-muted); display: block; font-size: 0.7rem; text-transform: uppercase;">PRODUÇÃO</small>
+                        <div style="font-size:2.2rem; font-weight:800; line-height:1; color:var(--text-muted); margin-bottom:4px;">0</div>
                     </div>
                     <div style="text-align:right">
-                        <small style="color:var(--text-muted); display: block; font-weight: 600;">META</small>
-                        <div style="font-size:20px; color:var(--text-muted); font-weight: bold;">?</div>
+                        <small style="color:var(--text-muted); display: block; font-weight: 700; font-size: 0.7rem; text-transform: uppercase;">META</small>
+                        <div style="font-size:1.4rem; color:var(--text-muted); font-weight: 800; line-height:1.2; margin-bottom: 4px;">?</div>
                     </div>
                 </div>
-                <div style="border:1px solid #B2EBF2; background: #E0F7FA; border-radius:8px; padding:10px; font-size:12px; margin-top:15px; color:#00838F;">
+                <div style="border-left:4px solid #00ACC1; background: #E0F7FA; border-radius:0 12px 12px 0; padding:15px; font-size:0.85rem; margin-top:20px; color:#00838F;">
                     <span style="font-weight:700;">Motivo:</span> ${f.descricao}
                 </div>
             </div>
@@ -239,26 +241,26 @@ function renderPage1() {
     listMissing.forEach(of => {
         let card = document.createElement('div');
         card.className = 'card';
-        card.style.background = 'var(--surface)'; card.style.borderRadius = '12px'; card.style.overflow = 'hidden'; card.style.boxShadow = 'var(--shadow)'; card.style.border = 'var(--card-border)'; card.style.opacity = '0.7';
+        card.style.background = 'var(--surface)'; card.style.borderRadius = '20px'; card.style.overflow = 'hidden'; card.style.boxShadow = 'var(--shadow)'; card.style.opacity = '0.8';
         card.innerHTML = `
-            <div class="card-header" style="background:var(--neutral-bg); padding: 15px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-header" style="background:var(--neutral-bg); padding: 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; flex-direction:column; justify-content:center;">
-                    <span style="font-weight:700; color:var(--text-muted); font-size: 16px;">${of}</span>
-                    <div style="font-size:11px; color:var(--text-muted); font-weight:500; margin-top:4px; display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-weight:800; color:var(--text-muted); font-size: 1.1rem; text-transform: uppercase;">${of}</span>
+                    <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700; margin-top:6px; display:flex; flex-direction:column; gap:2px; text-transform: uppercase;">
                         <span>Máquinas: N/A</span><span>Internos: N/A</span>
                     </div>
                 </div>
-                <span style="font-size:12px; padding:6px 12px; background: var(--border); color: var(--text-muted); border-radius: 20px; font-weight: bold; letter-spacing:0.5px;">NÃO INFORMADO</span>
+                <span style="font-size:0.7rem; padding:6px 12px; background: var(--border); color: var(--text-muted); border-radius: 20px; font-weight: 800; letter-spacing:0.5px;">NÃO INFORMADO</span>
             </div>
-            <div class="card-body" style="padding:15px; opacity:0.6;">
+            <div class="card-body" style="padding:20px; opacity:0.6;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-end;">
                     <div>
-                        <small style="font-weight:600; color:var(--text-muted); display: block;">PRODUÇÃO</small>
-                        <div style="font-size:28px; font-weight:700; line-height:1.1; color:var(--text-muted);">0</div>
+                        <small style="font-weight:700; color:var(--text-muted); display: block; font-size: 0.7rem; text-transform: uppercase;">PRODUÇÃO</small>
+                        <div style="font-size:2.2rem; font-weight:800; line-height:1; color:var(--text-muted); margin-bottom:4px;">0</div>
                     </div>
                     <div style="text-align:right">
-                        <small style="color:var(--text-muted); display: block; font-weight: 600;">META</small>
-                        <div style="font-size:20px; color:var(--text-muted); font-weight: bold;">?</div>
+                        <small style="color:var(--text-muted); display: block; font-weight: 700; font-size: 0.7rem; text-transform: uppercase;">META</small>
+                        <div style="font-size:1.4rem; color:var(--text-muted); font-weight: 800; line-height:1.2; margin-bottom: 4px;">?</div>
                     </div>
                 </div>
             </div>

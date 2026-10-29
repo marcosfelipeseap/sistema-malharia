@@ -3,23 +3,25 @@
      ========================================================= -->
 
 <!-- BARRA DE FILTRO DE TEMPO GLOBAL (COMPARTILHADA ENTRE AS PÁGINAS) -->
-<div class="top-bar" style="background: var(--surface); padding: 15px 20px; border-radius: 12px; box-shadow: var(--shadow); border: var(--card-border); margin-bottom: 25px;">
+<div class="top-bar" style="background: var(--surface); padding: 20px 25px; border-radius: 20px; box-shadow: var(--shadow); margin-bottom: 30px;">
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
     <div>
-      <span style="font-weight: 700; font-size: 14px; display: block; color: var(--text-main);">Filtro de Período Geral</span>
-      <span style="font-size: 11px; color: var(--text-muted);">Define o intervalo de datas para os relatórios, gráficos, demandas e processos.</span>
+      <span style="font-weight: 800; font-size: 1.15rem; display: block; color: var(--text-main); text-transform: uppercase;">Filtro de Período Geral</span>
+      <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Define o intervalo de datas para os relatórios, gráficos, demandas e processos.</span>
     </div>
     
-    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; width: 100%; max-width: 450px;">
-      <div class="filter-group" style="flex: 1; min-width: 120px;">
-        <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 3px;">Data Inicial</label>
-        <input type="date" id="globalStartFilter" onchange="triggerGlobalFilter()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text-main); font-size: 13px; width: 100%;">
+    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; width: 100%; max-width: 500px;">
+      <div class="filter-group" style="flex: 1; min-width: 130px;">
+        <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 5px;">Data Inicial</label>
+        <input type="date" id="globalStartFilter" onchange="triggerGlobalFilter()" style="width: 100%;">
       </div>
-      <div class="filter-group" style="flex: 1; min-width: 120px;">
-        <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 3px;">Data Final</label>
-        <input type="date" id="globalEndFilter" onchange="triggerGlobalFilter()" style="padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text-main); font-size: 13px; width: 100%;">
+      <div class="filter-group" style="flex: 1; min-width: 130px;">
+        <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 5px;">Data Final</label>
+        <input type="date" id="globalEndFilter" onchange="triggerGlobalFilter()" style="width: 100%;">
       </div>
-      <button class="btn-notif btn-notif-sec" onclick="resetGlobalFilter()" style="padding: 6px 12px; font-size: 12px; height: 35px; flex: 1; min-width: 100px;">Limpar Filtro</button>
+      <div style="display: flex; align-items: flex-end; padding-bottom: 2px;">
+        <button class="btn-notif btn-notif-sec" onclick="resetGlobalFilter()" style="height: 44px; padding: 0 15px;">LIMPAR</button>
+      </div>
     </div>
   </div>
 </div>
@@ -33,6 +35,10 @@
     const scheduleData = <%- typeof scheduleJSON !== 'undefined' ? scheduleJSON : '[]' %>;
     const rankingOficialData = <%- typeof rankingJSON !== 'undefined' ? rankingJSON : '[]' %>;
     window.infoOficinasEstatico = <%- typeof infoOficinasEstaticoJSON !== 'undefined' ? infoOficinasEstaticoJSON : '[]' %>;
+    
+    // Dados de Fardamento originários da Planilha Google
+    const fardamentoData = <%- typeof fardamentoJSON !== 'undefined' ? fardamentoJSON : '[]' %>;
+    const fardamentoSeapData = <%- typeof fardamentoseapJSON !== 'undefined' ? fardamentoseapJSON : '[]' %>;
 
     // Normalização inicial das datas dos registros de produção
     rawData.forEach(r => {
@@ -191,7 +197,7 @@
         return lines;
     }
 
-    // Inicialização da Página Diária
+    // Inicialização da Página Diária e Pré-carregamento dos Fardamentos
     document.addEventListener("DOMContentLoaded", () => {
         const hoje = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
         const objHoje = new Date(hoje);
@@ -203,6 +209,10 @@
             document.getElementById('dailyDate').value = `${yyyy}-${mm}-${dd}`;
             if (typeof renderPage1 === 'function') renderPage1();
         }
+
+        // PRELOAD DOS DADOS DA PLANILHA
+        if (typeof preloadFardamento === 'function') preloadFardamento(fardamentoData);
+        if (typeof preloadFardamentoSeap === 'function') preloadFardamentoSeap(fardamentoSeapData);
     });
 </script>
 
@@ -215,3 +225,7 @@
 <%- include('demanda') %>
 <%- include('processos') %>
 <%- include('cronograma') %>
+
+<!-- NOVAS PÁGINAS DE FARDAMENTO -->
+<%- include('fardamento') %>
+<%- include('fardamentoseap') %>

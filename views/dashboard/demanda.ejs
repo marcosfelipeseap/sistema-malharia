@@ -3,43 +3,44 @@
      ========================================================= -->
 <div id="page4" class="page">
   <style>
-    .selection-panel { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+    .selection-panel { display: grid; grid-template-columns: 350px 1fr; gap: 25px; align-items: start; }
     @media (max-width: 900px) { .selection-panel { grid-template-columns: 1fr; } }
     
-    .panel-list { background: var(--surface); border: var(--card-border); border-radius: 12px; padding: 15px; box-shadow: var(--shadow); max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .check-item { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; cursor: pointer; padding: 8px; border-radius: 6px; transition: 0.2s; color: var(--text-main); }
+    .panel-list { background: var(--surface); border: none; border-radius: 20px; padding: 20px; box-shadow: var(--shadow); max-height: 420px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .check-item { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 600; cursor: pointer; padding: 10px 12px; border-radius: 12px; transition: 0.2s; color: var(--text-main); }
     .check-item:hover { background: var(--primary-light); color: var(--primary); }
     
-    .search-input { width: 100%; padding: 10px 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-main); font-size: 13px; outline: none; margin-bottom: 8px; }
-    .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    .search-input { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text-main); font-size: 0.9rem; outline: none; margin-bottom: 10px; font-family: inherit; font-weight: 500;}
+    .search-input:focus { border-color: var(--primary); }
 
-    .summary-bar { background: var(--surface); border: var(--card-border); border-radius: 12px; padding: 15px 20px; box-shadow: var(--shadow); margin-bottom: 20px; display: flex; gap: 12px; flex-wrap: wrap; }
-    .summary-item { background: var(--primary-light); color: var(--primary); padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; border: 1px solid rgba(21, 101, 192, 0.2); }
+    .summary-bar { background: var(--surface); border: none; border-radius: 20px; padding: 20px 25px; box-shadow: var(--shadow); margin-bottom: 25px; display: flex; gap: 15px; flex-wrap: wrap; }
+    .summary-item { background: var(--primary-light); color: var(--primary); padding: 8px 16px; border-radius: 12px; font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px;}
 
     .custom-dropdown { position: relative; width: 100%; user-select: none; }
-    .custom-dropdown-btn { width: 100%; padding: 10px 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-main); font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+    .custom-dropdown-btn { width: 100%; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text-main); font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; font-weight: 600; }
     .custom-dropdown-btn:hover { border-color: var(--primary); }
     
-    .custom-dropdown-content { display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 100; max-height: 280px; flex-direction: column; }
-    .custom-dropdown-search { padding: 10px; border-bottom: 1px solid var(--border); background: var(--surface); border-radius: 8px 8px 0 0; }
-    .custom-dropdown-search input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; outline: none; background: var(--bg-body); color: var(--text-main); }
+    .custom-dropdown-content { display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 100; max-height: 350px; flex-direction: column; overflow: hidden; }
+    .custom-dropdown-search { padding: 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .custom-dropdown-search input { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; outline: none; background: var(--bg-body); color: var(--text-main); font-family: inherit; font-weight: 500;}
+    .custom-dropdown-search input:focus { border-color: var(--primary); }
     .custom-options-wrapper { overflow-y: auto; flex: 1; padding: 5px 0; }
-    .custom-option { padding: 10px 15px; font-size: 13px; cursor: pointer; color: var(--text-main); border-bottom: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .custom-option { padding: 12px 20px; font-size: 0.9rem; cursor: pointer; color: var(--text-main); border-bottom: 1px dashed var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;}
     .custom-option:last-child { border-bottom: none; }
-    .custom-option:hover { background: var(--primary-light); color: var(--primary); font-weight: 600; }
+    .custom-option:hover { background: var(--primary-light); color: var(--primary); font-weight: 700; }
   </style>
 
-  <h2>Produção por Demanda (Processo / Órgão)</h2>
+  <h2 style="font-size: 1.6rem; margin-bottom: 25px;">Produção por Demanda</h2>
 
   <div class="selection-panel">
     <div>
-      <div class="filter-group" style="margin-bottom:20px; position:relative;">
-        <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; display:block; margin-bottom:5px;">Processo / Órgão</label>
+      <div class="filter-group" style="margin-bottom:25px; position:relative;">
+        <label style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:800; display:block; margin-bottom:8px;">Processo / Órgão</label>
         
         <div class="custom-dropdown" id="demandaDropdown">
             <div class="custom-dropdown-btn" onclick="toggleDemandaDropdown()">
-              <span id="demandaSelectedText" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; max-width:210px; font-weight:600;">Carregando...</span>
-              <span class="material-icons" style="font-size:18px">arrow_drop_down</span>
+              <span id="demandaSelectedText" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; max-width:250px; font-weight:700; color: var(--primary); text-transform: uppercase;">Carregando...</span>
+              <span class="material-icons" style="font-size:20px; color: var(--text-muted);">expand_more</span>
             </div>
             <div class="custom-dropdown-content" id="demandaDropdownContent">
               <div class="custom-dropdown-search">
@@ -52,12 +53,12 @@
       </div>
       
       <div class="filter-group">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <label style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Produtos do Processo</label>
-            <div style="display: flex; gap: 8px;">
-                <button type="button" onclick="toggleAllP4Pecas(true)" style="background: none; border: none; color: var(--primary); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0;">Marcar Todos</button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); font-weight:800;">Produtos do Processo</label>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="toggleAllP4Pecas(true)" style="background: none; border: none; color: var(--primary); font-size: 0.75rem; font-weight: 700; cursor: pointer; padding: 0; text-transform: uppercase;">Marcar Todos</button>
                 <span style="color: var(--border);">|</span>
-                <button type="button" onclick="toggleAllP4Pecas(false)" style="background: none; border: none; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; padding: 0;">Desmarcar</button>
+                <button type="button" onclick="toggleAllP4Pecas(false)" style="background: none; border: none; color: var(--text-muted); font-size: 0.75rem; font-weight: 700; cursor: pointer; padding: 0; text-transform: uppercase;">Desmarcar</button>
             </div>
         </div>
         <input type="text" id="p4SearchPecas" class="search-input" placeholder="🔍 Pesquisar produto..." onkeyup="filterP4Pecas()">
@@ -67,11 +68,11 @@
 
     <div style="display:flex; flex-direction:column;">
       <div id="p4Summary" class="summary-bar"></div>
-      <div class="panel-list" style="flex:1; height:auto; display:flex; flex-direction:column; padding: 20px;">
-          <div style="flex:1; min-height: 320px; display:flex; align-items:center; justify-content:center; position:relative;">
+      <div class="panel-list" style="flex:1; height:auto; display:flex; flex-direction:column; padding: 25px;">
+          <div style="flex:1; min-height: 350px; display:flex; align-items:center; justify-content:center; position:relative;">
               <canvas id="chartDemanda"></canvas>
           </div>
-          <div id="p4OficinasBreakdown" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 15px;"></div>
+          <div id="p4OficinasBreakdown" style="margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;"></div>
       </div>
     </div>
   </div>
@@ -190,18 +191,17 @@
     cont.innerHTML = '';
     
     if (itensDemanda.length === 0) {
-        cont.innerHTML = '<span style="font-size:12px; color:var(--text-muted)">Nenhum produto cadastrado neste processo.</span>';
+        cont.innerHTML = '<span style="font-size:0.9rem; font-weight:500; color:var(--text-muted)">Nenhum produto cadastrado neste processo.</span>';
         return;
     }
 
-    // Cria chave única combinando Nome + Tamanho para evitar bugs de contagem
     itensDemanda.forEach(item => {
       let tamStr = (item.tamanho && item.tamanho !== '-') ? item.tamanho : 'Único';
       let chaveUnica = `${item.nome}__TAM__${tamStr}`;
       let nomeCompleto = `${item.nome}${item.descricao ? ` (${item.descricao})` : ''} [Tam: ${tamStr}]`;
 
       let div = document.createElement('label'); div.className = 'check-item';
-      div.innerHTML = `<input type="checkbox" value="${chaveUnica}" data-nome="${item.nome}" data-tamanho="${tamStr}" checked onchange="renderPage4()"> ${nomeCompleto}`;
+      div.innerHTML = `<input type="checkbox" value="${chaveUnica}" data-nome="${item.nome}" data-tamanho="${tamStr}" checked onchange="renderPage4()" style="width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer;"> ${nomeCompleto}`;
       cont.appendChild(div);
     });
     
@@ -252,7 +252,7 @@
     selChaves.forEach(ch => {
         let parts = ch.split('__TAM__');
         let labelShow = `${parts[0]} (Tam: ${parts[1]})`;
-        summaryHTML += `<div class="summary-item">${labelShow}: ${totals[ch]} un</div>`;
+        summaryHTML += `<div class="summary-item">${labelShow}: <span style="font-size: 1rem;">${totals[ch]} un</span></div>`;
     });
     let sumEl = document.getElementById('p4Summary');
     if (sumEl) sumEl.innerHTML = summaryHTML;
@@ -281,7 +281,7 @@
           return rs.reduce((a,b) => a + b.producaoDia, 0) || 0;
         });
 
-        return { label: labelShow, data: data, borderColor: c, backgroundColor: c, tension: 0.3, pointRadius: 4, borderWidth: 3, spanGaps: true };
+        return { label: labelShow, data: data, borderColor: c, backgroundColor: c, tension: 0.3, pointRadius: 5, borderWidth: 3, spanGaps: true };
     });
 
     let canvasDemanda = document.getElementById('chartDemanda');
@@ -289,8 +289,9 @@
     let ctx = canvasDemanda.getContext('2d');
     if(chartDemandaInst) chartDemandaInst.destroy();
     
-    let gridColor = typeof getThemeColor === 'function' ? getThemeColor('--chart-grid') : '#e0e0e0'; 
-    let txtColor = typeof getThemeColor === 'function' ? getThemeColor('--text-muted') : '#757575';
+    const isDark = document.body.classList.contains('dark-mode');
+    let gridColor = isDark ? '#37474f' : '#e2e8f0'; 
+    let txtColor = isDark ? '#a0abb5' : '#64748b';
 
     chartDemandaInst = new Chart(ctx, {
       type: 'line',
@@ -298,12 +299,13 @@
       options: {
         responsive: true, maintainAspectRatio: false,
         scales: { 
-            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: txtColor } }, 
-            x: { grid: { display: false }, ticks: { color: txtColor } } 
+            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: txtColor, font: {family: 'Poppins'} } }, 
+            x: { grid: { display: false }, ticks: { color: txtColor, font: {family: 'Poppins'} } } 
         },
         plugins: { 
-            legend: { labels: { color: txtColor } }, 
-            datalabels: { display: false } 
+            legend: { labels: { color: txtColor, font: {family: 'Poppins', weight: '600'} } }, 
+            datalabels: { display: false },
+            tooltip: { titleFont: {family: 'Poppins'}, bodyFont: {family: 'Poppins'} }
         }
       }
     });
@@ -311,7 +313,7 @@
     let oficinaTotals = {};
     filtered.forEach(r => {
       let rTam = (r.tamanho && r.tamanho !== '-') ? r.tamanho : 'Único';
-      let rChave = `${r.item} [${r.tam}]`; // formatado para exibição
+      let rChave = `${r.item} [${r.tam}]`; 
       let dispName = `${r.item} (Tam: ${rTam})`;
 
       if(!oficinaTotals[r.oficina]) oficinaTotals[r.oficina] = {};
@@ -323,21 +325,21 @@
 
     if(Object.keys(oficinaTotals).length === 0) { if(breakdownCont) breakdownCont.innerHTML = ''; return; }
 
-    let breakdownHtml = '<h4 style="margin-top:0; color:var(--text-main); font-size:14px; margin-bottom:15px;">Produção por Oficina (Peças e Tamanhos Selecionados)</h4><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:10px;">';
+    let breakdownHtml = '<h4 style="margin-top:0; color:var(--text-main); font-size:1rem; font-weight: 800; margin-bottom:20px; text-transform: uppercase;">Produção por Oficina (Peças Selecionadas)</h4><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:15px;">';
     let sortedOficinas = Object.keys(oficinaTotals).sort((a,b) => oficinaTotals[b]['_total'] - oficinaTotals[a]['_total']);
     
     sortedOficinas.forEach(of => {
-        breakdownHtml += `<div style="background:var(--bg-body); padding:10px; border-radius:8px; border:1px solid var(--border);"><div style="font-weight:700; color:var(--primary); font-size:13px; margin-bottom:5px;">${of}</div>`;
+        breakdownHtml += `<div style="background:var(--bg-body); padding:15px; border-radius:12px; border:1px solid var(--border);"><div style="font-weight:800; color:var(--primary); font-size:0.9rem; margin-bottom:10px; text-transform: uppercase;">${of}</div>`;
         
         selChaves.forEach(ch => {
             let parts = ch.split('__TAM__');
             let dispName = `${parts[0]} (Tam: ${parts[1]})`;
             if(oficinaTotals[of][dispName] > 0) {
-                breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); border-bottom:1px dashed var(--border); padding:2px 0;"><span>${parts[0]} [${parts[1]}]</span> <span style="font-weight:600; color:var(--text-main);">${oficinaTotals[of][dispName]}</span></div>`;
+                breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-muted); border-bottom:1px dashed var(--border); padding:4px 0; font-weight: 500;"><span>${parts[0]} [${parts[1]}]</span> <span style="font-weight:700; color:var(--text-main);">${oficinaTotals[of][dispName]}</span></div>`;
             }
         });
 
-        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700; margin-top:5px;"><span>TOTAL</span> <span style="color:var(--primary);">${oficinaTotals[of]['_total']}</span></div></div>`;
+        breakdownHtml += `<div style="display:flex; justify-content:space-between; font-size:0.9rem; font-weight:800; margin-top:10px; padding-top: 5px;"><span>TOTAL</span> <span style="color:var(--primary);">${oficinaTotals[of]['_total']}</span></div></div>`;
     });
     breakdownHtml += '</div>'; 
     if(breakdownCont) breakdownCont.innerHTML = breakdownHtml;

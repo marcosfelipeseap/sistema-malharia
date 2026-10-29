@@ -2,6 +2,108 @@ const registrosService = require('../services/registros.service');
 const malhariasService = require('../services/malharias.service');
 const processosService = require('../services/processos.service');
 const rankingService = require('../services/ranking.service'); 
+const { google } = require('googleapis');
+
+// --- AUTENTICAÇÃO GOOGLE SHEETS (Apenas para Fardamento) ---
+let auth;
+let sheets;
+try {
+    if (process.env.GOOGLE_CREDENTIALS) {
+        let rawCreds = process.env.GOOGLE_CREDENTIALS;
+        let credsObj;
+        try {
+            credsObj = JSON.parse(rawCreds);
+        } catch (e1) {
+            rawCreds = rawCreds.trim();
+            if ((rawCreds.startsWith('"') && rawCreds.endsWith('"')) || (rawCreds.startsWith("'") && rawCreds.endsWith("'"))) {
+                rawCreds = rawCreds.substring(1, rawCreds.length - 1);
+            }
+            credsObj = JSON.parse(rawCreds);
+        }
+        let privateKey = credsObj.private_key;
+        if (privateKey && privateKey.includes('\\n')) {
+            privateKey = privateKey.replace(/\\n/g, '\n');
+        }
+        auth = new google.auth.GoogleAuth({
+            credentials: {
+                client_email: credsObj.client_email,
+                private_key: privateKey,
+                project_id: credsObj.project_id
+            },
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+        });
+    } else {
+        auth = new google.auth.GoogleAuth({
+            keyFile: 'credentials.json',
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+        });
+    }
+    sheets = google.sheets({ version: 'v4', auth });
+} catch (error) {
+    console.error("Erro na leitura da chave Google:", error.message);
+}
+
+// --- FUNÇÕES UTILITÁRIAS DA PLANILHA ---
+function normalizeDate(val) {
+    if (val === null || val === undefined || val === "") return "";
+    if (typeof val === 'number' || (typeof val === 'string' && !isNaN(val) && Number(val) > 40000)) {
+        let serial = Number(val);
+        let utc_days = Math.floor(serial - 25569);
+        let date_info = new Date(utc_days * 86400 * 1000);
+        let day = String(date_info.getUTCDate()).padStart(2, '0');
+        let month = String(date_info.getUTCMonth() + 1).padStart(2, '0');
+        let year = date_info.getUTCFullYear();
+        return `${day}/${month}/${year}`;
+    }
+    let str = String(val).trim().split(' ')[0]; 
+    if (str.toLowerCase() === "invalid date") return "";
+    if (str.includes('/')) {
+        let parts = str.split('/');
+        if (parts.length === 2) return `${parts[0].trim().padStart(2, '0')}/${parts[1].trim().padStart(2, '0')}/${new Date().getFullYear()}`;
+        if (parts.length >= 3) {
+            let p0 = parts[0].trim().padStart(2, '0'), p1 = parts[1].trim().padStart(2, '0'), p2 = parts[2].trim();
+            if (p2.length === 2) p2 = "20" + p2;
+            if (p0.length === 4) return `${parts[2].trim().padStart(2, '0')}/${p1}/${p0}`;
+            return `${p0}/${p1}/${p2.substring(0,4)}`;
+        }
+    }
+    if (str.includes('-')) {
+        let parts = str.split('-');
+        if (parts.length >= 3) {
+            let p0 = parts[0].trim(), p1 = parts[1].trim().padStart(2, '0'), p2 = parts[2].trim();
+            if (p0.length === 4) return `${p2.padStart(2, '0')}/${p1}/${p0}`;
+            if (p2.length === 2) p2 = "20" + p2;
+            return `${p0.padStart(2, '0')}/${p1}/${p2.substring(0,4)}`;
+        }
+    }
+    return str;
+}
+
+function parseNumber(val) {
+    if (typeof val === 'string') {
+        let clean = val.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+        return parseFloat(clean) || 0;
+    }
+    return val || 0;
+}
+
+function processFardamentoData(values) {
+    if (values.length < 2) return [];
+    return values.slice(1).map(row => {
+        let dataStr = normalizeDate(row[0]);
+        if (!dataStr) return null;
+        return { data: dataStr, mesAno: String(row[1] || "").trim(), tipo: String(row[2] || "").trim(), cor: String(row[3] || "").trim(), quantidade: parseNumber(row[4]), destino: String(row[5] || "").trim(), observacao: String(row[6] || "").trim() };
+    }).filter(i => i !== null && i.tipo !== "");
+}
+
+function processFardamentoSeapData(values) {
+    if (values.length < 2) return [];
+    return values.slice(1).map(row => {
+        let dataStr = normalizeDate(row[0]);
+        if (!dataStr) return null;
+        return { data: dataStr, mesAno: String(row[1] || "").trim(), tipo: String(row[2] || "").trim(), tamanho: String(row[3] || "").trim(), quantidade: parseNumber(row[4]), destino: String(row[5] || "").trim(), observacao: String(row[6] || "").trim() };
+    }).filter(i => i !== null && i.tipo !== "");
+} 
 
 function removerDuplicatasRegistros(array) {
     if (!Array.isArray(array)) return array;
@@ -26,9 +128,9 @@ exports.diarioPublico = async (req, res) => {
 
         let [registros, feriadosRaw, malhariasRaw, processosRaw, itensDisponiveis, rankingRaw] = await Promise.all([
             registrosService.getRegistrosFiltrados(null, formatData(hojeObj)), 
-            registrosService.getFeriados(),                            
-            malhariasService.getAllMalharias(),                           
-            processosService.getAllProcessos(),                           
+            registrosService.getFeriados(),                                    
+            malhariasService.getAllMalharias(),                                
+            processosService.getAllProcessos(),                                
             processosService.getAllItensDisponiveis(),                          
             rankingService.getRankingPerformance(mesAtual, anoAtual)            
         ]);
@@ -167,6 +269,27 @@ exports.diarioPublico = async (req, res) => {
             processosMapeados.push({ nProcesso: p.numero_processo || '', tipoDemanda: p.tipo_demanda || 'Geral', orgao: p.orgao || 'Órgão não especificado', produtosBasicos: [...produtosBasicosSet], status: p.status || 'Entrega não iniciada', situacao: p.situacao || 'Pendente', linkSei: p.link_sei || '', obs: p.observacao || '', qtdAutorizada: p.totais ? p.totais.autorizado : 0, qtdEntregue: p.totais ? p.totais.entregue : 0, qtdFaltante: p.totais ? p.totais.faltante : 0, itens: itensFormatados });
         });
 
+        // --- BUSCA NA PLANILHA GOOGLE PARA FARDAMENTO ---
+        let fardData = [];
+        let fardSeapData = [];
+        
+        if (sheets) {
+            try {
+                const spreadsheetId = '1GU1b3QiOh9sSisqI3g-a2MoR5mTESD_jaTt_tOH5QjA';
+                const ranges = ['Fardamento Interno - Novo!A:G', 'Fardamento Servidor!A:G'];
+                
+                const responses = await Promise.all(ranges.map(range => 
+                    sheets.spreadsheets.values.get({ spreadsheetId, range, valueRenderOption: 'UNFORMATTED_VALUE' })
+                        .catch(() => ({ data: { values: [] } }))
+                ));
+                
+                fardData = processFardamentoData(responses[0].data.values || []);
+                fardSeapData = processFardamentoSeapData(responses[1].data.values || []);
+            } catch (sheetError) {
+                console.error("Erro ao buscar dados de fardamento da planilha:", sheetError);
+            }
+        }
+
         res.render('dashboard/index', {
             layout: 'layouts/public',
             title: 'Painel Público - Produção',
@@ -177,6 +300,9 @@ exports.diarioPublico = async (req, res) => {
             scheduleJSON: JSON.stringify(Object.values(cronogramaDataMap)),
             rankingJSON: JSON.stringify(rankingRaw), 
             infoOficinasEstaticoJSON: JSON.stringify(infoOficinasEstatico),
+            // Passando os dados da planilha para a view
+            fardamentoJSON: JSON.stringify(fardData),
+            fardamentoseapJSON: JSON.stringify(fardSeapData),
             user: req.user || res.locals.user || null 
         });
 

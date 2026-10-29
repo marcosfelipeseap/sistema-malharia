@@ -4,24 +4,24 @@
 <div id="pageApresentacao" class="page active" style="display: block;">
   
   <!-- Cabeçalho Executivo -->
-  <div style="background: linear-gradient(135deg, var(--primary), #0D47A1); color: white; padding: 30px; border-radius: 16px; margin-bottom: 30px; box-shadow: var(--shadow);">
-    <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: white;">Painel Geral de Produção</h2>
-    <p style="font-size: 14px; margin: 0; opacity: 0.9;">Acompanhe o volume total de peças fabricadas, médias mensais, gráficos de desempenho detalhados e a produção por unidades baseado no filtro geral.</p>
+  <div style="background: linear-gradient(135deg, var(--primary), #0D47A1); color: white; padding: 35px 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: var(--shadow);">
+    <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0 0 10px 0; color: white; text-transform: uppercase;">Painel Geral de Produção</h2>
+    <p style="font-size: 0.95rem; margin: 0; opacity: 0.9; font-weight: 500;">Acompanhe o volume total de peças fabricadas, médias mensais, gráficos de desempenho detalhados e a produção por unidades baseado no filtro geral.</p>
   </div>
 
   <!-- Cards de Resumo Principal (Foco em Peças) -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px;">
     
-    <div style="background: var(--surface); padding: 24px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border); border-left: 6px solid var(--primary);">
-      <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; letter-spacing: 0.5px;">Total no Período Geral</span>
-      <h3 id="apresTotalGeral" style="font-size: 32px; font-weight: 800; color: var(--primary); margin: 8px 0 4px 0;">0</h3>
-      <span style="font-size: 13px; color: var(--text-muted); display: block;">peças fabricadas no período</span>
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid var(--primary);">
+      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Total no Período Geral</span>
+      <h3 id="apresTotalGeral" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+      <span style="font-size: 0.85rem; font-weight: 600; color: var(--primary); display: block;">peças fabricadas no período</span>
     </div>
 
-    <div style="background: var(--surface); padding: 24px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border); border-left: 6px solid #3B82F6;">
-      <span style="font-size: 11px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; letter-spacing: 0.5px;">Média Mensal</span>
-      <h3 id="apresMediaMensalGeral" style="font-size: 32px; font-weight: 800; color: #3B82F6; margin: 8px 0 4px 0;">0</h3>
-      <span style="font-size: 13px; color: var(--text-muted); display: block;">média de peças por mês</span>
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #3B82F6;">
+      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Média Mensal</span>
+      <h3 id="apresMediaMensalGeral" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+      <span style="font-size: 0.85rem; font-weight: 600; color: #3B82F6; display: block;">média de peças por mês</span>
     </div>
 
   </div>
@@ -29,15 +29,15 @@
   <!-- Gráficos Visuais Explicativos -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; margin-bottom: 30px;">
     
-    <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border);">
-      <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 15px;">📊 Comparativo de Peças por Item</h3>
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📊 Comparativo de Peças por Item</h3>
       <div style="position: relative; height: 320px; width: 100%;">
         <canvas id="graficoItensApres"></canvas>
       </div>
     </div>
 
-    <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border);">
-      <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 15px;">📈 Evolução Mensal de Peças</h3>
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📈 Evolução Mensal de Peças</h3>
       <div style="position: relative; height: 320px; width: 100%;">
         <canvas id="graficoMesApres"></canvas>
       </div>
@@ -49,19 +49,19 @@
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 25px;">
     
     <!-- Bloco 1: Total de Peças por Item -->
-    <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border);">
-      <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">
-        <span class="material-icons" style="color: var(--primary); font-size: 20px;">inventory_2</span> 
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+        <span class="material-icons" style="color: var(--primary); font-size: 22px;">inventory_2</span> 
         Total de Peças por Item
       </h3>
-      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças produzidas de cada produto.</p>
+      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças produzidas de cada produto.</p>
       
       <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
           <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface);">
-              <th style="padding: 10px;">Item</th>
-              <th style="padding: 10px; text-align: right;">Quantidade</th>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+              <th style="padding: 12px 10px;">Item</th>
+              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
             </tr>
           </thead>
           <tbody id="tabelaGeralItens">
@@ -72,19 +72,19 @@
     </div>
 
     <!-- Bloco 2: Média por Mês -->
-    <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border);">
-      <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">
-        <span class="material-icons" style="color: #3B82F6; font-size: 20px;">calendar_today</span> 
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+        <span class="material-icons" style="color: #3B82F6; font-size: 22px;">calendar_today</span> 
         Histórico de Peças por Mês
       </h3>
-      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues mês a mês.</p>
+      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues mês a mês.</p>
       
       <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
           <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface);">
-              <th style="padding: 10px;">Mês / Ano</th>
-              <th style="padding: 10px; text-align: right;">Quantidade</th>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+              <th style="padding: 12px 10px;">Mês / Ano</th>
+              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
             </tr>
           </thead>
           <tbody id="tabelaMediaMes">
@@ -95,19 +95,19 @@
     </div>
 
     <!-- Bloco 3: Produção por Unidades / Oficinas -->
-    <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border);">
-      <h3 style="font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px;">
-        <span class="material-icons" style="color: #8B5CF6; font-size: 20px;">store</span> 
-        Produção por Unidades / Oficinas
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+        <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> 
+        Produção por Unidades
       </h3>
-      <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
+      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
       
       <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
           <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface);">
-              <th style="padding: 10px;">Unidade / Oficina</th>
-              <th style="padding: 10px; text-align: right;">Quantidade</th>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+              <th style="padding: 12px 10px;">Unidade / Oficina</th>
+              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
             </tr>
           </thead>
           <tbody id="tabelaOficinasGeral">
@@ -120,43 +120,43 @@
   </div>
 
   <!-- Bloco 4: Produção no Período Selecionado (Com Filtro Próprio e Total Embaixo) -->
-  <div style="background: var(--surface); padding: 22px; border-radius: 14px; box-shadow: var(--shadow); border: var(--card-border); margin-top: 25px;">
+  <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); margin-top: 25px;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
       <div>
-        <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
-          <span class="material-icons" style="color: #10B981; font-size: 20px;">filter_alt</span> 
-          Produção no Período Selecionado (Filtro Próprio)
+        <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+          <span class="material-icons" style="color: #10B981; font-size: 22px;">filter_alt</span> 
+          Produção no Período Selecionado
         </h3>
-        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Selecione um mês específico ou defina um intervalo de datas para esta análise específica.</p>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin: 0;">Selecione um mês específico ou defina um intervalo de datas para esta análise específica.</p>
       </div>
 
       <!-- Controles de Filtro Interno -->
-      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
         <div>
-          <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 2px;">Mês Específico</label>
-          <input type="month" id="apresFiltroMes" onchange="mudarFiltroMesApresentacao()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+          <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 5px;">Mês Específico</label>
+          <input type="month" id="apresFiltroMes" onchange="mudarFiltroMesApresentacao()">
         </div>
         <div>
-          <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 2px;">Data Inicial</label>
-          <input type="date" id="apresFiltroInicio" onchange="limparMesSePersonalizado()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+          <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 5px;">Data Inicial</label>
+          <input type="date" id="apresFiltroInicio" onchange="limparMesSePersonalizado()">
         </div>
         <div>
-          <label style="font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 2px;">Data Final</label>
-          <input type="date" id="apresFiltroFim" onchange="limparMesSePersonalizado()" style="padding: 6px 10px; font-size: 13px; border-radius: 6px;">
+          <label style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 5px;">Data Final</label>
+          <input type="date" id="apresFiltroFim" onchange="limparMesSePersonalizado()">
         </div>
-        <div style="align-self: flex-end;">
-          <button class="btn-notif btn-notif-pri" onclick="aplicarFiltroApresentacao()" style="padding: 7px 14px; font-size: 12px; height: 35px;">Filtrar</button>
+        <div style="align-self: flex-end; padding-bottom: 2px;">
+          <button class="btn-notif btn-notif-pri" onclick="aplicarFiltroApresentacao()" style="height: 44px; padding: 0 20px;">Filtrar</button>
         </div>
       </div>
     </div>
     
     <div style="overflow-x: auto; margin-bottom: 20px;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
         <thead>
-          <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
-            <th style="padding: 10px;">Item</th>
-            <th style="padding: 10px; text-align: right;">Quantidade</th>
+          <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem;">
+            <th style="padding: 12px 10px;">Item</th>
+            <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
           </tr>
         </thead>
         <tbody id="tabelaFiltroPersonalizado">
@@ -166,9 +166,9 @@
     </div>
 
     <!-- TOTAL NO PERÍODO SELECIONADO MAIS EMBAIXO -->
-    <div style="background: var(--bg-body); padding: 16px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border);">
-      <span style="font-size: 13px; font-weight: 600; color: var(--text-main); text-transform: uppercase;">Total de Peças no Período Selecionado:</span>
-      <h3 id="apresTotalFiltrado" style="font-size: 22px; font-weight: 800; color: #10B981; margin: 0;">0 peças</h3>
+    <div style="background: var(--input-bg, var(--bg-body)); padding: 20px 25px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border);">
+      <span style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); text-transform: uppercase;">Total de Peças no Período Selecionado:</span>
+      <h3 id="apresTotalFiltrado" style="font-size: 1.8rem; font-weight: 900; color: #10B981; margin: 0;">0 peças</h3>
     </div>
 
   </div>
@@ -274,13 +274,13 @@
     const itensGeralOrdenados = Object.values(mapaGeralItens).sort((a, b) => b.qtd - a.qtd);
     
     if (itensGeralOrdenados.length === 0) {
-      tbodyGeral.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted);">Nenhum registro no período geral.</td></tr>`;
+      tbodyGeral.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhum registro no período geral.</td></tr>`;
     } else {
       itensGeralOrdenados.forEach(i => {
         tbodyGeral.innerHTML += `
-          <tr style="border-bottom: 1px solid var(--border);">
+          <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600;">${i.item}</td>
-            <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: var(--primary);">${i.qtd.toLocaleString('pt-BR')} peças</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: var(--primary);">${i.qtd.toLocaleString('pt-BR')} peças</td>
           </tr>`;
       });
     }
@@ -291,7 +291,7 @@
     const mesesArray = Object.values(mapaGeralMes).sort((a, b) => b.anoMes.localeCompare(a.anoMes));
     
     if (mesesArray.length === 0) {
-      tbodyMes.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted);">Sem dados mensais no período.</td></tr>`;
+      tbodyMes.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Sem dados mensais no período.</td></tr>`;
     } else {
       let totalMesesUnicos = mesesArray.length || 1;
       document.getElementById('apresMediaMensalGeral').innerText = Math.round(totalGeralQtd / totalMesesUnicos).toLocaleString('pt-BR');
@@ -301,9 +301,9 @@
         const formatadoBonito = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
         tbodyMes.innerHTML += `
-          <tr style="border-bottom: 1px solid var(--border);">
+          <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600; text-transform: capitalize;">${formatadoBonito}</td>
-            <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #3B82F6;">${m.qtd.toLocaleString('pt-BR')} peças</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #3B82F6;">${m.qtd.toLocaleString('pt-BR')} peças</td>
           </tr>`;
       });
     }
@@ -314,13 +314,13 @@
     const oficinasOrdenadas = Object.entries(mapaOficinasGeral).sort((a, b) => b[1] - a[1]);
 
     if (oficinasOrdenadas.length === 0) {
-      tbodyOficinas.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted);">Nenhuma unidade encontrada.</td></tr>`;
+      tbodyOficinas.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhuma unidade encontrada.</td></tr>`;
     } else {
       oficinasOrdenadas.forEach(([nomeOficina, qtdOficina]) => {
         tbodyOficinas.innerHTML += `
-          <tr style="border-bottom: 1px solid var(--border);">
+          <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600;">${nomeOficina}</td>
-            <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #8B5CF6;">${qtdOficina.toLocaleString('pt-BR')} peças</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #8B5CF6;">${qtdOficina.toLocaleString('pt-BR')} peças</td>
           </tr>`;
       });
     }
@@ -331,13 +331,13 @@
     const itensFiltradosOrdenados = Object.values(mapaFiltradoItens).sort((a, b) => b.qtd - a.qtd);
 
     if (itensFiltradosOrdenados.length === 0) {
-      tbodyFiltro.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted);">Nenhum dado encontrado no período selecionado.</td></tr>`;
+      tbodyFiltro.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhum dado encontrado no período selecionado.</td></tr>`;
     } else {
       itensFiltradosOrdenados.forEach(i => {
         tbodyFiltro.innerHTML += `
-          <tr style="border-bottom: 1px solid var(--border);">
+          <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600;">${i.item}</td>
-            <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #10B981;">${i.qtd.toLocaleString('pt-BR')} peças</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #10B981;">${i.qtd.toLocaleString('pt-BR')} peças</td>
           </tr>`;
       });
     }
@@ -347,6 +347,10 @@
   }
 
   function renderizarGraficosApres(itensArr, mesesArr) {
+    const isDark = document.body.classList.contains('dark-mode');
+    const gridColor = isDark ? '#37474f' : '#e2e8f0';
+    const textColor = isDark ? '#a0abb5' : '#64748b';
+
     // Gráfico de Itens (Barra)
     const ctxItens = document.getElementById('graficoItensApres').getContext('2d');
     if (chartInstItensApres) chartInstItensApres.destroy();
@@ -358,8 +362,8 @@
         datasets: [{
           label: 'Peças Produzidas',
           data: itensArr.map(i => i.qtd),
-          backgroundColor: '#1565C0',
-          borderRadius: 6
+          backgroundColor: '#001E7A',
+          borderRadius: 8
         }]
       },
       options: {
@@ -371,14 +375,14 @@
           datalabels: {
             anchor: 'end',
             align: 'top',
-            color: '#333333',
-            font: { weight: 'bold', size: 10 },
+            color: textColor,
+            font: { weight: 'bold', size: 11, family: 'Poppins' },
             formatter: (value) => value.toLocaleString('pt-BR')
           }
         },
         scales: {
-          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
-          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } }
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: { size: 11, family: 'Poppins' }, color: textColor } },
+          x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Poppins' }, maxRotation: 45, minRotation: 45, color: textColor } }
         }
       },
       plugins: [ChartDataLabels]
@@ -399,10 +403,10 @@
           label: 'Peças no Mês',
           data: mesesArr.map(m => m.qtd),
           borderColor: '#3B82F6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
           fill: true,
           tension: 0.3,
-          pointRadius: 5,
+          pointRadius: 6,
           pointBackgroundColor: '#3B82F6'
         }]
       },
@@ -414,14 +418,14 @@
           legend: { display: false },
           datalabels: {
             align: 'top',
-            color: '#333333',
-            font: { weight: 'bold', size: 10 },
+            color: textColor,
+            font: { weight: 'bold', size: 11, family: 'Poppins' },
             formatter: (value) => value.toLocaleString('pt-BR')
           }
         },
         scales: {
-          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 11 } } },
-          x: { grid: { display: false }, ticks: { font: { size: 11 } } }
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: { size: 11, family: 'Poppins' }, color: textColor } },
+          x: { grid: { display: false }, ticks: { font: { size: 11, family: 'Poppins' }, color: textColor } }
         }
       },
       plugins: [ChartDataLabels]
@@ -431,7 +435,7 @@
   // Executa ao carregar e quando o filtro global for acionado
   document.addEventListener("DOMContentLoaded", () => {
     if (typeof renderPageApres === 'undefined') {
-      window.renderPageApres = renderPageApreste;
+      window.renderPageApres = renderPageApresentacao;
     }
     renderPageApresentacao();
   });

@@ -2,10 +2,10 @@
      PAGE 3 — DESEMPENHO (META X PRODUÇÃO)
      ========================================================= -->
 <div id="page2" class="page">
-  <h2>Desempenho (Meta x Produção)</h2>
-  <p style="font-size:13px; color:var(--text-muted)">Selecione as oficinas abaixo para visualizar os gráficos comparativos detalhados.</p>
-  <div id="oficinaChips" class="chip-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px;"></div>
-  <div id="chartsArea" style="display: flex; flex-direction: column; gap: 20px;"></div>
+  <h2 style="font-size: 1.6rem; margin-bottom: 5px;">Desempenho (Meta x Produção)</h2>
+  <p style="font-size: 0.85rem; font-weight: 500; color:var(--text-muted); margin-bottom: 20px;">Selecione as oficinas abaixo para visualizar os gráficos comparativos detalhados.</p>
+  <div id="oficinaChips" class="chip-container" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;"></div>
+  <div id="chartsArea" style="display: flex; flex-direction: column; gap: 25px;"></div>
 </div>
 
 <script>
@@ -20,18 +20,18 @@
     selectedOficinas = selectedOficinas.filter(o => list.includes(o));
     
     if (list.length === 0) { 
-      cont.innerHTML = '<span style="font-size:12px; color:var(--text-muted)">Nenhuma oficina neste período.</span>'; 
+      cont.innerHTML = '<span style="font-size:0.9rem; font-weight: 500; color:var(--text-muted)">Nenhuma oficina neste período.</span>'; 
       return;
     }
     
     list.forEach(of => {
       let c = document.createElement('div');
       c.className = 'chip'; 
-      c.style.padding = '8px 16px'; c.style.borderRadius = '20px'; c.style.border = '1px solid var(--border)'; c.style.background = 'var(--surface)'; c.style.cursor = 'pointer'; c.style.fontSize = '13px'; c.style.color = 'var(--text-muted)'; c.style.transition = '0.2s';
+      c.style.padding = '10px 20px'; c.style.borderRadius = '20px'; c.style.border = '1px solid var(--border)'; c.style.background = 'var(--surface)'; c.style.cursor = 'pointer'; c.style.fontSize = '0.85rem'; c.style.fontWeight = '600'; c.style.color = 'var(--text-muted)'; c.style.transition = '0.2s'; c.style.textTransform = 'uppercase';
       
       if (selectedOficinas.includes(of)) {
           c.classList.add('selected');
-          c.style.background = 'var(--primary)'; c.style.color = '#fff'; c.style.borderColor = 'var(--primary)';
+          c.style.background = 'var(--primary)'; c.style.color = '#fff'; c.style.borderColor = 'var(--primary)'; c.style.boxShadow = 'var(--shadow)';
       }
 
       c.innerText = of;
@@ -39,11 +39,11 @@
         if (selectedOficinas.includes(of)) { 
           selectedOficinas = selectedOficinas.filter(x => x !== of); 
           c.classList.remove('selected'); 
-          c.style.background = 'var(--surface)'; c.style.color = 'var(--text-muted)'; c.style.borderColor = 'var(--border)';
+          c.style.background = 'var(--surface)'; c.style.color = 'var(--text-muted)'; c.style.borderColor = 'var(--border)'; c.style.boxShadow = 'none';
         } else { 
           selectedOficinas.push(of); 
           c.classList.add('selected'); 
-          c.style.background = 'var(--primary)'; c.style.color = '#fff'; c.style.borderColor = 'var(--primary)';
+          c.style.background = 'var(--primary)'; c.style.color = '#fff'; c.style.borderColor = 'var(--primary)'; c.style.boxShadow = 'var(--shadow)';
         }
         renderPage2();
       };
@@ -61,7 +61,7 @@
     activeCharts = [];
     
     if (selectedOficinas.length === 0) {
-        area.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted); background: var(--surface); border-radius: 12px; border: var(--card-border);">Selecione ao menos uma oficina acima para exibir os gráficos de desempenho.</div>';
+        area.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--text-muted); font-weight: 500; font-size: 1rem; background: var(--surface); border-radius: 20px; box-shadow: var(--shadow);">Selecione ao menos uma oficina acima para exibir os gráficos de desempenho.</div>';
         return;
     }
 
@@ -77,7 +77,6 @@
     window.tempInsumoData = {}; 
 
     displayOrder.forEach((of) => {
-      // Utiliza a função global com validação de feriados a partir do primeiro registro
       let missingDates = typeof getMissingBusinessDaysCustom === 'function' ? getMissingBusinessDaysCustom(of, rawData) : [];
       window.tempMissingData[of] = missingDates; 
 
@@ -119,17 +118,17 @@
       
       let div = document.createElement('div'); 
       div.className = 'chart-card';
-      div.style.background = 'var(--surface)'; div.style.padding = '20px'; div.style.borderRadius = '12px'; div.style.border = 'var(--card-border)'; div.style.boxShadow = 'var(--shadow)';
+      div.style.background = 'var(--surface)'; div.style.padding = '25px'; div.style.borderRadius = '20px'; div.style.border = 'none'; div.style.boxShadow = 'var(--shadow)';
       div.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px; flex-wrap: wrap; gap: 10px;">
-            <h3 style="margin:0; font-size:20px; align-self:center; color:var(--text-main);">${of}</h3>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap: wrap; gap: 15px;">
+            <h3 style="margin:0; font-size:1.2rem; font-weight:800; align-self:center; color:var(--text-main); text-transform: uppercase;">${of}</h3>
             <div class="p2-header-right" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <div class="perf-label ${perfClass}" style="padding: 5px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; background: ${perfPerc >= 75 ? 'var(--success-bg)' : 'var(--danger-bg)'}; color: ${perfPerc >= 75 ? 'var(--success-text)' : 'var(--danger-text)'};">PERFORMANCE: ${perfPerc}%</div>
-                ${missingDates.length > 0 ? `<div class="missing-label" onclick="openModal('Relatórios não enviados - ${of}', window.tempMissingData['${of}'])" style="cursor: pointer; background: var(--alert-bg); color: var(--alert-text); padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">RELATÓRIOS NÃO ENVIADOS: ${missingDates.length} DIAS</div>` : ''}
-                ${insumoDaysList.length > 0 ? `<div class="insumo-label" onclick="openModal('Dias sem Insumo (Prod: 0) - ${of}', window.tempInsumoData['${of}'])" style="cursor: pointer; background: var(--insumo-bg); color: var(--insumo-text); padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">DIAS SEM INSUMO: ${insumoDaysList.length} DIAS</div>` : ''}
+                <div class="perf-label ${perfClass}" style="padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 0.75rem; background: ${perfPerc >= 75 ? 'var(--success-bg)' : 'var(--danger-bg)'}; color: ${perfPerc >= 75 ? 'var(--success-text)' : 'var(--danger-text)'}; text-transform: uppercase; letter-spacing: 0.5px;">PERFORMANCE: ${perfPerc}%</div>
+                ${missingDates.length > 0 ? `<div class="missing-label" onclick="openModal('Relatórios não enviados - ${of}', window.tempMissingData['${of}'])" style="cursor: pointer; background: var(--alert-bg); color: var(--alert-text); padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">NÃO ENVIADOS: ${missingDates.length} DIAS</div>` : ''}
+                ${insumoDaysList.length > 0 ? `<div class="insumo-label" onclick="openModal('Dias sem Insumo (Prod: 0) - ${of}', window.tempInsumoData['${of}'])" style="cursor: pointer; background: var(--insumo-bg); color: var(--insumo-text); padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">SEM INSUMO: ${insumoDaysList.length} DIAS</div>` : ''}
             </div>
         </div>
-        <div style="height:300px"><canvas></canvas></div>`;
+        <div style="height:320px"><canvas></canvas></div>`;
       area.appendChild(div);
 
       let ofMaxDate = dayRecords.length > 0 ? new Date(Math.max(...dayRecords.map(r => r.dateObj.getTime()))) : new Date(0);
@@ -160,8 +159,9 @@
           return refMeta;
       });
 
-      let gridColor = typeof getThemeColor === 'function' ? getThemeColor('--chart-grid') : '#e0e0e0'; 
-      let txtColor = typeof getThemeColor === 'function' ? getThemeColor('--text-muted') : '#757575';
+      const isDark = document.body.classList.contains('dark-mode');
+      let gridColor = isDark ? '#37474f' : '#e2e8f0'; 
+      let txtColor = isDark ? '#a0abb5' : '#64748b';
       let ctx = div.querySelector('canvas');
       
       let chart = new Chart(ctx, {
@@ -177,7 +177,7 @@
               backgroundColor: '#1E88E5',
               borderWidth: 3, 
               pointRadius: 5, 
-              pointBackgroundColor: typeof getThemeColor === 'function' ? getThemeColor('--surface') : '#ffffff', 
+              pointBackgroundColor: isDark ? '#1c2126' : '#ffffff', 
               tension: 0.2
             },
             {
@@ -195,12 +195,13 @@
           responsive: true, 
           maintainAspectRatio: false,
           scales: { 
-            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: txtColor } }, 
-            x: { grid: { display: false }, ticks: { color: txtColor } } 
+            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: txtColor, font: {family: 'Poppins'} } }, 
+            x: { grid: { display: false }, ticks: { color: txtColor, font: {family: 'Poppins'} } } 
           },
           plugins: { 
-            legend: { labels: { color: txtColor } },
+            legend: { labels: { color: txtColor, font: {family: 'Poppins', weight: '600'} } },
             tooltip: {
+              titleFont: {family: 'Poppins'}, bodyFont: {family: 'Poppins'},
               callbacks: {
                 label: function(context) {
                     let label = context.dataset.label || '';
@@ -237,15 +238,14 @@
                     });
                   }
 
-                  // Triagem aprimorada de motivos e observações
                   let justs = [...new Set(dayRecords.map(r => r.justificativa).filter(j => j && j.trim() !== ""))];
                   let obss = [...new Set(dayRecords.map(r => r.observacao).filter(o => o && o.trim() !== ""))];
 
                   if (totalProd < dayMeta) {
                       if (justs.length > 0 && typeof wrapText === 'function') {
-                        justs.forEach(j => { finalLines.push(...wrapText(`• Justificativa: ${j}`, 55)); }); 
+                        justs.forEach(j => { finalLines.push(...wrapText(`• Just.: ${j}`, 55)); }); 
                       } else {
-                        finalLines.push('• Justificativa: Não informada');
+                        finalLines.push('• Just.: Não informada');
                       }
                   }
 

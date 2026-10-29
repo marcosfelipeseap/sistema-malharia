@@ -3,36 +3,36 @@
      ========================================================= -->
 <div id="page3" class="page">
   <style>
-    .ranking-container { background: var(--surface); border-radius: 12px; padding: 20px; border: var(--card-border); box-shadow: var(--shadow); margin-bottom: 20px; animation: fadeIn 0.4s ease;}
-    .ranking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
-    .ranking-title { font-size: 16px; font-weight: 700; color: var(--text-main); }
-    .ranking-period { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+    .ranking-container { background: var(--surface); border-radius: 20px; padding: 25px; border: none; box-shadow: var(--shadow); margin-bottom: 25px; animation: fadeIn 0.4s ease;}
+    .ranking-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+    .ranking-title { font-size: 1.1rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; }
+    .ranking-period { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
     
-    .rank-list { display: flex; flex-direction: column; gap: 10px; }
-    .rank-item { display: flex; align-items: center; gap: 15px; background: var(--bg-body); padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); transition: 0.2s; }
-    .rank-item:hover { border-color: var(--primary); }
-    .rank-pos { font-size: 15px; font-weight: 700; color: var(--primary); width: 30px; text-align: center; }
-    .rank-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-    .rank-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+    .rank-list { display: flex; flex-direction: column; gap: 12px; }
+    .rank-item { display: flex; align-items: center; gap: 15px; background: var(--bg-body); padding: 12px 20px; border-radius: 12px; border: 1px solid var(--border); transition: 0.2s; }
+    .rank-item:hover { border-color: var(--primary); transform: translateX(4px); box-shadow: var(--shadow); }
+    .rank-pos { font-size: 1.1rem; font-weight: 800; color: var(--primary); width: 35px; text-align: center; }
+    .rank-info { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+    .rank-name { font-size: 0.9rem; font-weight: 700; color: var(--text-main); text-transform: uppercase; }
     .rank-bar-bg { width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
     .rank-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
-    .rank-val { font-size: 14px; font-weight: 700; color: var(--text-main); width: 50px; text-align: right; }
+    .rank-val { font-size: 1.1rem; font-weight: 800; color: var(--text-main); width: 60px; text-align: right; }
 
-    .legend-highlight { display: flex; align-items: center; gap: 8px; background: var(--warning-bg); color: var(--warning-text-dark); padding: 12px 15px; border-radius: 8px; font-size: 12px; font-weight: 600; border: 1px solid var(--warning-text); margin-bottom: 20px; }
+    .legend-highlight { display: flex; align-items: center; gap: 10px; background: var(--warning-bg); color: var(--warning-text-dark); padding: 15px 20px; border-radius: 16px; font-size: 0.85rem; font-weight: 600; margin-bottom: 25px; }
 
     /* CARDS DETALHADOS POR OFICINA */
-    .detail-card { background: var(--surface); border-radius: 10px; border: var(--card-border); margin-bottom: 12px; box-shadow: var(--shadow); overflow: hidden; }
-    .detail-head { padding: 15px 20px; background: var(--primary-light); display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 600; color: var(--primary); font-size: 14px; transition: 0.2s; }
-    .detail-head:hover { background: rgba(21, 101, 192, 0.12); }
-    .detail-content { display: none; padding: 15px 20px; background: var(--surface); border-top: 1px solid var(--border); font-size: 13px; }
+    .detail-card { background: var(--surface); border-radius: 16px; border: none; margin-bottom: 15px; box-shadow: var(--shadow); overflow: hidden; }
+    .detail-head { padding: 20px 25px; background: var(--primary-light); display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 800; color: var(--primary); font-size: 1rem; text-transform: uppercase; transition: 0.2s; }
+    .detail-head:hover { background: rgba(21, 101, 192, 0.15); }
+    .detail-content { display: none; padding: 20px 25px; background: var(--surface); border-top: 1px solid var(--border); font-size: 0.85rem; }
     .detail-card.open .detail-content { display: block; }
 
-    .row-day { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+    .row-day { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--border); }
     .row-day:last-child { border-bottom: none; }
-    .just-note { background: var(--danger-bg); color: var(--danger-text); padding: 6px 10px; border-radius: 6px; font-size: 11px; margin-top: 4px; margin-bottom: 8px; border-left: 3px solid var(--danger-text); }
+    .just-note { background: var(--danger-bg); color: var(--danger-text); padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 500; margin-top: 6px; margin-bottom: 10px; border-left: 4px solid var(--danger-text); }
   </style>
 
-  <h2>Histórico Detalhado</h2>
+  <h2 style="font-size: 1.6rem; margin-bottom: 20px;">Histórico Detalhado</h2>
 
   <div class="ranking-container">
       <div class="ranking-header">
@@ -50,26 +50,26 @@
   </div>
 
   <div class="legend-highlight">
-      <span class="material-icons" style="font-size:18px">warning_amber</span>
+      <span class="material-icons" style="font-size:22px">warning_amber</span>
       <span>SR = Quantidade de dias úteis que o relatório não foi enviado (Sem Relatório, desconsiderando feriados). S/I = Sem Insumo (Produção zero declarada por falta de material).</span>
   </div>
 
-  <div id="chartDetailsContainer" class="chart-card" style="margin-bottom:20px; height:400px; background: var(--surface); padding: 20px; border-radius: 12px; border: var(--card-border); box-shadow: var(--shadow);">
+  <div id="chartDetailsContainer" class="chart-card" style="margin-bottom:25px; height:420px; background: var(--surface); padding: 25px; border-radius: 20px; border: none; box-shadow: var(--shadow);">
       <canvas id="chartDetails"></canvas>
   </div>
   
-  <div id="detailedList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px;"></div>
+  <div id="detailedList" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px;"></div>
 </div>
 
 <script>
   let chartDetailsInst = null;
 
   function getColorForPercentage(perc) {
-      if (perc >= 100) return '#2E7D32'; // Verde Escuro (100%)
-      if (perc >= 85) return '#43A047'; // Verde Claro
-      if (perc >= 60) return '#1E88E5'; // Azul
-      if (perc >= 40) return '#FBC02D'; // Amarelo
-      return '#C62828'; // Vermelho
+      if (perc >= 100) return '#2E7D32'; 
+      if (perc >= 85) return '#43A047'; 
+      if (perc >= 60) return '#1E88E5'; 
+      if (perc >= 40) return '#FBC02D'; 
+      return '#C62828'; 
   }
 
   function openMissingDetailsModal(oficinaName, datesList) {
@@ -88,7 +88,7 @@
     let rankingData = [];
     window.tempMissingDataP3 = {}; 
     
-    let fmtDate = d => d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getFullYear();
+    let fmtDate = d => String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
     let periodDisplay = document.getElementById('rankingPeriodDisplay');
     if (periodDisplay) {
         if (dates.start.getFullYear() < 2021 && dates.end.getFullYear() > 2090) {
@@ -98,14 +98,10 @@
         }
     }
 
-    // =====================================================================================
-    // CÁLCULO DE PERFORMANCE CORRIGIDO (Matemática IDÊNTICA ao ranking.service.js)
-    // =====================================================================================
     uniqueOficinasAll.forEach(of => {
         let dayRecords = filtered.filter(x => x.oficina === of);
         let daysMap = {};
         
-        // 1. Agrupar a produção e a MAIOR META do dia (Evita duplicar meta)
         dayRecords.forEach(r => { 
             let dKey = r.data;
             if(!daysMap[dKey]) {
@@ -154,23 +150,18 @@
 
         let mediaMeta = countMetaDays > 0 ? Math.round(sumMetaForAvg / countMetaDays) : 10;
         
-        // --- AUDITORIA DE FALTAS CORRIGIDA (COBRA SÓ ATÉ ONTEM) ---
         let allOficinaRecords = rawData.filter(r => r.oficina === of);
         
-        // Descobre a "data de criação" (Primeiro registro feito pela oficina na vida)
         let dataCriacao = allOficinaRecords.length > 0 
             ? new Date(Math.min(...allOficinaRecords.map(r => r.dateObj.getTime()))) 
             : dates.start;
 
-        // O loop começa na data de criação (ou no início do filtro)
         let startLoop = new Date(Math.max(dataCriacao.getTime(), dates.start.getTime()));
         
-        // A data limite de cobrança é rigorosamente ONTEM (Impede de cobrar o relatório de "Hoje" que derrubava os 97%)
         let dataLimiteCobranca = new Date();
         dataLimiteCobranca.setHours(0, 0, 0, 0);
         dataLimiteCobranca.setDate(dataLimiteCobranca.getDate() - 1); 
 
-        // O loop termina na data final do filtro OU até ontem.
         let endLoop = new Date(Math.min(dates.end.getTime(), dataLimiteCobranca.getTime()));
 
         let missingDates = [];
@@ -199,12 +190,10 @@
 
         window.tempMissingDataP3[of] = missingDates; 
 
-        // Punição: Adiciona a Meta Média exigida para os dias que não trabalharam
         if (missingDates.length > 0) {
             ofiTotalMeta += (missingDates.length * mediaMeta);
         }
 
-        // 4. Calcular a percentagem real blindada
         let perc = 0;
         if (ofiTotalMeta > 0) {
             perc = (ofiTotalProd / ofiTotalMeta) * 100;
@@ -220,18 +209,15 @@
 
     rankingData.sort((a,b) => b.perc - a.perc || a.name.localeCompare(b.name));
 
-    // =====================================================================================
-    // RENDERIZAÇÃO DO RANKING (DESIGN ANTIGO PRESERVADO)
-    // =====================================================================================
     let rankCont = document.getElementById('rankingList'); 
     if (rankCont) {
       rankCont.innerHTML = '';
       if (rankingData.length === 0) {
-        rankCont.innerHTML = '<div style="color:var(--text-muted)">Sem dados para ranking neste período.</div>';
+        rankCont.innerHTML = '<div style="color:var(--text-muted); font-weight:500;">Sem dados para ranking neste período.</div>';
       } else {
           rankingData.forEach((item, index) => {
               let color = getColorForPercentage(item.perc);
-              let visualWidth = Math.min(item.perc, 100); // Impede a barra de quebrar a tela se passar de 100%
+              let visualWidth = Math.min(item.perc, 100);
 
               let div = document.createElement('div'); 
               div.className = 'rank-item';
@@ -248,9 +234,6 @@
       }
     }
 
-    // =====================================================================================
-    // RENDERIZAÇÃO DE DIAS SEM RELATÓRIO (FALTAS)
-    // =====================================================================================
     let missingRankingData = [];
     uniqueOficinasAll.forEach(of => {
         let missingDates = window.tempMissingDataP3[of] || [];
@@ -262,7 +245,7 @@
     if (rankMissingCont) {
       rankMissingCont.innerHTML = '';
       if (missingRankingData.length === 0) {
-          rankMissingCont.innerHTML = '<div style="color:var(--text-muted); font-size: 13px; padding: 5px;">Nenhuma malharia com relatórios pendentes neste período.</div>';
+          rankMissingCont.innerHTML = '<div style="color:var(--text-muted); font-size: 0.9rem; font-weight:500; padding: 5px;">Nenhuma malharia com relatórios pendentes neste período.</div>';
       } else {
           let maxMissing = missingRankingData[0].count;
           missingRankingData.forEach((item, index) => {
@@ -276,23 +259,20 @@
                   <div class="rank-pos">#${index+1}</div>
                   <div class="rank-info">
                       <div class="rank-name" title="${item.name}">${item.name}</div>
-                      <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${widthPerc}%; background:var(--neutral-text, #9e9e9e)"></div></div>
+                      <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${widthPerc}%; background:var(--text-muted)"></div></div>
                   </div>
-                  <div class="rank-val" style="font-weight: 700; color:var(--neutral-text, #9e9e9e)">${item.count} dias</div>
+                  <div class="rank-val" style="font-weight: 800; color:var(--text-muted)">${item.count} dias</div>
               `;
               rankMissingCont.appendChild(div);
           });
       }
     }
 
-    // =====================================================================================
-    // GRÁFICO E ACORDEÃO 
-    // =====================================================================================
     let list = document.getElementById('detailedList'); 
     if (!list) return;
     list.innerHTML = '';
     
-    let chartHeight = Math.max(400, uniqueOficinasAll.length * 40);
+    let chartHeight = Math.max(420, uniqueOficinasAll.length * 45);
     let chartDetailsContainer = document.getElementById('chartDetailsContainer');
     if (chartDetailsContainer) chartDetailsContainer.style.height = chartHeight + 'px';
 
@@ -359,7 +339,7 @@
 
         if (hasInsumoZero) { statusText = 'SEM INSUMO'; statusColor = 'var(--warning-text-dark)'; }
         let dLabel = d;
-        if (isWknd) dLabel += ` <span style="font-size:10px; color:var(--warning-text-dark); font-weight:bold;">(Final Sem.)</span>`;
+        if (isWknd) dLabel += ` <span style="font-size:0.7rem; color:var(--warning-text-dark); font-weight:800; text-transform: uppercase;">(Final Sem.)</span>`;
 
         let uniqJ = [...new Set(inf.j)].filter(j => j && j.trim() !== "");
         let uniqO = [...new Set(inf.o)].filter(o => o && o.trim() !== "");
@@ -369,13 +349,13 @@
             justNote += `<div class="just-note">Justificativa: ${uniqJ.join(', ')}</div>`;
         }
         if (uniqO.length > 0) {
-            justNote += `<div style="background: var(--neutral-bg); color: var(--text-muted); padding: 5px 8px; border-radius: 6px; font-size: 11px; margin-top: 2px; margin-bottom: 6px;">Obs: ${uniqO.join(' | ')}</div>`;
+            justNote += `<div style="background: var(--neutral-bg); color: var(--text-muted); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; margin-top: 2px; margin-bottom: 8px;">Obs: ${uniqO.join(' | ')}</div>`;
         }
         
         rows += `<div class="row-day">
-                    <span style="width:110px; font-weight:600;">${dLabel}</span>
-                    <span style="flex:1; text-align:center">Prod: <b>${inf.p}</b> / Meta: <b>${inf.m}</b></span>
-                    <span style="font-weight:700; color:${statusColor}">${statusText}</span>
+                    <span style="width:120px; font-weight:700;">${dLabel}</span>
+                    <span style="flex:1; text-align:center; font-weight:500;">Prod: <b style="color:var(--text-main); font-size:1.1rem;">${inf.p}</b> / Meta: <b style="color:var(--text-muted); font-size:0.95rem;">${inf.m}</b></span>
+                    <span style="font-weight:800; color:${statusColor}">${statusText}</span>
                  </div>${justNote}`;
       });
       
@@ -383,14 +363,14 @@
       el.className = 'detail-card';
       el.innerHTML = `
         <div class="detail-head" onclick="this.parentElement.classList.toggle('open')">
-            <div style="display:flex; align-items:center; gap:10px">
-              <span style="font-weight:700">${of}</span>
-              ${missingDates.length > 0 ? `<span class="pill" style="font-size:11px; background:var(--alert-bg); color:var(--alert-text); padding:2px 8px; border-radius:10px; cursor:pointer;" onclick="event.stopPropagation(); openMissingDetailsModal('${of}', window.tempMissingDataP3['${of}'])">SR: ${missingDates.length} dias</span>` : ''}
-              ${insumoZeroCount > 0 ? `<span class="pill" style="font-size:11px; background:var(--insumo-bg); color:var(--insumo-text); padding:2px 8px; border-radius:10px;">S/I: ${insumoZeroCount} dias</span>` : ''}
+            <div style="display:flex; align-items:center; gap:12px">
+              <span>${of}</span>
+              ${missingDates.length > 0 ? `<span class="pill" style="font-size:0.7rem; background:var(--alert-bg); color:var(--alert-text); padding:4px 10px; border-radius:12px; cursor:pointer;" onclick="event.stopPropagation(); openMissingDetailsModal('${of}', window.tempMissingDataP3['${of}'])">SR: ${missingDates.length} dias</span>` : ''}
+              ${insumoZeroCount > 0 ? `<span class="pill" style="font-size:0.7rem; background:var(--insumo-bg); color:var(--insumo-text); padding:4px 10px; border-radius:12px;">S/I: ${insumoZeroCount} dias</span>` : ''}
             </div>
             <span>${okCount}/${tot} Dias (${pc}%) ▾</span>
         </div>
-        <div class="detail-content">${rows || '<div style="color:var(--text-muted)">Nenhum registro no período.</div>'}</div>`;
+        <div class="detail-content">${rows || '<div style="color:var(--text-muted); font-weight:500;">Nenhum registro no período.</div>'}</div>`;
       list.appendChild(el);
     });
 
@@ -398,8 +378,10 @@
     let canvasDetails = document.getElementById('chartDetails');
     if (!canvasDetails) return;
     let ctx = canvasDetails.getContext('2d');
-    let txtColor = typeof getThemeColor === 'function' ? getThemeColor('--text-muted') : '#757575'; 
-    let gridColor = typeof getThemeColor === 'function' ? getThemeColor('--chart-grid') : '#e0e0e0';
+    
+    const isDark = document.body.classList.contains('dark-mode');
+    let txtColor = isDark ? '#a0abb5' : '#64748b'; 
+    let gridColor = isDark ? '#37474f' : '#e2e8f0';
 
     chartDetailsInst = new Chart(ctx, {
         type: 'bar',
@@ -410,17 +392,19 @@
                     label: 'Satisfatório', 
                     data: dataOk, 
                     backgroundColor: '#2E7D32', 
-                    barPercentage: 0.5, 
+                    barPercentage: 0.6, 
                     categoryPercentage: 0.9,
-                    datalabels: { color: 'white', font: {size: 13, weight:'bold'}, display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0 }
+                    borderRadius: 4,
+                    datalabels: { color: 'white', font: {size: 12, weight:'bold', family:'Poppins'}, display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0 }
                 },
                 {
                     label: 'Insuficiente', 
                     data: dataFail, 
                     backgroundColor: '#C62828', 
-                    barPercentage: 0.5, 
+                    barPercentage: 0.6, 
                     categoryPercentage: 0.9,
-                    datalabels: { color: 'white', font: {size: 13, weight:'bold'}, display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, formatter: (val) => val }
+                    borderRadius: 4,
+                    datalabels: { color: 'white', font: {size: 12, weight:'bold', family:'Poppins'}, display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0, formatter: (val) => val }
                 }
             ]
         },
@@ -429,21 +413,21 @@
             responsive: true, 
             maintainAspectRatio: false,
             scales: { 
-                x: { stacked: true, grid: { color: gridColor }, ticks: { color: txtColor } }, 
-                y: { stacked: true, grid: { display: false }, ticks: { color: txtColor, font: {size:13, weight:'bold'}, autoSkip: false } } 
+                x: { stacked: true, grid: { color: gridColor }, ticks: { color: txtColor, font: {family:'Poppins'} } }, 
+                y: { stacked: true, grid: { display: false }, ticks: { color: txtColor, font: {size:12, weight:'bold', family:'Poppins'}, autoSkip: false } } 
             },
             plugins: {
-                title: { display: true, text: 'Dias com meta satisfatória x Dias com meta insuficiente', color: txtColor, font: {size: 18, weight: '700'}, align: 'start', padding: {bottom: 15} },
-                legend: { labels: { color: txtColor } }, 
-                tooltip: { mode: 'index', intersect: true }
+                title: { display: true, text: 'DIAS COM META SATISFATÓRIA VS INSUFICIENTE', color: txtColor, font: {size: 14, weight: '800', family:'Poppins'}, align: 'start', padding: {bottom: 20} },
+                legend: { labels: { color: txtColor, font: {family:'Poppins', weight:'600'} } }, 
+                tooltip: { mode: 'index', intersect: true, titleFont: {family:'Poppins'}, bodyFont: {family:'Poppins'} }
             }
         },
-        plugins: [{
+        plugins: [ChartDataLabels, {
             id: 'customLabels',
             afterDatasetsDraw: (chart) => {
                 const { ctx } = chart;
                 ctx.save(); 
-                ctx.font = Chart.helpers.fontString(13, 'bold', 'Poppins'); 
+                ctx.font = Chart.helpers.fontString(12, 'bold', 'Poppins'); 
                 ctx.fillStyle = txtColor; 
                 ctx.textAlign = 'left'; 
                 ctx.textBaseline = 'middle';
@@ -457,7 +441,7 @@
                     let missingCount = (window.tempMissingDataP3[ofName] || []).length;
                     let text = percent; 
                     if(missingCount > 0) text += ` (SR: ${missingCount} dias)`;
-                    ctx.fillText(text, bar.x + 8, bar.y);
+                    ctx.fillText(text, bar.x + 10, bar.y);
                 });
                 ctx.restore();
             }
