@@ -2,16 +2,19 @@ const registrosService = require('../services/registros.service');
 const malhariasService = require('../services/malharias.service');
 const processosService = require('../services/processos.service');
 const rankingService = require('../services/ranking.service'); 
-const { google } = require('googleapis');
+const { GoogleAuth } = require('google-auth-library');
 const NodeCache = require('node-cache');
 
 // Inicializa o cache com tempo de vida de 10 minutos (600 segundos)
 const myCache = new NodeCache({ stdTTL: 600 });
 
-// --- AUTENTICAÇÃO GOOGLE SHEETS (Apenas para Fardamento) ---
+// --- AUTENTICAÇÃO LEVE GOOGLE SHEETS ---
 let auth;
-let sheets;
 try {
+    let authOptions = {
+        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
+    };
+
     if (process.env.GOOGLE_CREDENTIALS) {
         let rawCreds = process.env.GOOGLE_CREDENTIALS;
         let credsObj;
@@ -28,23 +31,44 @@ try {
         if (privateKey && privateKey.includes('\\n')) {
             privateKey = privateKey.replace(/\\n/g, '\n');
         }
-        auth = new google.auth.GoogleAuth({
-            credentials: {
-                client_email: credsObj.client_email,
-                private_key: privateKey,
-                project_id: credsObj.project_id
-            },
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
-        });
+        authOptions.credentials = {
+            client_email: credsObj.client_email,
+            private_key: privateKey,
+            project_id: credsObj.project_id
+        };
     } else {
-        auth = new google.auth.GoogleAuth({
-            keyFile: 'credentials.json',
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly']
-        });
+        authOptions.keyFile = 'credentials.json';
     }
-    sheets = google.sheets({ version: 'v4', auth });
+    
+    auth = new GoogleAuth(authOptions);
 } catch (error) {
     console.error("Erro na leitura da chave Google:", error.message);
+}
+
+async function fetchPlanilhasGoogle() {
+    if (!auth) return { fardData: [], fardSeapData: [] };
+    
+    try {
+        const client = await auth.getClient();
+        const spreadsheetId = '1GU1b3QiOh9sSisqI3g-a2MoR5mTESD_jaTt_tOH5QjA';
+        
+        // Requisições diretas e leves usando a biblioteca nativa do Google
+        const urlInterno = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('Fardamento Interno - Novo!A:G')}?valueRenderOption=UNFORMATTED_VALUE`;
+        const urlSeap = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('Fardamento Servidor!A:G')}?valueRenderOption=UNFORMATTED_VALUE`;
+
+        const [resInterno, resSeap] = await Promise.all([
+            client.request({ url: urlInterno }).catch(() => ({ data: { values: [] } })),
+            client.request({ url: urlSeap }).catch(() => ({ data: { values: [] } }))
+        ]);
+
+        return {
+            fardData: processFardamentoData(resInterno.data.values || []),
+            fardSeapData: processFardamentoSeapData(resSeap.data.values || [])
+        };
+    } catch (err) {
+        console.error("Erro ao buscar dados no Google via Auth Library:", err.message);
+        return { fardData: [], fardSeapData: [] };
+    }
 }
 
 // --- FUNÇÕES UTILITÁRIAS DA PLANILHA ---
@@ -273,38 +297,23 @@ exports.diarioPublico = async (req, res) => {
             processosMapeados.push({ nProcesso: p.numero_processo || '', tipoDemanda: p.tipo_demanda || 'Geral', orgao: p.orgao || 'Órgão não especificado', produtosBasicos: [...produtosBasicosSet], status: p.status || 'Entrega não iniciada', situacao: p.situacao || 'Pendente', linkSei: p.link_sei || '', obs: p.observacao || '', qtdAutorizada: p.totais ? p.totais.autorizado : 0, qtdEntregue: p.totais ? p.totais.entregue : 0, qtdFaltante: p.totais ? p.totais.faltante : 0, itens: itensFormatados });
         });
 
-        // --- BUSCA NA PLANILHA GOOGLE PARA FARDAMENTO (COM CACHE) ---
+        // --- BUSCA NA PLANILHA GOOGLE (COM CACHE) ---
         let fardData = [];
         let fardSeapData = [];
         
-        if (sheets) {
-            const cacheKey = 'FARDAMENTO_SHEETS_DATA';
-            const cachedData = myCache.get(cacheKey);
+        const cacheKey = 'FARDAMENTO_SHEETS_DATA';
+        const cachedData = myCache.get(cacheKey);
 
-            if (cachedData) {
-                // Se tem no cache, pega instantaneamente da memória
-                fardData = cachedData.fardData;
-                fardSeapData = cachedData.fardSeapData;
-            } else {
-                // Se não tem (ou passou 10 min), busca no Google
-                try {
-                    const spreadsheetId = '1GU1b3QiOh9sSisqI3g-a2MoR5mTESD_jaTt_tOH5QjA';
-                    const ranges = ['Fardamento Interno - Novo!A:G', 'Fardamento Servidor!A:G'];
-                    
-                    const responses = await Promise.all(ranges.map(range => 
-                        sheets.spreadsheets.values.get({ spreadsheetId, range, valueRenderOption: 'UNFORMATTED_VALUE' })
-                            .catch(() => ({ data: { values: [] } }))
-                    ));
-                    
-                    fardData = processFardamentoData(responses[0].data.values || []);
-                    fardSeapData = processFardamentoSeapData(responses[1].data.values || []);
-
-                    // Salva no cache para os próximos acessos
-                    myCache.set(cacheKey, { fardData, fardSeapData });
-                } catch (sheetError) {
-                    console.error("Erro ao buscar dados de fardamento da planilha:", sheetError);
-                }
-            }
+        if (cachedData) {
+            fardData = cachedData.fardData;
+            fardSeapData = cachedData.fardSeapData;
+        } else {
+            const planilhas = await fetchPlanilhasGoogle();
+            fardData = planilhas.fardData;
+            fardSeapData = planilhas.fardSeapData;
+            
+            // Só salva em cache se a requisição não falhou totalmente
+            myCache.set(cacheKey, { fardData, fardSeapData });
         }
 
         res.render('dashboard/index', {
