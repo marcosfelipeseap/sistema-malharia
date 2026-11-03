@@ -12,171 +12,175 @@
   <!-- ==========================================
        SEÇÃO 1: DADOS ATUAIS (SISTEMA)
        ========================================== -->
-  <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; text-transform: uppercase;">🖥️ DADOS DO SISTEMA</h3>
-  <p id="lblPeriodoSistema" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 20px;">Calculando período...</p>
+  <div style="margin-bottom: 40px;">
+    <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; text-transform: uppercase; border-left: 5px solid var(--primary); padding-left: 10px;">🖥️ DADOS DO SISTEMA</h3>
+    <p id="lblPeriodoSistema" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 20px; padding-left: 15px;">Calculando período...</p>
 
-  <!-- Cards de Resumo Principal -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px;">
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid var(--primary);">
-      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Total no Período Geral</span>
-      <h3 id="apresTotalGeralSis" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
-      <span style="font-size: 0.85rem; font-weight: 600; color: var(--primary); display: block;">peças fabricadas no período</span>
+    <!-- Cards de Resumo Principal -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px;">
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid var(--primary);">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Total no Período Geral</span>
+        <h3 id="apresTotalGeralSis" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+        <span style="font-size: 0.85rem; font-weight: 600; color: var(--primary); display: block;">peças fabricadas no período</span>
+      </div>
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #3B82F6;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Média Mensal</span>
+        <h3 id="apresMediaMensalGeralSis" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+        <span style="font-size: 0.85rem; font-weight: 600; color: #3B82F6; display: block;">média de peças por mês</span>
+      </div>
     </div>
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #3B82F6;">
-      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Média Mensal</span>
-      <h3 id="apresMediaMensalGeralSis" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
-      <span style="font-size: 0.85rem; font-weight: 600; color: #3B82F6; display: block;">média de peças por mês</span>
+
+    <!-- Gráficos Visuais Explicativos -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; margin-bottom: 30px;">
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📊 Comparativo de Peças por Item</h3>
+        <div style="position: relative; height: 320px; width: 100%;">
+          <canvas id="graficoItensApresSis"></canvas>
+        </div>
+      </div>
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📈 Evolução Mensal de Peças</h3>
+        <div style="position: relative; height: 320px; width: 100%;">
+          <canvas id="graficoMesApresSis"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grade de Tabelas Executivas (Sistema) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px;">
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+          <span class="material-icons" style="color: var(--primary); font-size: 22px;">inventory_2</span> Total de Peças por Item
+        </h3>
+        <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças produzidas de cada produto.</p>
+        <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+                <th style="padding: 12px 10px;">Item</th>
+                <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaGeralItensSis"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+          <span class="material-icons" style="color: #3B82F6; font-size: 22px;">calendar_today</span> Histórico de Peças por Mês
+        </h3>
+        <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues mês a mês.</p>
+        <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+                <th style="padding: 12px 10px;">Mês / Ano</th>
+                <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaMediaMesSis"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+          <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> Produção por Unidades
+        </h3>
+        <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
+        <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+                <th style="padding: 12px 10px;">Unidade / Oficina</th>
+                <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaOficinasGeralSis"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Gráficos Visuais Explicativos -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; margin-bottom: 30px;">
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📊 Comparativo de Peças por Item</h3>
-      <div style="position: relative; height: 320px; width: 100%;">
-        <canvas id="graficoItensApresSis"></canvas>
-      </div>
-    </div>
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📈 Evolução Mensal de Peças</h3>
-      <div style="position: relative; height: 320px; width: 100%;">
-        <canvas id="graficoMesApresSis"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Grade de Tabelas Executivas (Sistema) -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px;">
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: var(--primary); font-size: 22px;">inventory_2</span> Total de Peças por Item
-      </h3>
-      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças produzidas de cada produto.</p>
-      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
-              <th style="padding: 12px 10px;">Item</th>
-              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaGeralItensSis"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: #3B82F6; font-size: 22px;">calendar_today</span> Histórico de Peças por Mês
-      </h3>
-      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues mês a mês.</p>
-      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
-              <th style="padding: 12px 10px;">Mês / Ano</th>
-              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaMediaMesSis"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> Produção por Unidades
-      </h3>
-      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
-      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
-              <th style="padding: 12px 10px;">Unidade / Oficina</th>
-              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaOficinasGeralSis"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <hr style="border: 0; border-top: 2px dashed var(--border); margin: 40px 0;">
+  <hr style="border: 0; border-top: 1px dashed var(--border); margin: 40px 0;">
 
   <!-- ==========================================
        SEÇÃO 2: DADOS HISTÓRICOS (PLANILHA)
        ========================================== -->
-  <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; text-transform: uppercase;">🕰️ DADOS HISTÓRICOS (PLANILHA)</h3>
-  <p id="lblPeriodoPlanilha" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 20px;">Calculando período...</p>
+  <div style="margin-bottom: 40px;">
+    <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; text-transform: uppercase; border-left: 5px solid #F59E0B; padding-left: 10px;">🕰️ DADOS HISTÓRICOS (PLANILHA)</h3>
+    <p id="lblPeriodoPlanilha" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 20px; padding-left: 15px;">Calculando período...</p>
 
-  <!-- Cards de Resumo Principal -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px;">
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #F59E0B;">
-      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Total Histórico (Planilha)</span>
-      <h3 id="apresTotalGeralAnt" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
-      <span style="font-size: 0.85rem; font-weight: 600; color: #F59E0B; display: block;">peças fabricadas historicamente</span>
-    </div>
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #8B5CF6;">
-      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Média Mensal (Histórica)</span>
-      <h3 id="apresMediaMensalGeralAnt" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
-      <span style="font-size: 0.85rem; font-weight: 600; color: #8B5CF6; display: block;">média de peças por mês</span>
-    </div>
-  </div>
-
-  <!-- Grade de Tabelas Executivas (Planilha) -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px;">
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: #F59E0B; font-size: 22px;">inventory_2</span> Total de Peças por Item
-      </h3>
-      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças registradas na planilha.</p>
-      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
-              <th style="padding: 12px 10px;">Item</th>
-              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaGeralItensAnt"></tbody>
-        </table>
+    <!-- Cards de Resumo Principal -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px;">
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #F59E0B;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Total Histórico (Planilha)</span>
+        <h3 id="apresTotalGeralAnt" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+        <span style="font-size: 0.85rem; font-weight: 600; color: #F59E0B; display: block;">peças fabricadas historicamente</span>
+      </div>
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #8B5CF6;">
+        <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Média Mensal (Histórica)</span>
+        <h3 id="apresMediaMensalGeralAnt" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+        <span style="font-size: 0.85rem; font-weight: 600; color: #8B5CF6; display: block;">média de peças por mês</span>
       </div>
     </div>
 
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: #10B981; font-size: 22px;">calendar_today</span> Histórico de Peças por Mês
-      </h3>
-      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues historicamente.</p>
-      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
-              <th style="padding: 12px 10px;">Mês / Ano</th>
-              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaMediaMesAnt"></tbody>
-        </table>
+    <!-- Grade de Tabelas Executivas (Planilha) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px;">
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+          <span class="material-icons" style="color: #F59E0B; font-size: 22px;">inventory_2</span> Total de Peças por Item
+        </h3>
+        <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças registradas na planilha.</p>
+        <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+                <th style="padding: 12px 10px;">Item</th>
+                <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaGeralItensAnt"></tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
-    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
-      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> Produção por Unidades
-      </h3>
-      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
-      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-          <thead>
-            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
-              <th style="padding: 12px 10px;">Unidade / Oficina</th>
-              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaOficinasGeralAnt"></tbody>
-        </table>
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+          <span class="material-icons" style="color: #10B981; font-size: 22px;">calendar_today</span> Histórico de Peças por Mês
+        </h3>
+        <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues historicamente.</p>
+        <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+                <th style="padding: 12px 10px;">Mês / Ano</th>
+                <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaMediaMesAnt"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+          <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> Produção por Unidades
+        </h3>
+        <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
+        <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+                <th style="padding: 12px 10px;">Unidade / Oficina</th>
+                <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaOficinasGeralAnt"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -194,7 +198,8 @@
           <span class="material-icons" style="color: #10B981; font-size: 22px;">filter_alt</span> 
           Filtro Rápido (Sistema + Planilha)
         </h3>
-        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin: 0;">Análise unificada da produção integrando as duas bases de dados.</p>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin: 0 0 5px 0;">Análise unificada da produção integrando as duas bases de dados.</p>
+        <p id="lblPeriodoFiltroRapido" style="font-size: 0.85rem; font-weight: 700; color: var(--primary); margin: 0;">Calculando período...</p>
       </div>
 
       <!-- Controles de Filtro Interno -->
@@ -302,6 +307,8 @@
     // Variáveis UNIFICADAS PARA O FILTRO RÁPIDO
     let mapaFiltradoItensUnificado = {};
     let totalFiltradoQtdUnificado = 0;
+    let minDateUnificado = new Date(8640000000000000);
+    let maxDateUnificado = new Date(-8640000000000000);
 
     // Processar DADOS SISTEMA (rawData)
     if (typeof rawData !== 'undefined') {
@@ -332,6 +339,9 @@
 
         // Adiciona ao Bloco Unificado
         if (r.dateObj >= customStartDate && r.dateObj <= customEndDate) {
+          if (r.dateObj < minDateUnificado) minDateUnificado = r.dateObj;
+          if (r.dateObj > maxDateUnificado) maxDateUnificado = r.dateObj;
+
           if (!mapaFiltradoItensUnificado[nomeItem]) mapaFiltradoItensUnificado[nomeItem] = { item: nomeItem, qtd: 0 };
           mapaFiltradoItensUnificado[nomeItem].qtd += qtd;
           totalFiltradoQtdUnificado += qtd;
@@ -368,6 +378,9 @@
 
         // Adiciona ao Bloco Unificado
         if (r.dateObj >= customStartDate && r.dateObj <= customEndDate) {
+          if (r.dateObj < minDateUnificado) minDateUnificado = r.dateObj;
+          if (r.dateObj > maxDateUnificado) maxDateUnificado = r.dateObj;
+
           if (!mapaFiltradoItensUnificado[nomeItem]) mapaFiltradoItensUnificado[nomeItem] = { item: nomeItem, qtd: 0 };
           mapaFiltradoItensUnificado[nomeItem].qtd += qtd;
           totalFiltradoQtdUnificado += qtd;
@@ -508,6 +521,12 @@
     // ==========================================
     // ATUALIZAR UI - FILTRO RÁPIDO UNIFICADO
     // ==========================================
+    if (totalFiltradoQtdUnificado > 0) {
+      document.getElementById('lblPeriodoFiltroRapido').innerText = `Período analisado: de ${formatarDataSimples(minDateUnificado)} a ${formatarDataSimples(maxDateUnificado)}`;
+    } else {
+      document.getElementById('lblPeriodoFiltroRapido').innerText = `Nenhum dado encontrado no período selecionado.`;
+    }
+
     document.getElementById('apresTotalFiltrado').innerText = totalFiltradoQtdUnificado.toLocaleString('pt-BR') + ' peças';
 
     let tbodyFiltro = document.getElementById('tabelaFiltroPersonalizado');

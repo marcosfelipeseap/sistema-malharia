@@ -29,7 +29,21 @@ function renderPage1() {
     if (!val) return;
 
     let sDate = val.split('-').reverse().join('/');
-    let data = rawData.filter(r => r.data === sDate);
+    let selDateObj = new Date(val.split('-')[0], val.split('-')[1] - 1, val.split('-')[2]);
+    let isWeekendDay = selDateObj.getDay() === 0 || selDateObj.getDay() === 6;
+    
+    // Mescla os dados do sistema e da planilha, alinhando a nomenclatura da meta
+    let dadosCompletos = [...rawData];
+    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
+        let antigosMarcados = dadosAntigos.map(d => ({ 
+            ...d, 
+            isPlanilha: true,
+            metaOficina: d.meta || 0 // Mapeia a meta da planilha para o padrão do sistema
+        }));
+        dadosCompletos = [...dadosCompletos, ...antigosMarcados];
+    }
+
+    let data = dadosCompletos.filter(r => r.data === sDate);
     let feriadosHoje = feriadosData.filter(f => f.data === sDate);
 
     let cont = document.getElementById('dailyCards');
@@ -38,7 +52,22 @@ function renderPage1() {
     cont.innerHTML = '';
     summaryCont.innerHTML = '';
 
-    let allOficinas = [...new Set(rawData.map(r => r.oficina))].sort();
+    // LÓGICA INTELIGENTE: Puxa oficinas antigas apenas se estiverem dentro do seu período de atividade
+    let allOficinasSet = new Set(rawData.map(r => r.oficina));
+    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
+        let maxDateAntigos = {};
+        dadosAntigos.forEach(r => {
+            if (!maxDateAntigos[r.oficina] || r.dateObj > maxDateAntigos[r.oficina]) {
+                maxDateAntigos[r.oficina] = r.dateObj;
+            }
+        });
+        dadosAntigos.forEach(r => {
+            if (selDateObj <= maxDateAntigos[r.oficina]) {
+                allOficinasSet.add(r.oficina);
+            }
+        });
+    }
+    let allOficinas = [...allOficinasSet].sort();
     let groups = {};
 
     data.forEach(r => {
@@ -60,8 +89,6 @@ function renderPage1() {
         else listFail.push(of);
     });
 
-    let selDateObj = new Date(val.split('-')[0], val.split('-')[1] - 1, val.split('-')[2]);
-    let isWeekendDay = selDateObj.getDay() === 0 || selDateObj.getDay() === 6;
     let presentOficinas = Object.keys(groups);
     let maxDates = {};
 
@@ -80,7 +107,7 @@ function renderPage1() {
                     descricao: fGlobal ? fGlobal.descricao : fSpecific.descricao
                 });
             } else if (!isWeekendDay) {
-                if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > maxDates[of]) {} 
+                if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > (maxDates[of] || new Date(0))) {} 
                 else listMissing.push(of);
             }
         }
@@ -128,14 +155,21 @@ function renderPage1() {
 
         let itemsHtml = g.items.map(i => {
             if (i.item === 'Nenhum') return ''; 
+            
+            let isPlanilha = i.isPlanilha === true;
             let tagsHtml = '';
-            if (i.tamanho) tagsHtml += `<span style="background:var(--primary-light); color:var(--primary); padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform: uppercase;">Tam: ${i.tamanho}</span>`;
-            if (i.processoNome && i.processoNome !== '-') tagsHtml += `<span style="background:var(--neutral-bg); color:var(--neutral-text); padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform: uppercase;">Órgão: ${i.processoNome}</span>`;
+            
+            if (isPlanilha) {
+                tagsHtml += `<span style="background:#FFF3E0; color:#E65100; padding:4px 8px; border-radius:6px; font-size:0.65rem; font-weight:700; text-transform: uppercase;">Dados da Planilha - Sem detalhamento</span>`;
+            } else {
+                if (i.tamanho) tagsHtml += `<span style="background:var(--primary-light); color:var(--primary); padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform: uppercase;">Tam: ${i.tamanho}</span>`;
+                if (i.processoNome && i.processoNome !== '-') tagsHtml += `<span style="background:var(--neutral-bg); color:var(--neutral-text); padding:4px 8px; border-radius:6px; font-size:0.7rem; font-weight:700; text-transform: uppercase;">Órgão: ${i.processoNome}</span>`;
+            }
 
             return `
                 <div class="item-row" style="display: flex; flex-direction: column; padding: 12px 0; border-bottom: 1px dashed var(--border);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">${i.item} <span style="color:var(--text-muted); font-weight: 500;">(${i.tipo})</span></div>
+                        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">${i.item} <span style="color:var(--text-muted); font-weight: 500;">${isPlanilha ? '' : `(${i.tipo})`}</span></div>
                         <div style="font-size: 1.1rem; font-weight: 800; color:var(--primary);">${i.producaoDia}</div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -146,7 +180,7 @@ function renderPage1() {
         }).join('');
 
         let infoMaq = g.items[0].maquinas || '?';
-        let infoInt = g.items[0].internos || '?';
+        let infoInt = g.items[0].qtd_internos || g.items[0].internos || '?';
         let uniqJust = [...new Set(g.items.map(i => i.justificativa))].filter(j => j && j.trim() !== "");
         let uniqObs = [...new Set(g.items.map(i => i.observacao))].filter(o => o && o.trim() !== "");
         let perc = g.meta > 0 ? Math.round((g.prod / g.meta) * 100) : 0;
@@ -274,9 +308,38 @@ function generateDiarioRelatorio() {
     if (!val) return;
 
     let sDate = val.split('-').reverse().join('/');
-    let data = rawData.filter(r => r.data === sDate);
+    let selDateObj = new Date(val.split('-')[0], val.split('-')[1] - 1, val.split('-')[2]);
+    let isWeekendDay = selDateObj.getDay() === 0 || selDateObj.getDay() === 6;
+    
+    // Mescla os dados para o relatório, alinhando a nomenclatura da meta
+    let dadosCompletos = [...rawData];
+    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
+        let antigosMarcados = dadosAntigos.map(d => ({ 
+            ...d, 
+            isPlanilha: true,
+            metaOficina: d.meta || 0 // Mapeia a meta
+        }));
+        dadosCompletos = [...dadosCompletos, ...antigosMarcados];
+    }
+    
+    let data = dadosCompletos.filter(r => r.data === sDate);
     let feriadosHoje = feriadosData.filter(f => f.data === sDate);
-    let allOficinas = [...new Set(rawData.map(r => r.oficina))].sort();
+    
+    let allOficinasSet = new Set(rawData.map(r => r.oficina));
+    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
+        let maxDateAntigos = {};
+        dadosAntigos.forEach(r => {
+            if (!maxDateAntigos[r.oficina] || r.dateObj > maxDateAntigos[r.oficina]) {
+                maxDateAntigos[r.oficina] = r.dateObj;
+            }
+        });
+        dadosAntigos.forEach(r => {
+            if (selDateObj <= maxDateAntigos[r.oficina]) {
+                allOficinasSet.add(r.oficina);
+            }
+        });
+    }
+    let allOficinas = [...allOficinasSet].sort();
     let groups = {};
 
     data.forEach(r => {
@@ -298,11 +361,7 @@ function generateDiarioRelatorio() {
         else listFail.push(of);
     });
 
-    let selDateObj = new Date(val.split('-')[0], val.split('-')[1] - 1, val.split('-')[2]);
-    let isWeekendDay = selDateObj.getDay() === 0 || selDateObj.getDay() === 6;
-    let presentOficinas = Object.keys(groups);
     let maxDates = {};
-
     rawData.forEach(r => { if (!maxDates[r.oficina] || r.dateObj > maxDates[r.oficina]) maxDates[r.oficina] = r.dateObj; });
 
     allOficinas.forEach(of => {
@@ -310,7 +369,7 @@ function generateDiarioRelatorio() {
             let fGlobal = feriadosHoje.find(f => f.oficina === 'Todas');
             let fSpecific = feriadosHoje.find(f => f.oficina === of);
             if (fGlobal || fSpecific) listFeriado.push({ oficina: of, descricao: fGlobal ? fGlobal.descricao : fSpecific.descricao });
-            else if (!isWeekendDay) { if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > maxDates[of]) {} else listMissing.push(of); }
+            else if (!isWeekendDay) { if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > (maxDates[of] || new Date(0))) {} else listMissing.push(of); }
         }
     });
 
@@ -329,14 +388,18 @@ function generateDiarioRelatorio() {
         let statusText = bateu ? '✅ SATISFATÓRIO' : (isInsumo ? '⚠️ SEM INSUMO' : '❌ INSUFICIENTE');
         let perc = g.meta > 0 ? Math.round((g.prod / g.meta) * 100) : (isInsumo ? 0 : 100);
 
-        text += `🏢 *${of}*\nMáquinas: ${g.items[0].maquinas || '?'} | Internos: ${g.items[0].internos || '?'}\nStatus: ${statusText}\nProdução: ${g.prod} / Meta: ${g.meta} (${perc}%)\n`;
+        text += `🏢 *${of}*\nMáquinas: ${g.items[0].maquinas || '?'} | Internos: ${g.items[0].qtd_internos || g.items[0].internos || '?'}\nStatus: ${statusText}\nProdução: ${g.prod} / Meta: ${g.meta} (${perc}%)\n`;
 
         g.items.forEach(i => {
             if(i.item !== 'Nenhum') {
-                let infoExtra = [];
-                if(i.processoNome && i.processoNome !== '-') infoExtra.push(`Órgão: ${i.processoNome}`);
-                if(i.tamanho) infoExtra.push(`Tam: ${i.tamanho}`);
-                text += `- ${i.producaoDia}x ${i.item} (${i.tipo})${infoExtra.length > 0 ? ` [${infoExtra.join(' | ')}]` : ''}\n`;
+                if (i.isPlanilha) {
+                    text += `- ${i.producaoDia}x ${i.item} *(Dados da Planilha - Sem detalhamento)*\n`;
+                } else {
+                    let infoExtra = [];
+                    if(i.processoNome && i.processoNome !== '-') infoExtra.push(`Órgão: ${i.processoNome}`);
+                    if(i.tamanho) infoExtra.push(`Tam: ${i.tamanho}`);
+                    text += `- ${i.producaoDia}x ${i.item} (${i.tipo || '-'})${infoExtra.length > 0 ? ` [${infoExtra.join(' | ')}]` : ''}\n`;
+                }
             }
         });
 
