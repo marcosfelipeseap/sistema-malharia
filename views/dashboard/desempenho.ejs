@@ -3,7 +3,13 @@
      ========================================================= -->
 <div id="page2" class="page">
   <h2 style="font-size: 1.6rem; margin-bottom: 5px;">Desempenho (Meta x Produção)</h2>
-  <p style="font-size: 0.85rem; font-weight: 500; color:var(--text-muted); margin-bottom: 20px;">Selecione as oficinas abaixo para visualizar os gráficos comparativos detalhados.</p>
+  <p style="font-size: 0.85rem; font-weight: 500; color:var(--text-muted); margin-bottom: 20px;">Selecione as oficinas abaixo para visualizar os gráficos comparativos detalhados integrando o Histórico da Planilha e o Novo Sistema.</p>
+  
+  <div style="display: flex; gap: 15px; margin-bottom: 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); align-items: center;">
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 15px; height: 3px; background: #F59E0B; display: inline-block;"></span> Histórico da Planilha</span>
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 15px; height: 3px; background: #1E88E5; display: inline-block;"></span> Novo Sistema</span>
+  </div>
+
   <div id="oficinaChips" class="chip-container" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;"></div>
   <div id="chartsArea" style="display: flex; flex-direction: column; gap: 25px;"></div>
 </div>
@@ -11,16 +17,25 @@
 <script>
   function setupChips() {
     let dates = typeof getFilterDates === 'function' ? getFilterDates() : { start: new Date(0), end: new Date() };
-    let filtered = rawData.filter(r => r.dateObj >= dates.start && r.dateObj <= dates.end);
+    
+    let dadosCompletos = [...rawData];
+    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
+        let antigosMarcados = dadosAntigos.map(d => ({ ...d, isPlanilha: true, metaOficina: d.meta || 0 }));
+        dadosCompletos = [...dadosCompletos, ...antigosMarcados];
+    }
+
+    let filtered = dadosCompletos.filter(r => r.dateObj >= dates.start && r.dateObj <= dates.end);
     let cont = document.getElementById('oficinaChips');
     if (!cont) return;
     cont.innerHTML = '';
     
-    let list = [...new Set(filtered.map(r => r.oficina))].sort();
+    let oficinasNoSistema = new Set(rawData.map(r => r.oficina));
+    let list = [...new Set(filtered.map(r => r.oficina))].filter(o => oficinasNoSistema.has(o)).sort();
+    
     selectedOficinas = selectedOficinas.filter(o => list.includes(o));
     
     if (list.length === 0) { 
-      cont.innerHTML = '<span style="font-size:0.9rem; font-weight: 500; color:var(--text-muted)">Nenhuma oficina neste período.</span>'; 
+      cont.innerHTML = '<span style="font-size:0.9rem; font-weight: 500; color:var(--text-muted)">Nenhuma oficina do sistema ativo possui dados neste período.</span>'; 
       return;
     }
     
@@ -66,7 +81,14 @@
     }
 
     let datesFilter = typeof getFilterDates === 'function' ? getFilterDates() : { start: new Date(0), end: new Date() };
-    let filtered = rawData.filter(r => r.dateObj >= datesFilter.start && r.dateObj <= datesFilter.end);
+    
+    let dadosCompletos = [...rawData];
+    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
+        let antigosMarcados = dadosAntigos.map(d => ({ ...d, isPlanilha: true, metaOficina: d.meta || 0 }));
+        dadosCompletos = [...dadosCompletos, ...antigosMarcados];
+    }
+
+    let filtered = dadosCompletos.filter(r => r.dateObj >= datesFilter.start && r.dateObj <= datesFilter.end);
     let dates = [...new Set(filtered.map(r => r.data))].sort((a,b) => { 
       let da = a.split('/'), db = b.split('/'); 
       return new Date(da[2], da[1]-1, da[0]) - new Date(db[2], db[1]-1, db[0]); 
@@ -124,16 +146,17 @@
             <h3 style="margin:0; font-size:1.2rem; font-weight:800; align-self:center; color:var(--text-main); text-transform: uppercase;">${of}</h3>
             <div class="p2-header-right" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div class="perf-label ${perfClass}" style="padding: 6px 14px; border-radius: 12px; font-weight: 800; font-size: 0.75rem; background: ${perfPerc >= 75 ? 'var(--success-bg)' : 'var(--danger-bg)'}; color: ${perfPerc >= 75 ? 'var(--success-text)' : 'var(--danger-text)'}; text-transform: uppercase; letter-spacing: 0.5px;">PERFORMANCE: ${perfPerc}%</div>
-                ${missingDates.length > 0 ? `<div class="missing-label" onclick="openModal('Relatórios não enviados - ${of}', window.tempMissingData['${of}'])" style="cursor: pointer; background: var(--alert-bg); color: var(--alert-text); padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">NÃO ENVIADOS: ${missingDates.length} DIAS</div>` : ''}
+                ${missingDates.length > 0 ? `<div class="missing-label" onclick="openModal('Relatórios não enviados (Sistema) - ${of}', window.tempMissingData['${of}'])" style="cursor: pointer; background: var(--alert-bg); color: var(--alert-text); padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">NÃO ENVIADOS: ${missingDates.length} DIAS</div>` : ''}
                 ${insumoDaysList.length > 0 ? `<div class="insumo-label" onclick="openModal('Dias sem Insumo (Prod: 0) - ${of}', window.tempInsumoData['${of}'])" style="cursor: pointer; background: var(--insumo-bg); color: var(--insumo-text); padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">SEM INSUMO: ${insumoDaysList.length} DIAS</div>` : ''}
             </div>
         </div>
         <div style="height:320px"><canvas></canvas></div>`;
       area.appendChild(div);
 
-      let ofMaxDate = dayRecords.length > 0 ? new Date(Math.max(...dayRecords.map(r => r.dateObj.getTime()))) : new Date(0);
+      let ofMaxDate = new Date(8640000000000000); 
 
-      let prodData = dates.map(d => {
+      // Criação de duas séries separadas para evitar sobreposição feia de cores
+      let prodPlanilhaData = dates.map((d) => {
           let pts = d.split('/'); 
           let dObj = new Date(pts[2], pts[1]-1, pts[0]);
           if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && dObj > ofMaxDate) return null;
@@ -141,7 +164,28 @@
 
           let rs = filtered.filter(x => x.oficina === of && x.data === d);
           if (rs.length === 0 && typeof isDateWeekend === 'function' && isDateWeekend(d)) return null; 
-          return rs.reduce((a,b) => a + b.producaoDia, 0) || 0;
+          
+          let planRecs = rs.filter(x => x.isPlanilha);
+          if (planRecs.length > 0) {
+              return planRecs.reduce((a,b) => a + b.producaoDia, 0) || 0;
+          }
+          return null;
+      });
+
+      let prodSistemaData = dates.map((d) => {
+          let pts = d.split('/'); 
+          let dObj = new Date(pts[2], pts[1]-1, pts[0]);
+          if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && dObj > ofMaxDate) return null;
+          if (typeof isFeriado === 'function' && isFeriado(d, of)) return null;
+
+          let rs = filtered.filter(x => x.oficina === of && x.data === d);
+          if (rs.length === 0 && typeof isDateWeekend === 'function' && isDateWeekend(d)) return null; 
+          
+          let sysRecs = rs.filter(x => !x.isPlanilha);
+          if (sysRecs.length > 0) {
+              return sysRecs.reduce((a,b) => a + b.producaoDia, 0) || 0;
+          }
+          return null;
       });
       
       let metaData = dates.map(d => {
@@ -170,11 +214,22 @@
           labels: dates,
           datasets: [
             {
-              label: 'Produção', 
-              data: prodData, 
+              label: 'Produção (Novo Sistema)', 
+              data: prodSistemaData, 
               spanGaps: true, 
               borderColor: '#1E88E5', 
               backgroundColor: '#1E88E5',
+              borderWidth: 3, 
+              pointRadius: 5, 
+              pointBackgroundColor: isDark ? '#1c2126' : '#ffffff', 
+              tension: 0.2
+            },
+            {
+              label: 'Produção (Histórico da Planilha)', 
+              data: prodPlanilhaData, 
+              spanGaps: true, 
+              borderColor: '#F59E0B', 
+              backgroundColor: '#F59E0B',
               borderWidth: 3, 
               pointRadius: 5, 
               pointBackgroundColor: isDark ? '#1c2126' : '#ffffff', 
@@ -199,17 +254,24 @@
             x: { grid: { display: false }, ticks: { color: txtColor, font: {family: 'Poppins'} } } 
           },
           plugins: { 
-            legend: { labels: { color: txtColor, font: {family: 'Poppins', weight: '600'} } },
+            legend: { 
+                labels: { 
+                    color: txtColor, 
+                    font: {family: 'Poppins', weight: '600'}
+                } 
+            },
             tooltip: {
               titleFont: {family: 'Poppins'}, bodyFont: {family: 'Poppins'},
               callbacks: {
                 label: function(context) {
-                    let label = context.dataset.label || '';
-                    if (label) label += ': ';
-                    if (context.parsed.y !== null) label += context.parsed.y;
-                    return label;
+                    if(context.datasetIndex === 2) return `Meta: ${context.parsed.y}`;
+                    let datasetLabel = context.dataset.label || '';
+                    if (context.parsed.y !== null) return `${datasetLabel}: ${context.parsed.y}`;
+                    return null;
                 },
                 afterBody: function(tooltipItems) {
+                  if(tooltipItems[0].datasetIndex === 2) return []; 
+                  
                   let idx = tooltipItems[0].dataIndex; 
                   let dateVal = dates[idx];
                   let dayRecords = filtered.filter(x => x.oficina === of && x.data === dateVal);
@@ -221,7 +283,7 @@
                   finalLines.push(`--- DETALHES DO DIA ---`);
                   
                   if (dayRecords.length > 0) {
-                      let internosUsados = dayRecords[0].internos || '?';
+                      let internosUsados = dayRecords[0].qtd_internos || dayRecords[0].internos || '?';
                       let maquinasUsadas = dayRecords[0].maquinas || '?';
                       finalLines.push(`• Máquinas: ${maquinasUsadas} | Internos: ${internosUsados}`);
                   }
@@ -229,11 +291,15 @@
                   if (totalProd > 0 && typeof wrapText === 'function') {
                     dayRecords.forEach(r => { 
                         if (r.item !== 'Nenhum') {
-                            let extra = [];
-                            if (r.tamanho) extra.push(`Tam: ${r.tamanho}`);
-                            if (r.processoNome && r.processoNome !== '-') extra.push(`Órgão: ${r.processoNome}`);
-                            let extraStr = extra.length > 0 ? ` [${extra.join(' | ')}]` : '';
-                            finalLines.push(...wrapText(`• ${r.producaoDia}x ${r.item} (${r.tipo})${extraStr}`, 55)); 
+                            if (r.isPlanilha) {
+                                finalLines.push(...wrapText(`• ${r.producaoDia}x ${r.item} (Histórico da Planilha)`, 55)); 
+                            } else {
+                                let extra = [];
+                                if (r.tamanho) extra.push(`Tam: ${r.tamanho}`);
+                                if (r.processoNome && r.processoNome !== '-') extra.push(`Órgão: ${r.processoNome}`);
+                                let extraStr = extra.length > 0 ? ` [${extra.join(' | ')}]` : '';
+                                finalLines.push(...wrapText(`• ${r.producaoDia}x ${r.item} (${r.tipo || '-'})${extraStr}`, 55)); 
+                            }
                         }
                     });
                   }
