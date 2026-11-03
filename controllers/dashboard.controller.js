@@ -3,10 +3,6 @@ const malhariasService = require('../services/malharias.service');
 const processosService = require('../services/processos.service');
 const rankingService = require('../services/ranking.service'); 
 const { GoogleAuth } = require('google-auth-library');
-const NodeCache = require('node-cache');
-
-// Inicializa o cache com tempo de vida de 10 minutos (600 segundos)
-const myCache = new NodeCache({ stdTTL: 600 });
 
 // --- AUTENTICAÇÃO LEVE GOOGLE SHEETS ---
 let auth;
@@ -45,33 +41,52 @@ try {
     console.error("Erro na leitura da chave Google:", error.message);
 }
 
+// Cache da Planilha (10 minutos)
+let sheetsCache = {
+    data: { fardData: [], fardSeapData: [], dadosAntigosData: [] },
+    lastFetch: 0,
+    isFetching: false
+};
+
 async function fetchPlanilhasGoogle() {
-    if (!auth) return { fardData: [], fardSeapData: [], dadosAntigosData: [] };
+    if (!auth) return sheetsCache.data;
     
+    if (sheetsCache.lastFetch > 0 && (Date.now() - sheetsCache.lastFetch < 600000)) {
+        return sheetsCache.data;
+    }
+
+    if (sheetsCache.isFetching) return sheetsCache.data;
+    sheetsCache.isFetching = true;
+
     try {
         const client = await auth.getClient();
         const spreadsheetId = '1GU1b3QiOh9sSisqI3g-a2MoR5mTESD_jaTt_tOH5QjA';
         
-        // Requisições diretas e leves usando a biblioteca nativa do Google
         const urlInterno = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('Fardamento Interno - Novo!A:G')}?valueRenderOption=UNFORMATTED_VALUE`;
         const urlSeap = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('Fardamento Servidor!A:G')}?valueRenderOption=UNFORMATTED_VALUE`;
         const urlDadosAntigos = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('DADOSANTIGOS!A:H')}?valueRenderOption=UNFORMATTED_VALUE`;
 
         const [resInterno, resSeap, resAntigos] = await Promise.all([
-            client.request({ url: urlInterno }).catch(() => ({ data: { values: [] } })),
-            client.request({ url: urlSeap }).catch(() => ({ data: { values: [] } })),
-            client.request({ url: urlDadosAntigos }).catch(() => ({ data: { values: [] } }))
+            client.request({ url: urlInterno, timeout: 10000 }).catch(() => ({ data: { values: [] } })),
+            client.request({ url: urlSeap, timeout: 10000 }).catch(() => ({ data: { values: [] } })),
+            client.request({ url: urlDadosAntigos, timeout: 10000 }).catch(() => ({ data: { values: [] } }))
         ]);
 
-        return {
-            fardData: processFardamentoData(resInterno.data.values || []),
-            fardSeapData: processFardamentoSeapData(resSeap.data.values || []),
-            dadosAntigosData: processDadosAntigos(resAntigos.data.values || [])
-        };
+        const fardData = processFardamentoData(resInterno.data.values || []);
+        const fardSeapData = processFardamentoSeapData(resSeap.data.values || []);
+        const dadosAntigosData = processDadosAntigos(resAntigos.data.values || []);
+
+        if (fardData.length > 0 || dadosAntigosData.length > 0) {
+            sheetsCache.data = { fardData, fardSeapData, dadosAntigosData };
+            sheetsCache.lastFetch = Date.now();
+        }
     } catch (err) {
-        console.error("Erro ao buscar dados no Google via Auth Library:", err.message);
-        return { fardData: [], fardSeapData: [], dadosAntigosData: [] };
+        console.error("Erro ao buscar dados no Google:", err.message);
+    } finally {
+        sheetsCache.isFetching = false;
     }
+
+    return sheetsCache.data;
 }
 
 // --- FUNÇÕES UTILITÁRIAS DA PLANILHA ---
@@ -149,7 +164,7 @@ function processDadosAntigos(values) {
         return { 
             data: dataStr,
             dateObj: dataObj,
-            dataOriginal: dataObj.toISOString().split('T')[0], // Para agrupar por mês no gráfico
+            dataOriginal: `${p[2]}-${p[1]}-${p[0]}`,
             oficina: String(row[1] || "").trim(),
             item: String(row[2] || "").trim(),
             qtd_internos: parseNumber(row[3]),
@@ -170,7 +185,17 @@ function removerDuplicatasRegistros(array) {
     return Array.from(map.values());
 }
 
-exports.diarioPublico = async (req, res) => {
+// --- CACHE DO PAYLOAD DO DASHBOARD EM MEMÓRIA ---
+let dashboardCache = {
+    payload: null,
+    lastFetch: 0,
+    isFetching: false
+};
+
+async function construirPayloadDashboard() {
+    if (dashboardCache.isFetching) return dashboardCache.payload;
+    dashboardCache.isFetching = true;
+
     try {
         const hojeObj = new Date();
         const mesAtual = hojeObj.getMonth() + 1;
@@ -182,13 +207,19 @@ exports.diarioPublico = async (req, res) => {
             return `${d.getFullYear()}-${mes}-${dia}`;
         };
 
-        let [registros, feriadosRaw, malhariasRaw, processosRaw, itensDisponiveis, rankingRaw] = await Promise.all([
-            registrosService.getRegistrosFiltrados(null, formatData(hojeObj)), 
+        // Usa a função leve se existir, senão usa a padrão
+        const fnRegistros = registrosService.getRegistrosParaDashboard 
+            ? registrosService.getRegistrosParaDashboard(formatData(hojeObj))
+            : registrosService.getRegistrosFiltrados(null, formatData(hojeObj));
+
+        let [registros, feriadosRaw, malhariasRaw, processosRaw, itensDisponiveis, rankingRaw, planilhas] = await Promise.all([
+            fnRegistros, 
             registrosService.getFeriados(),                                    
             malhariasService.getAllMalharias(),                                
             processosService.getAllProcessos(),                                
             processosService.getAllItensDisponiveis(),                          
-            rankingService.getRankingPerformance(mesAtual, anoAtual)            
+            rankingService.getRankingPerformance(mesAtual, anoAtual),
+            fetchPlanilhasGoogle()
         ]);
         
         registros = removerDuplicatasRegistros(registros);
@@ -325,33 +356,7 @@ exports.diarioPublico = async (req, res) => {
             processosMapeados.push({ nProcesso: p.numero_processo || '', tipoDemanda: p.tipo_demanda || 'Geral', orgao: p.orgao || 'Órgão não especificado', produtosBasicos: [...produtosBasicosSet], status: p.status || 'Entrega não iniciada', situacao: p.situacao || 'Pendente', linkSei: p.link_sei || '', obs: p.observacao || '', qtdAutorizada: p.totais ? p.totais.autorizado : 0, qtdEntregue: p.totais ? p.totais.entregue : 0, qtdFaltante: p.totais ? p.totais.faltante : 0, itens: itensFormatados });
         });
 
-        // --- BUSCA NA PLANILHA GOOGLE (COM CACHE) ---
-        let fardData = [];
-        let fardSeapData = [];
-        let dadosAntigosData = [];
-        
-        const cacheKey = 'PLANILHA_SHEETS_DATA';
-        const cachedData = myCache.get(cacheKey);
-
-        if (cachedData) {
-            fardData = cachedData.fardData;
-            fardSeapData = cachedData.fardSeapData;
-            dadosAntigosData = cachedData.dadosAntigosData;
-        } else {
-            const planilhas = await fetchPlanilhasGoogle();
-            fardData = planilhas.fardData;
-            fardSeapData = planilhas.fardSeapData;
-            dadosAntigosData = planilhas.dadosAntigosData;
-            
-            // Só salva em cache se a requisição não falhou totalmente
-            if (fardData.length > 0 || dadosAntigosData.length > 0) {
-                myCache.set(cacheKey, { fardData, fardSeapData, dadosAntigosData });
-            }
-        }
-
-        res.render('dashboard/index', {
-            layout: 'layouts/public',
-            title: 'Painel Público - Produção',
+        dashboardCache.payload = {
             rawDataJSON: JSON.stringify(rawData),
             feriadosJSON: JSON.stringify(feriados),
             demandasJSON: JSON.stringify(demandasFormatadas),
@@ -359,9 +364,47 @@ exports.diarioPublico = async (req, res) => {
             scheduleJSON: JSON.stringify(Object.values(cronogramaDataMap)),
             rankingJSON: JSON.stringify(rankingRaw), 
             infoOficinasEstaticoJSON: JSON.stringify(infoOficinasEstatico),
-            fardamentoJSON: JSON.stringify(fardData),
-            fardamentoseapJSON: JSON.stringify(fardSeapData),
-            dadosAntigosJSON: JSON.stringify(dadosAntigosData),
+            fardamentoJSON: JSON.stringify(planilhas.fardData),
+            fardamentoseapJSON: JSON.stringify(planilhas.fardSeapData),
+            dadosAntigosJSON: JSON.stringify(planilhas.dadosAntigosData)
+        };
+        dashboardCache.lastFetch = Date.now();
+    } catch (err) {
+        console.error("Erro ao atualizar cache do Dashboard:", err.message);
+    } finally {
+        dashboardCache.isFetching = false;
+    }
+
+    return dashboardCache.payload;
+}
+
+// Pré-aquece o cache assim que o servidor liga!
+setTimeout(() => {
+    construirPayloadDashboard();
+}, 1000);
+
+exports.diarioPublico = async (req, res) => {
+    try {
+        // Se já existe em cache, entrega NA HORA (0ms de espera!)
+        if (dashboardCache.payload) {
+            // Se passou de 2 minutos, manda atualizar em segundo plano sem travar o usuário
+            if (Date.now() - dashboardCache.lastFetch > 120000) {
+                construirPayloadDashboard();
+            }
+            return res.render('dashboard/index', {
+                layout: 'layouts/public',
+                title: 'Painel Público - Produção',
+                ...dashboardCache.payload,
+                user: req.user || res.locals.user || null 
+            });
+        }
+
+        // Apenas se alguém acessar no exato primeiro segundo em que o servidor ligou
+        const payload = await construirPayloadDashboard();
+        res.render('dashboard/index', {
+            layout: 'layouts/public',
+            title: 'Painel Público - Produção',
+            ...(payload || {}),
             user: req.user || res.locals.user || null 
         });
 
