@@ -3,6 +3,10 @@ const malhariasService = require('../services/malharias.service');
 const processosService = require('../services/processos.service');
 const rankingService = require('../services/ranking.service'); 
 const { google } = require('googleapis');
+const NodeCache = require('node-cache');
+
+// Inicializa o cache com tempo de vida de 10 minutos (600 segundos)
+const myCache = new NodeCache({ stdTTL: 600 });
 
 // --- AUTENTICAÇÃO GOOGLE SHEETS (Apenas para Fardamento) ---
 let auth;
@@ -269,24 +273,37 @@ exports.diarioPublico = async (req, res) => {
             processosMapeados.push({ nProcesso: p.numero_processo || '', tipoDemanda: p.tipo_demanda || 'Geral', orgao: p.orgao || 'Órgão não especificado', produtosBasicos: [...produtosBasicosSet], status: p.status || 'Entrega não iniciada', situacao: p.situacao || 'Pendente', linkSei: p.link_sei || '', obs: p.observacao || '', qtdAutorizada: p.totais ? p.totais.autorizado : 0, qtdEntregue: p.totais ? p.totais.entregue : 0, qtdFaltante: p.totais ? p.totais.faltante : 0, itens: itensFormatados });
         });
 
-        // --- BUSCA NA PLANILHA GOOGLE PARA FARDAMENTO ---
+        // --- BUSCA NA PLANILHA GOOGLE PARA FARDAMENTO (COM CACHE) ---
         let fardData = [];
         let fardSeapData = [];
         
         if (sheets) {
-            try {
-                const spreadsheetId = '1GU1b3QiOh9sSisqI3g-a2MoR5mTESD_jaTt_tOH5QjA';
-                const ranges = ['Fardamento Interno - Novo!A:G', 'Fardamento Servidor!A:G'];
-                
-                const responses = await Promise.all(ranges.map(range => 
-                    sheets.spreadsheets.values.get({ spreadsheetId, range, valueRenderOption: 'UNFORMATTED_VALUE' })
-                        .catch(() => ({ data: { values: [] } }))
-                ));
-                
-                fardData = processFardamentoData(responses[0].data.values || []);
-                fardSeapData = processFardamentoSeapData(responses[1].data.values || []);
-            } catch (sheetError) {
-                console.error("Erro ao buscar dados de fardamento da planilha:", sheetError);
+            const cacheKey = 'FARDAMENTO_SHEETS_DATA';
+            const cachedData = myCache.get(cacheKey);
+
+            if (cachedData) {
+                // Se tem no cache, pega instantaneamente da memória
+                fardData = cachedData.fardData;
+                fardSeapData = cachedData.fardSeapData;
+            } else {
+                // Se não tem (ou passou 10 min), busca no Google
+                try {
+                    const spreadsheetId = '1GU1b3QiOh9sSisqI3g-a2MoR5mTESD_jaTt_tOH5QjA';
+                    const ranges = ['Fardamento Interno - Novo!A:G', 'Fardamento Servidor!A:G'];
+                    
+                    const responses = await Promise.all(ranges.map(range => 
+                        sheets.spreadsheets.values.get({ spreadsheetId, range, valueRenderOption: 'UNFORMATTED_VALUE' })
+                            .catch(() => ({ data: { values: [] } }))
+                    ));
+                    
+                    fardData = processFardamentoData(responses[0].data.values || []);
+                    fardSeapData = processFardamentoSeapData(responses[1].data.values || []);
+
+                    // Salva no cache para os próximos acessos
+                    myCache.set(cacheKey, { fardData, fardSeapData });
+                } catch (sheetError) {
+                    console.error("Erro ao buscar dados de fardamento da planilha:", sheetError);
+                }
             }
         }
 
@@ -300,7 +317,6 @@ exports.diarioPublico = async (req, res) => {
             scheduleJSON: JSON.stringify(Object.values(cronogramaDataMap)),
             rankingJSON: JSON.stringify(rankingRaw), 
             infoOficinasEstaticoJSON: JSON.stringify(infoOficinasEstatico),
-            // Passando os dados da planilha para a view
             fardamentoJSON: JSON.stringify(fardData),
             fardamentoseapJSON: JSON.stringify(fardSeapData),
             user: req.user || res.locals.user || null 

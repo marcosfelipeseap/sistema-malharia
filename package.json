@@ -29,6 +29,7 @@
     "jsonwebtoken": "^9.0.3",
     "morgan": "^1.10.0",
     "multer": "^2.2.0",
+    "node-cache": "^5.1.2",
     "resend": "^6.9.4"
   },
   "devDependencies": {
