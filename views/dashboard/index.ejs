@@ -36,12 +36,16 @@
     const rankingOficialData = <%- typeof rankingJSON !== 'undefined' ? rankingJSON : '[]' %>;
     window.infoOficinasEstatico = <%- typeof infoOficinasEstaticoJSON !== 'undefined' ? infoOficinasEstaticoJSON : '[]' %>;
     
-    // Dados de Fardamento originários da Planilha Google
+    // Dados originários da Planilha Google (Fardamentos e Histórico)
     const fardamentoData = <%- typeof fardamentoJSON !== 'undefined' ? fardamentoJSON : '[]' %>;
     const fardamentoSeapData = <%- typeof fardamentoseapJSON !== 'undefined' ? fardamentoseapJSON : '[]' %>;
+    const dadosAntigos = <%- typeof dadosAntigosJSON !== 'undefined' ? dadosAntigosJSON : '[]' %>;
 
-    // Normalização inicial das datas dos registros de produção
+    // Normalização inicial das datas dos registros (Sistema e Planilha)
     rawData.forEach(r => {
+        if(typeof r.dateObj === 'string') r.dateObj = new Date(r.dateObj);
+    });
+    dadosAntigos.forEach(r => {
         if(typeof r.dateObj === 'string') r.dateObj = new Date(r.dateObj);
     });
 
@@ -210,7 +214,7 @@
             if (typeof renderPage1 === 'function') renderPage1();
         }
 
-        // PRELOAD DOS DADOS DA PLANILHA
+        // PRELOAD DOS DADOS DA PLANILHA (Fardamentos)
         if (typeof preloadFardamento === 'function') preloadFardamento(fardamentoData);
         if (typeof preloadFardamentoSeap === 'function') preloadFardamentoSeap(fardamentoSeapData);
     });

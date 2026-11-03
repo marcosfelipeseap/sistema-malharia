@@ -1,61 +1,57 @@
 <!-- =========================================================
-     PÁGINA: APRESENTAÇÃO (INTEGRADA AO FILTRO GERAL)
+     PÁGINA: APRESENTAÇÃO (INTEGRADA AO FILTRO GERAL E UNIFICADA)
      ========================================================= -->
 <div id="pageApresentacao" class="page active" style="display: block;">
   
   <!-- Cabeçalho Executivo -->
   <div style="background: linear-gradient(135deg, var(--primary), #0D47A1); color: white; padding: 35px 30px; border-radius: 20px; margin-bottom: 30px; box-shadow: var(--shadow);">
     <h2 style="font-size: 1.6rem; font-weight: 800; margin: 0 0 10px 0; color: white; text-transform: uppercase;">Painel Geral de Produção</h2>
-    <p style="font-size: 0.95rem; margin: 0; opacity: 0.9; font-weight: 500;">Acompanhe o volume total de peças fabricadas, médias mensais, gráficos de desempenho detalhados e a produção por unidades baseado no filtro geral.</p>
+    <p style="font-size: 0.95rem; margin: 0; opacity: 0.9; font-weight: 500;">Acompanhe o volume total de peças fabricadas e a evolução da produção, integrando os dados históricos da planilha e os dados atuais do novo sistema.</p>
   </div>
 
-  <!-- Cards de Resumo Principal (Foco em Peças) -->
+  <!-- ==========================================
+       SEÇÃO 1: DADOS ATUAIS (SISTEMA)
+       ========================================== -->
+  <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; text-transform: uppercase;">🖥️ DADOS DO SISTEMA</h3>
+  <p id="lblPeriodoSistema" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 20px;">Calculando período...</p>
+
+  <!-- Cards de Resumo Principal -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px;">
-    
     <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid var(--primary);">
       <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Total no Período Geral</span>
-      <h3 id="apresTotalGeral" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+      <h3 id="apresTotalGeralSis" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
       <span style="font-size: 0.85rem; font-weight: 600; color: var(--primary); display: block;">peças fabricadas no período</span>
     </div>
-
     <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #3B82F6;">
       <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Média Mensal</span>
-      <h3 id="apresMediaMensalGeral" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+      <h3 id="apresMediaMensalGeralSis" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
       <span style="font-size: 0.85rem; font-weight: 600; color: #3B82F6; display: block;">média de peças por mês</span>
     </div>
-
   </div>
 
   <!-- Gráficos Visuais Explicativos -->
   <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 25px; margin-bottom: 30px;">
-    
     <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
       <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📊 Comparativo de Peças por Item</h3>
       <div style="position: relative; height: 320px; width: 100%;">
-        <canvas id="graficoItensApres"></canvas>
+        <canvas id="graficoItensApresSis"></canvas>
       </div>
     </div>
-
     <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
       <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 20px; text-transform: uppercase;">📈 Evolução Mensal de Peças</h3>
       <div style="position: relative; height: 320px; width: 100%;">
-        <canvas id="graficoMesApres"></canvas>
+        <canvas id="graficoMesApresSis"></canvas>
       </div>
     </div>
-
   </div>
 
-  <!-- Grade de Tabelas Executivas (Itens, Média Mensal e Unidades) -->
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 25px;">
-    
-    <!-- Bloco 1: Total de Peças por Item -->
+  <!-- Grade de Tabelas Executivas (Sistema) -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px;">
     <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
       <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: var(--primary); font-size: 22px;">inventory_2</span> 
-        Total de Peças por Item
+        <span class="material-icons" style="color: var(--primary); font-size: 22px;">inventory_2</span> Total de Peças por Item
       </h3>
       <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças produzidas de cada produto.</p>
-      
       <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
           <thead>
@@ -64,21 +60,16 @@
               <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
             </tr>
           </thead>
-          <tbody id="tabelaGeralItens">
-            <!-- Preenchido via JS -->
-          </tbody>
+          <tbody id="tabelaGeralItensSis"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Bloco 2: Média por Mês -->
     <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
       <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: #3B82F6; font-size: 22px;">calendar_today</span> 
-        Histórico de Peças por Mês
+        <span class="material-icons" style="color: #3B82F6; font-size: 22px;">calendar_today</span> Histórico de Peças por Mês
       </h3>
       <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues mês a mês.</p>
-      
       <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
           <thead>
@@ -87,21 +78,16 @@
               <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
             </tr>
           </thead>
-          <tbody id="tabelaMediaMes">
-            <!-- Preenchido via JS -->
-          </tbody>
+          <tbody id="tabelaMediaMesSis"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- Bloco 3: Produção por Unidades / Oficinas -->
     <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
       <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
-        <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> 
-        Produção por Unidades
+        <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> Produção por Unidades
       </h3>
       <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
-      
       <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
           <thead>
@@ -110,25 +96,105 @@
               <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
             </tr>
           </thead>
-          <tbody id="tabelaOficinasGeral">
-            <!-- Preenchido via JS -->
-          </tbody>
+          <tbody id="tabelaOficinasGeralSis"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <hr style="border: 0; border-top: 2px dashed var(--border); margin: 40px 0;">
+
+  <!-- ==========================================
+       SEÇÃO 2: DADOS HISTÓRICOS (PLANILHA)
+       ========================================== -->
+  <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; text-transform: uppercase;">🕰️ DADOS HISTÓRICOS (PLANILHA)</h3>
+  <p id="lblPeriodoPlanilha" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600; margin-bottom: 20px;">Calculando período...</p>
+
+  <!-- Cards de Resumo Principal -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; margin-bottom: 30px;">
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #F59E0B;">
+      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Total Histórico (Planilha)</span>
+      <h3 id="apresTotalGeralAnt" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+      <span style="font-size: 0.85rem; font-weight: 600; color: #F59E0B; display: block;">peças fabricadas historicamente</span>
+    </div>
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border-left: 6px solid #8B5CF6;">
+      <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; letter-spacing: 0.5px;">Média Mensal (Histórica)</span>
+      <h3 id="apresMediaMensalGeralAnt" style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); margin: 10px 0 5px 0; line-height: 1;">0</h3>
+      <span style="font-size: 0.85rem; font-weight: 600; color: #8B5CF6; display: block;">média de peças por mês</span>
+    </div>
+  </div>
+
+  <!-- Grade de Tabelas Executivas (Planilha) -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px;">
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+        <span class="material-icons" style="color: #F59E0B; font-size: 22px;">inventory_2</span> Total de Peças por Item
+      </h3>
+      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Soma de todas as peças registradas na planilha.</p>
+      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+              <th style="padding: 12px 10px;">Item</th>
+              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaGeralItensAnt"></tbody>
         </table>
       </div>
     </div>
 
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+        <span class="material-icons" style="color: #10B981; font-size: 22px;">calendar_today</span> Histórico de Peças por Mês
+      </h3>
+      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Volume de peças entregues historicamente.</p>
+      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+              <th style="padding: 12px 10px;">Mês / Ano</th>
+              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaMediaMesAnt"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main); margin-bottom: 5px; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
+        <span class="material-icons" style="color: #8B5CF6; font-size: 22px;">store</span> Produção por Unidades
+      </h3>
+      <p style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-bottom: 15px;">Total de peças fabricadas em cada unidade.</p>
+      <div style="overflow-x: auto; max-height: 280px; overflow-y: auto;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); position: sticky; top: 0; background: var(--surface); text-transform: uppercase; font-size: 0.75rem;">
+              <th style="padding: 12px 10px;">Unidade / Oficina</th>
+              <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaOficinasGeralAnt"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <!-- Bloco 4: Produção no Período Selecionado (Com Filtro Próprio e Total Embaixo) -->
+  <hr style="border: 0; border-top: 1px dashed var(--border); margin: 40px 0;">
+
+  <!-- ==========================================
+       SEÇÃO 3: PRODUÇÃO UNIFICADA NO PERÍODO (SISTEMA + PLANILHA)
+       ========================================== -->
   <div style="background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); margin-top: 25px;">
     
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
       <div>
         <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px; text-transform: uppercase;">
           <span class="material-icons" style="color: #10B981; font-size: 22px;">filter_alt</span> 
-          Produção no Período Selecionado
+          Filtro Rápido (Sistema + Planilha)
         </h3>
-        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin: 0;">Selecione um mês específico ou defina um intervalo de datas para esta análise específica.</p>
+        <p style="font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin: 0;">Análise unificada da produção integrando as duas bases de dados.</p>
       </div>
 
       <!-- Controles de Filtro Interno -->
@@ -156,7 +222,7 @@
         <thead>
           <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem;">
             <th style="padding: 12px 10px;">Item</th>
-            <th style="padding: 12px 10px; text-align: right;">Quantidade</th>
+            <th style="padding: 12px 10px; text-align: right;">Quantidade (Unificada)</th>
           </tr>
         </thead>
         <tbody id="tabelaFiltroPersonalizado">
@@ -176,8 +242,8 @@
 </div>
 
 <script>
-  let chartInstItensApres = null;
-  let chartInstMesApres = null;
+  let chartInstItensApresSis = null;
+  let chartInstMesApresSis = null;
 
   function mudarFiltroMesApresentacao() {
     const mesVal = document.getElementById('apresFiltroMes').value;
@@ -201,83 +267,134 @@
     renderPageApresentacao();
   }
 
+  function formatarDataSimples(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return '-';
+    return dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
   function renderPageApresentacao() {
     const pageEl = document.getElementById('pageApresentacao');
     if (!pageEl || !pageEl.classList.contains('active')) return;
 
-    // 1. Pega o Filtro Geral do Topo para o painel principal
-    const globalDates = getFilterDates(); // { start, end }
-
-    // 2. Pega o Filtro Próprio para o último bloco
+    // Filtros Globais e Específicos
+    const globalDates = getFilterDates();
     let startInput = document.getElementById('apresFiltroInicio').value;
     let endInput = document.getElementById('apresFiltroFim').value;
     let customStartDate = startInput ? new Date(startInput + 'T00:00:00') : new Date(2020, 0, 1);
     let customEndDate = endInput ? new Date(endInput + 'T23:59:59') : new Date(2100, 11, 31);
 
-    let mapaGeralItens = {};
-    let mapaGeralMes = {}; 
-    let mapaFiltradoItens = {};
-    let mapaOficinasGeral = {};
+    // Variáveis SISTEMA
+    let mapaGeralItensSis = {};
+    let mapaGeralMesSis = {}; 
+    let mapaOficinasGeralSis = {};
+    let totalGeralQtdSis = 0;
+    let minDateSis = new Date(8640000000000000);
+    let maxDateSis = new Date(-8640000000000000);
 
-    let totalGeralQtd = 0;
-    let totalFiltradoQtd = 0;
+    // Variáveis PLANILHA
+    let mapaGeralItensAnt = {};
+    let mapaGeralMesAnt = {}; 
+    let mapaOficinasGeralAnt = {};
+    let totalGeralQtdAnt = 0;
+    let minDateAnt = new Date(8640000000000000);
+    let maxDateAnt = new Date(-8640000000000000);
 
-    rawData.forEach(r => {
-      const qtd = r.producaoDia || 0;
-      if (!r.item || r.item === 'Nenhum' || qtd <= 0) return;
+    // Variáveis UNIFICADAS PARA O FILTRO RÁPIDO
+    let mapaFiltradoItensUnificado = {};
+    let totalFiltradoQtdUnificado = 0;
 
-      const nomeItem = r.item.trim();
-      const nomeOficina = r.oficina || 'Geral';
+    // Processar DADOS SISTEMA (rawData)
+    if (typeof rawData !== 'undefined') {
+      rawData.forEach(r => {
+        const qtd = r.producaoDia || 0;
+        if (!r.item || r.item === 'Nenhum' || qtd <= 0) return;
 
-      // Verifica se está dentro do Filtro Geral do Topo
-      const dentroFiltroGeral = r.dateObj >= globalDates.start && r.dateObj <= globalDates.end;
+        const nomeItem = r.item.trim();
+        const nomeOficina = r.oficina || 'Geral';
 
-      if (dentroFiltroGeral) {
-        // Acumula para o painel geral superior, gráficos, itens e oficinas
-        if (!mapaGeralItens[nomeItem]) {
-          mapaGeralItens[nomeItem] = { item: nomeItem, qtd: 0 };
-        }
-        mapaGeralItens[nomeItem].qtd += qtd;
-        totalGeralQtd += qtd;
+        if (r.dateObj >= globalDates.start && r.dateObj <= globalDates.end) {
+          if (r.dateObj < minDateSis) minDateSis = r.dateObj;
+          if (r.dateObj > maxDateSis) maxDateSis = r.dateObj;
 
-        if (!mapaOficinasGeral[nomeOficina]) {
-          mapaOficinasGeral[nomeOficina] = 0;
-        }
-        mapaOficinasGeral[nomeOficina] += qtd;
+          if (!mapaGeralItensSis[nomeItem]) mapaGeralItensSis[nomeItem] = { item: nomeItem, qtd: 0 };
+          mapaGeralItensSis[nomeItem].qtd += qtd;
+          totalGeralQtdSis += qtd;
 
-        if (r.dataOriginal) {
-          const anoMes = r.dataOriginal.substring(0, 7); 
-          if (!mapaGeralMes[anoMes]) {
-            mapaGeralMes[anoMes] = { anoMes, qtd: 0 };
+          if (!mapaOficinasGeralSis[nomeOficina]) mapaOficinasGeralSis[nomeOficina] = 0;
+          mapaOficinasGeralSis[nomeOficina] += qtd;
+
+          if (r.dataOriginal) {
+            const anoMes = r.dataOriginal.substring(0, 7); 
+            if (!mapaGeralMesSis[anoMes]) mapaGeralMesSis[anoMes] = { anoMes, qtd: 0 };
+            mapaGeralMesSis[anoMes].qtd += qtd;
           }
-          mapaGeralMes[anoMes].qtd += qtd;
         }
-      }
 
-      // Bloco Inferior: Usa o Filtro Próprio
-      if (r.dateObj >= customStartDate && r.dateObj <= customEndDate) {
-        if (!mapaFiltradoItens[nomeItem]) {
-          mapaFiltradoItens[nomeItem] = { item: nomeItem, qtd: 0 };
+        // Adiciona ao Bloco Unificado
+        if (r.dateObj >= customStartDate && r.dateObj <= customEndDate) {
+          if (!mapaFiltradoItensUnificado[nomeItem]) mapaFiltradoItensUnificado[nomeItem] = { item: nomeItem, qtd: 0 };
+          mapaFiltradoItensUnificado[nomeItem].qtd += qtd;
+          totalFiltradoQtdUnificado += qtd;
         }
-        mapaFiltradoItens[nomeItem].qtd += qtd;
-        totalFiltradoQtd += qtd;
-      }
-    });
+      });
+    }
 
-    // Atualiza os Cards Superiores com base no Filtro Geral
-    document.getElementById('apresTotalGeral').innerText = totalGeralQtd.toLocaleString('pt-BR');
-    document.getElementById('apresTotalFiltrado').innerText = totalFiltradoQtd.toLocaleString('pt-BR') + ' peças';
+    // Processar DADOS PLANILHA (dadosAntigos)
+    if (typeof dadosAntigos !== 'undefined') {
+      dadosAntigos.forEach(r => {
+        const qtd = r.producaoDia || 0;
+        if (!r.item || qtd <= 0) return;
+        
+        const nomeItem = r.item.trim();
+        const nomeOficina = r.oficina || 'Geral';
 
-    // Tabela 1: Total Geral por Item (Filtro Geral)
-    let tbodyGeral = document.getElementById('tabelaGeralItens');
-    tbodyGeral.innerHTML = '';
-    const itensGeralOrdenados = Object.values(mapaGeralItens).sort((a, b) => b.qtd - a.qtd);
-    
-    if (itensGeralOrdenados.length === 0) {
-      tbodyGeral.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhum registro no período geral.</td></tr>`;
+        if (r.dateObj >= globalDates.start && r.dateObj <= globalDates.end) {
+          if (r.dateObj < minDateAnt) minDateAnt = r.dateObj;
+          if (r.dateObj > maxDateAnt) maxDateAnt = r.dateObj;
+
+          if (!mapaGeralItensAnt[nomeItem]) mapaGeralItensAnt[nomeItem] = { item: nomeItem, qtd: 0 };
+          mapaGeralItensAnt[nomeItem].qtd += qtd;
+          totalGeralQtdAnt += qtd;
+
+          if (!mapaOficinasGeralAnt[nomeOficina]) mapaOficinasGeralAnt[nomeOficina] = 0;
+          mapaOficinasGeralAnt[nomeOficina] += qtd;
+
+          if (r.dataOriginal) {
+            const anoMes = r.dataOriginal.substring(0, 7); 
+            if (!mapaGeralMesAnt[anoMes]) mapaGeralMesAnt[anoMes] = { anoMes, qtd: 0 };
+            mapaGeralMesAnt[anoMes].qtd += qtd;
+          }
+        }
+
+        // Adiciona ao Bloco Unificado
+        if (r.dateObj >= customStartDate && r.dateObj <= customEndDate) {
+          if (!mapaFiltradoItensUnificado[nomeItem]) mapaFiltradoItensUnificado[nomeItem] = { item: nomeItem, qtd: 0 };
+          mapaFiltradoItensUnificado[nomeItem].qtd += qtd;
+          totalFiltradoQtdUnificado += qtd;
+        }
+      });
+    }
+
+    // ==========================================
+    // ATUALIZAR UI - SISTEMA
+    // ==========================================
+    if (totalGeralQtdSis > 0) {
+      document.getElementById('lblPeriodoSistema').innerText = `Período extraído: a partir de ${formatarDataSimples(minDateSis)} até ${formatarDataSimples(maxDateSis)}`;
     } else {
-      itensGeralOrdenados.forEach(i => {
-        tbodyGeral.innerHTML += `
+      document.getElementById('lblPeriodoSistema').innerText = `Nenhum dado do sistema encontrado no filtro atual.`;
+    }
+
+    document.getElementById('apresTotalGeralSis').innerText = totalGeralQtdSis.toLocaleString('pt-BR');
+
+    let tbodyGeralSis = document.getElementById('tabelaGeralItensSis');
+    tbodyGeralSis.innerHTML = '';
+    const itensGeralOrdenadosSis = Object.values(mapaGeralItensSis).sort((a, b) => b.qtd - a.qtd);
+    
+    if (itensGeralOrdenadosSis.length === 0) {
+      tbodyGeralSis.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhum registro.</td></tr>`;
+    } else {
+      itensGeralOrdenadosSis.forEach(i => {
+        tbodyGeralSis.innerHTML += `
           <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600;">${i.item}</td>
             <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: var(--primary);">${i.qtd.toLocaleString('pt-BR')} peças</td>
@@ -285,22 +402,20 @@
       });
     }
 
-    // Tabela 2: Média por Mês (Filtro Geral)
-    let tbodyMes = document.getElementById('tabelaMediaMes');
-    tbodyMes.innerHTML = '';
-    const mesesArray = Object.values(mapaGeralMes).sort((a, b) => b.anoMes.localeCompare(a.anoMes));
+    let tbodyMesSis = document.getElementById('tabelaMediaMesSis');
+    tbodyMesSis.innerHTML = '';
+    const mesesArraySis = Object.values(mapaGeralMesSis).sort((a, b) => b.anoMes.localeCompare(a.anoMes));
     
-    if (mesesArray.length === 0) {
-      tbodyMes.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Sem dados mensais no período.</td></tr>`;
+    if (mesesArraySis.length === 0) {
+      tbodyMesSis.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Sem dados mensais.</td></tr>`;
     } else {
-      let totalMesesUnicos = mesesArray.length || 1;
-      document.getElementById('apresMediaMensalGeral').innerText = Math.round(totalGeralQtd / totalMesesUnicos).toLocaleString('pt-BR');
+      let totalMesesUnicosSis = mesesArraySis.length || 1;
+      document.getElementById('apresMediaMensalGeralSis').innerText = Math.round(totalGeralQtdSis / totalMesesUnicosSis).toLocaleString('pt-BR');
 
-      mesesArray.slice(0, 10).forEach(m => {
+      mesesArraySis.slice(0, 10).forEach(m => {
         const dateStr = new Date(m.anoMes + '-01T00:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
         const formatadoBonito = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-
-        tbodyMes.innerHTML += `
+        tbodyMesSis.innerHTML += `
           <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600; text-transform: capitalize;">${formatadoBonito}</td>
             <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #3B82F6;">${m.qtd.toLocaleString('pt-BR')} peças</td>
@@ -308,16 +423,15 @@
       });
     }
 
-    // Tabela 3: Produção por Unidades / Oficinas (Filtro Geral)
-    let tbodyOficinas = document.getElementById('tabelaOficinasGeral');
-    tbodyOficinas.innerHTML = '';
-    const oficinasOrdenadas = Object.entries(mapaOficinasGeral).sort((a, b) => b[1] - a[1]);
+    let tbodyOficinasSis = document.getElementById('tabelaOficinasGeralSis');
+    tbodyOficinasSis.innerHTML = '';
+    const oficinasOrdenadasSis = Object.entries(mapaOficinasGeralSis).sort((a, b) => b[1] - a[1]);
 
-    if (oficinasOrdenadas.length === 0) {
-      tbodyOficinas.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhuma unidade encontrada.</td></tr>`;
+    if (oficinasOrdenadasSis.length === 0) {
+      tbodyOficinasSis.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhuma unidade.</td></tr>`;
     } else {
-      oficinasOrdenadas.forEach(([nomeOficina, qtdOficina]) => {
-        tbodyOficinas.innerHTML += `
+      oficinasOrdenadasSis.forEach(([nomeOficina, qtdOficina]) => {
+        tbodyOficinasSis.innerHTML += `
           <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600;">${nomeOficina}</td>
             <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #8B5CF6;">${qtdOficina.toLocaleString('pt-BR')} peças</td>
@@ -325,15 +439,85 @@
       });
     }
 
-    // Tabela 4: Filtro Personalizado (Bloco Inferior)
+    renderizarGraficosApresSis(itensGeralOrdenadosSis, mesesArraySis.reverse());
+
+    // ==========================================
+    // ATUALIZAR UI - PLANILHA ANTIGA
+    // ==========================================
+    if (totalGeralQtdAnt > 0) {
+      document.getElementById('lblPeriodoPlanilha').innerText = `Período extraído: de ${formatarDataSimples(minDateAnt)} a ${formatarDataSimples(maxDateAnt)}`;
+    } else {
+      document.getElementById('lblPeriodoPlanilha').innerText = `Nenhum dado histórico encontrado na planilha neste filtro.`;
+    }
+
+    document.getElementById('apresTotalGeralAnt').innerText = totalGeralQtdAnt.toLocaleString('pt-BR');
+
+    let tbodyItensAnt = document.getElementById('tabelaGeralItensAnt');
+    tbodyItensAnt.innerHTML = '';
+    const itensAntOrdenados = Object.values(mapaGeralItensAnt).sort((a, b) => b.qtd - a.qtd);
+    
+    if (itensAntOrdenados.length === 0) {
+      tbodyItensAnt.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhum registro.</td></tr>`;
+    } else {
+      itensAntOrdenados.forEach(i => {
+        tbodyItensAnt.innerHTML += `
+          <tr style="border-bottom: 1px dashed var(--border);">
+            <td style="padding: 12px 10px; font-weight: 600;">${i.item}</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #F59E0B;">${i.qtd.toLocaleString('pt-BR')} peças</td>
+          </tr>`;
+      });
+    }
+
+    let tbodyMesAnt = document.getElementById('tabelaMediaMesAnt');
+    tbodyMesAnt.innerHTML = '';
+    const mesesArrayAnt = Object.values(mapaGeralMesAnt).sort((a, b) => b.anoMes.localeCompare(a.anoMes));
+    
+    if (mesesArrayAnt.length === 0) {
+      tbodyMesAnt.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Sem dados mensais.</td></tr>`;
+    } else {
+      let totalMesesUnicosAnt = mesesArrayAnt.length || 1;
+      document.getElementById('apresMediaMensalGeralAnt').innerText = Math.round(totalGeralQtdAnt / totalMesesUnicosAnt).toLocaleString('pt-BR');
+
+      mesesArrayAnt.forEach(m => {
+        const dateStr = new Date(m.anoMes + '-01T00:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const formatadoBonito = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+        tbodyMesAnt.innerHTML += `
+          <tr style="border-bottom: 1px dashed var(--border);">
+            <td style="padding: 12px 10px; font-weight: 600; text-transform: capitalize;">${formatadoBonito}</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #10B981;">${m.qtd.toLocaleString('pt-BR')} peças</td>
+          </tr>`;
+      });
+    }
+
+    let tbodyOficinasAnt = document.getElementById('tabelaOficinasGeralAnt');
+    tbodyOficinasAnt.innerHTML = '';
+    const oficinasOrdenadasAnt = Object.entries(mapaOficinasGeralAnt).sort((a, b) => b[1] - a[1]);
+
+    if (oficinasOrdenadasAnt.length === 0) {
+      tbodyOficinasAnt.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhuma unidade.</td></tr>`;
+    } else {
+      oficinasOrdenadasAnt.forEach(([nomeOficina, qtdOficina]) => {
+        tbodyOficinasAnt.innerHTML += `
+          <tr style="border-bottom: 1px dashed var(--border);">
+            <td style="padding: 12px 10px; font-weight: 600;">${nomeOficina}</td>
+            <td style="padding: 12px 10px; text-align: right; font-weight: 800; color: #8B5CF6;">${qtdOficina.toLocaleString('pt-BR')} peças</td>
+          </tr>`;
+      });
+    }
+
+    // ==========================================
+    // ATUALIZAR UI - FILTRO RÁPIDO UNIFICADO
+    // ==========================================
+    document.getElementById('apresTotalFiltrado').innerText = totalFiltradoQtdUnificado.toLocaleString('pt-BR') + ' peças';
+
     let tbodyFiltro = document.getElementById('tabelaFiltroPersonalizado');
     tbodyFiltro.innerHTML = '';
-    const itensFiltradosOrdenados = Object.values(mapaFiltradoItens).sort((a, b) => b.qtd - a.qtd);
+    const itensFiltradosUnificados = Object.values(mapaFiltradoItensUnificado).sort((a, b) => b.qtd - a.qtd);
 
-    if (itensFiltradosOrdenados.length === 0) {
+    if (itensFiltradosUnificados.length === 0) {
       tbodyFiltro.innerHTML = `<tr><td colspan="2" style="padding: 15px; text-align: center; color: var(--text-muted); font-weight: 500;">Nenhum dado encontrado no período selecionado.</td></tr>`;
     } else {
-      itensFiltradosOrdenados.forEach(i => {
+      itensFiltradosUnificados.forEach(i => {
         tbodyFiltro.innerHTML += `
           <tr style="border-bottom: 1px dashed var(--border);">
             <td style="padding: 12px 10px; font-weight: 600;">${i.item}</td>
@@ -341,21 +525,17 @@
           </tr>`;
       });
     }
-
-    // Renderiza os Gráficos com base no Filtro Geral
-    renderizarGraficosApres(itensGeralOrdenados, mesesArray.reverse());
   }
 
-  function renderizarGraficosApres(itensArr, mesesArr) {
+  function renderizarGraficosApresSis(itensArr, mesesArr) {
     const isDark = document.body.classList.contains('dark-mode');
     const gridColor = isDark ? '#37474f' : '#e2e8f0';
     const textColor = isDark ? '#a0abb5' : '#64748b';
 
-    // Gráfico de Itens (Barra)
-    const ctxItens = document.getElementById('graficoItensApres').getContext('2d');
-    if (chartInstItensApres) chartInstItensApres.destroy();
+    const ctxItens = document.getElementById('graficoItensApresSis').getContext('2d');
+    if (chartInstItensApresSis) chartInstItensApresSis.destroy();
 
-    chartInstItensApres = new Chart(ctxItens, {
+    chartInstItensApresSis = new Chart(ctxItens, {
       type: 'bar',
       data: {
         labels: itensArr.map(i => i.item),
@@ -367,18 +547,10 @@
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: { padding: { top: 35 } },
+        responsive: true, maintainAspectRatio: false, layout: { padding: { top: 35 } },
         plugins: {
           legend: { display: false },
-          datalabels: {
-            anchor: 'end',
-            align: 'top',
-            color: textColor,
-            font: { weight: 'bold', size: 11, family: 'Poppins' },
-            formatter: (value) => value.toLocaleString('pt-BR')
-          }
+          datalabels: { anchor: 'end', align: 'top', color: textColor, font: { weight: 'bold', size: 11, family: 'Poppins' }, formatter: (value) => value.toLocaleString('pt-BR') }
         },
         scales: {
           y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: { size: 11, family: 'Poppins' }, color: textColor } },
@@ -388,11 +560,10 @@
       plugins: [ChartDataLabels]
     });
 
-    // Gráfico de Meses (Linha)
-    const ctxMes = document.getElementById('graficoMesApres').getContext('2d');
-    if (chartInstMesApres) chartInstMesApres.destroy();
+    const ctxMes = document.getElementById('graficoMesApresSis').getContext('2d');
+    if (chartInstMesApresSis) chartInstMesApresSis.destroy();
 
-    chartInstMesApres = new Chart(ctxMes, {
+    chartInstMesApresSis = new Chart(ctxMes, {
       type: 'line',
       data: {
         labels: mesesArr.map(m => {
@@ -404,24 +575,14 @@
           data: mesesArr.map(m => m.qtd),
           borderColor: '#3B82F6',
           backgroundColor: 'rgba(59, 130, 246, 0.15)',
-          fill: true,
-          tension: 0.3,
-          pointRadius: 6,
-          pointBackgroundColor: '#3B82F6'
+          fill: true, tension: 0.3, pointRadius: 6, pointBackgroundColor: '#3B82F6'
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: { padding: { top: 35 } },
+        responsive: true, maintainAspectRatio: false, layout: { padding: { top: 35 } },
         plugins: {
           legend: { display: false },
-          datalabels: {
-            align: 'top',
-            color: textColor,
-            font: { weight: 'bold', size: 11, family: 'Poppins' },
-            formatter: (value) => value.toLocaleString('pt-BR')
-          }
+          datalabels: { align: 'top', color: textColor, font: { weight: 'bold', size: 11, family: 'Poppins' }, formatter: (value) => value.toLocaleString('pt-BR') }
         },
         scales: {
           y: { beginAtZero: true, grid: { color: gridColor }, ticks: { font: { size: 11, family: 'Poppins' }, color: textColor } },
@@ -432,7 +593,6 @@
     });
   }
 
-  // Executa ao carregar e quando o filtro global for acionado
   document.addEventListener("DOMContentLoaded", () => {
     if (typeof renderPageApres === 'undefined') {
       window.renderPageApres = renderPageApresentacao;
@@ -440,3 +600,4 @@
     renderPageApresentacao();
   });
 </script>
+</div>

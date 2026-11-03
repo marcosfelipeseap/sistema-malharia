@@ -46,7 +46,7 @@ try {
 }
 
 async function fetchPlanilhasGoogle() {
-    if (!auth) return { fardData: [], fardSeapData: [] };
+    if (!auth) return { fardData: [], fardSeapData: [], dadosAntigosData: [] };
     
     try {
         const client = await auth.getClient();
@@ -55,19 +55,22 @@ async function fetchPlanilhasGoogle() {
         // Requisições diretas e leves usando a biblioteca nativa do Google
         const urlInterno = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('Fardamento Interno - Novo!A:G')}?valueRenderOption=UNFORMATTED_VALUE`;
         const urlSeap = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('Fardamento Servidor!A:G')}?valueRenderOption=UNFORMATTED_VALUE`;
+        const urlDadosAntigos = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent('DADOSANTIGOS!A:H')}?valueRenderOption=UNFORMATTED_VALUE`;
 
-        const [resInterno, resSeap] = await Promise.all([
+        const [resInterno, resSeap, resAntigos] = await Promise.all([
             client.request({ url: urlInterno }).catch(() => ({ data: { values: [] } })),
-            client.request({ url: urlSeap }).catch(() => ({ data: { values: [] } }))
+            client.request({ url: urlSeap }).catch(() => ({ data: { values: [] } })),
+            client.request({ url: urlDadosAntigos }).catch(() => ({ data: { values: [] } }))
         ]);
 
         return {
             fardData: processFardamentoData(resInterno.data.values || []),
-            fardSeapData: processFardamentoSeapData(resSeap.data.values || [])
+            fardSeapData: processFardamentoSeapData(resSeap.data.values || []),
+            dadosAntigosData: processDadosAntigos(resAntigos.data.values || [])
         };
     } catch (err) {
         console.error("Erro ao buscar dados no Google via Auth Library:", err.message);
-        return { fardData: [], fardSeapData: [] };
+        return { fardData: [], fardSeapData: [], dadosAntigosData: [] };
     }
 }
 
@@ -132,6 +135,31 @@ function processFardamentoSeapData(values) {
         return { data: dataStr, mesAno: String(row[1] || "").trim(), tipo: String(row[2] || "").trim(), tamanho: String(row[3] || "").trim(), quantidade: parseNumber(row[4]), destino: String(row[5] || "").trim(), observacao: String(row[6] || "").trim() };
     }).filter(i => i !== null && i.tipo !== "");
 } 
+
+function processDadosAntigos(values) {
+    if (values.length < 2) return [];
+    return values.slice(1).map(row => {
+        let dataStr = normalizeDate(row[0]);
+        if (!dataStr) return null;
+        
+        let p = dataStr.split('/');
+        if (p.length !== 3) return null;
+        let dataObj = new Date(p[2], p[1]-1, p[0]);
+        
+        return { 
+            data: dataStr,
+            dateObj: dataObj,
+            dataOriginal: dataObj.toISOString().split('T')[0], // Para agrupar por mês no gráfico
+            oficina: String(row[1] || "").trim(),
+            item: String(row[2] || "").trim(),
+            qtd_internos: parseNumber(row[3]),
+            meta: parseNumber(row[4]),
+            producaoDia: parseNumber(row[5]),
+            desempenho: String(row[6] || "").trim(),
+            justificativa: String(row[7] || "").trim()
+        };
+    }).filter(i => i !== null && i.producaoDia > 0 && i.item !== "");
+}
 
 function removerDuplicatasRegistros(array) {
     if (!Array.isArray(array)) return array;
@@ -300,20 +328,25 @@ exports.diarioPublico = async (req, res) => {
         // --- BUSCA NA PLANILHA GOOGLE (COM CACHE) ---
         let fardData = [];
         let fardSeapData = [];
+        let dadosAntigosData = [];
         
-        const cacheKey = 'FARDAMENTO_SHEETS_DATA';
+        const cacheKey = 'PLANILHA_SHEETS_DATA';
         const cachedData = myCache.get(cacheKey);
 
         if (cachedData) {
             fardData = cachedData.fardData;
             fardSeapData = cachedData.fardSeapData;
+            dadosAntigosData = cachedData.dadosAntigosData;
         } else {
             const planilhas = await fetchPlanilhasGoogle();
             fardData = planilhas.fardData;
             fardSeapData = planilhas.fardSeapData;
+            dadosAntigosData = planilhas.dadosAntigosData;
             
             // Só salva em cache se a requisição não falhou totalmente
-            myCache.set(cacheKey, { fardData, fardSeapData });
+            if (fardData.length > 0 || dadosAntigosData.length > 0) {
+                myCache.set(cacheKey, { fardData, fardSeapData, dadosAntigosData });
+            }
         }
 
         res.render('dashboard/index', {
@@ -328,6 +361,7 @@ exports.diarioPublico = async (req, res) => {
             infoOficinasEstaticoJSON: JSON.stringify(infoOficinasEstatico),
             fardamentoJSON: JSON.stringify(fardData),
             fardamentoseapJSON: JSON.stringify(fardSeapData),
+            dadosAntigosJSON: JSON.stringify(dadosAntigosData),
             user: req.user || res.locals.user || null 
         });
 
