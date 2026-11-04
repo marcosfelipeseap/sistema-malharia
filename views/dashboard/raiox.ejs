@@ -62,7 +62,12 @@
   </style>
 
   <div class="rx-header">
-    <h2 style="margin: 0; font-size: 1.6rem;">Raio X da Oficina</h2>
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <h2 style="margin: 0; font-size: 1.6rem;">Raio X da Oficina</h2>
+        <span id="rxHeaderPeriodo" style="display: none; align-items: center; font-size: 0.8rem; font-weight: 700; color: var(--primary); background: rgba(30, 136, 229, 0.1); padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(30, 136, 229, 0.3);">
+            <!-- Período preenchido via JS -->
+        </span>
+    </div>
     
     <div class="filter-group" style="width: 320px; position: relative;">
       <div class="custom-dropdown" id="rxDropdown">
@@ -142,6 +147,11 @@
     </div>
   </div>
 
+  <!-- LEGENDA DO NOVO GRÁFICO TIPO DESEMPENHO -->
+  <div style="display: flex; gap: 15px; margin-bottom: 10px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); align-items: center;">
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 15px; height: 3px; background: #F59E0B; display: inline-block;"></span> Histórico da Planilha</span>
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 15px; height: 3px; background: #1E88E5; display: inline-block;"></span> Novo Sistema</span>
+  </div>
   <div class="chart-card" style="height: 380px; background: var(--surface); padding: 25px; border-radius: 20px; box-shadow: var(--shadow); border: none; margin-bottom: 25px;">
     <canvas id="rxChart"></canvas>
   </div>
@@ -180,9 +190,17 @@ let rxChartInst = null;
 let rxGlobalDaysMap = {}; 
 let currentSelectedWeekStart = null;
 let lastSelectedOficina = null;
+let rxFilteredDataGlobal = []; // Auxiliar para tooltips do gráfico
 
 const diasDaSemanaNome = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-window.infoOficinasEstatico = window.infoOficinasEstatico || [];
+
+// Função de segurança caso isSemInsumo não exista no escopo
+function safeIsSemInsumo(justificativa) {
+    if (typeof isSemInsumo === 'function') return isSemInsumo(justificativa);
+    if (!justificativa) return false;
+    let j = justificativa.toLowerCase();
+    return j.includes('sem insumo') || j.includes('falta de insumo') || j.includes('material');
+}
 
 function getMonday(d) {
     d = new Date(d);
@@ -265,7 +283,10 @@ function changeRxWeek(offset) {
 }
 
 function generateSemanaRelatorio() {
-    if (!currentSelectedWeekStart) return;
+    if (!currentSelectedWeekStart) {
+        alert("Selecione uma oficina e aguarde o carregamento dos dados para gerar o relatório.");
+        return;
+    }
 
     let val = document.getElementById('rxOficinaSelect').value;
     let start = new Date(currentSelectedWeekStart);
@@ -299,7 +320,7 @@ function generateSemanaRelatorio() {
             weekDaysCount++;
 
             let bateu = inf.prod > 0 && inf.prod >= inf.meta;
-            let isInsumo = inf.prod === 0 && inf.justs.some(j => isSemInsumo(j));
+            let isInsumo = inf.prod === 0 && inf.justs.some(j => safeIsSemInsumo(j));
 
             let statusText = '❌ FALHA';
             if(bateu) statusText = '✅ OK';
@@ -311,7 +332,7 @@ function generateSemanaRelatorio() {
             
             inf.items.forEach(it => {
                 if(it.item !== 'Nenhum') {
-                    daysText += `- ${it.producaoDia}x ${it.item} (${it.tipo})\n`;
+                    daysText += `- ${it.producaoDia}x ${it.item} (${it.tipo || 'Planilha'})\n`;
                 }
             });
             
@@ -344,7 +365,11 @@ function generateSemanaRelatorio() {
     text += `*--- DETALHES POR DIA ---*\n\n`;
     text += daysText;
 
-    if (typeof openWhatsModal === 'function') openWhatsModal(text.trim());
+    if (typeof openWhatsModal === 'function') {
+        openWhatsModal(text.trim());
+    } else {
+        alert("Função de WhatsApp não encontrada. O texto do relatório é:\n\n" + text.trim());
+    }
 }
 
 function renderWeeklyBanner() {
@@ -386,7 +411,7 @@ function renderWeeklyBanner() {
             weekDaysCount++;
 
             let bateu = inf.prod > 0 && inf.prod >= inf.meta;
-            let isInsumo = inf.prod === 0 && inf.justs.some(j => isSemInsumo(j));
+            let isInsumo = inf.prod === 0 && inf.justs.some(j => safeIsSemInsumo(j));
 
             let statusBadge = '';
             if(bateu) statusBadge = '<span style="background:#4CAF50; color:white; padding:4px 8px; border-radius:6px; font-size:0.6rem; font-weight:800; letter-spacing: 0.5px;">OK</span>';
@@ -448,12 +473,13 @@ function renderWeeklyBanner() {
 }
 
 function renderPageOficina() {
-    if (typeof rawData === 'undefined' || rawData.length === 0) return;
+    let globalData = (typeof rawData !== 'undefined') ? rawData : [];
+    if (globalData.length === 0) return;
 
     let val = document.getElementById('rxOficinaSelect').value;
     
     if (!val) {
-        let ofs = [...new Set(rawData.map(r => r.oficina))].sort();
+        let ofs = [...new Set(globalData.map(r => r.oficina))].sort();
         setupRxDropdown(ofs);
         val = ofs[0]; 
         document.getElementById('rxSelectedText').innerText = val;
@@ -467,18 +493,27 @@ function renderPageOficina() {
     }
 
     let datesFilter = typeof getFilterDates === 'function' ? getFilterDates() : { start: new Date(0), end: new Date() };
-    let filtered = rawData.filter(r => r.oficina === val && r.dateObj >= datesFilter.start && r.dateObj <= datesFilter.end);
+    
+    // Mesclar dados do Sistema + dados Antigos (Planilha)
+    let dadosCompletos = [...globalData];
+    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
+        let antigosMarcados = dadosAntigos.map(d => ({ ...d, isPlanilha: true, metaOficina: d.meta || 0 }));
+        dadosCompletos = [...dadosCompletos, ...antigosMarcados];
+    }
+
+    let filtered = dadosCompletos.filter(r => r.oficina === val && r.dateObj >= datesFilter.start && r.dateObj <= datesFilter.end);
+    rxFilteredDataGlobal = filtered; // Salva para o tooltip do Gráfico
 
     rxGlobalDaysMap = {};
     filtered.forEach(r => {
         if (!rxGlobalDaysMap[r.data]) {
-            rxGlobalDaysMap[r.data] = { prod: 0, intProd: r.internos, items: [], justs: [], obs: [] };
+            rxGlobalDaysMap[r.data] = { prod: 0, intProd: r.internos || r.qtd_internos || 0, items: [], justs: [], obs: [] };
         }
-        rxGlobalDaysMap[r.data].prod += r.producaoDia;
+        rxGlobalDaysMap[r.data].prod += (r.producaoDia || 0);
         rxGlobalDaysMap[r.data].items.push(r);
         if (r.justificativa) rxGlobalDaysMap[r.data].justs.push(r.justificativa);
         if (r.observacao) rxGlobalDaysMap[r.data].obs.push(r.observacao);
-        rxGlobalDaysMap[r.data].intProd = Math.max(rxGlobalDaysMap[r.data].intProd, r.internos);
+        rxGlobalDaysMap[r.data].intProd = Math.max(rxGlobalDaysMap[r.data].intProd, (r.internos || r.qtd_internos || 0));
     });
 
     let dateKeys = Object.keys(rxGlobalDaysMap).sort((a,b) => {
@@ -497,22 +532,22 @@ function renderPageOficina() {
     let daysCount = dateKeys.length;
     let latestInt = 0;
 
+    let refMetaRecord = filtered.find(r => r.metaOficina > 0);
+    let refMeta = refMetaRecord ? refMetaRecord.metaOficina : 0;
+
     if (daysCount > 0) {
         latestInt = rxGlobalDaysMap[dateKeys[daysCount - 1]].intProd;
     }
 
     let trs = '';
-    let prodData = [];
 
     dateKeys.forEach(d => {
         let inf = rxGlobalDaysMap[d];
-        let validItems = inf.items.filter(r => !(r.producaoDia === 0 && isSemInsumo(r.justificativa)));
-        inf.meta = validItems.length > 0 ? calculateDynamicMeta(validItems) : 0;
+        let validItems = inf.items.filter(r => !(r.producaoDia === 0 && safeIsSemInsumo(r.justificativa)));
+        inf.meta = (validItems.length > 0 && typeof calculateDynamicMeta === 'function') ? calculateDynamicMeta(validItems) : refMeta;
         
         totalProd += inf.prod;
         totalGlobalMeta += inf.meta;
-
-        prodData.push(inf.prod);
     });
 
     renderWeeklyBanner();
@@ -521,7 +556,7 @@ function renderPageOficina() {
         let inf = rxGlobalDaysMap[d];
         
         let bateu = inf.prod > 0 && inf.prod >= inf.meta;
-        let isInsumo = inf.prod === 0 && inf.justs.some(j => isSemInsumo(j));
+        let isInsumo = inf.prod === 0 && inf.justs.some(j => safeIsSemInsumo(j));
         
         let statusText = 'INSUFICIENTE';
         let statusColor = 'var(--danger-text)';
@@ -534,7 +569,8 @@ function renderPageOficina() {
         
         let itemsText = inf.items.map(i => {
             if (i.item === 'Nenhum') return '';
-            return `<div style="margin-bottom:8px; font-size:0.85rem;"><b>${i.producaoDia}x</b> ${i.item} <span style="color:var(--text-muted); font-weight: 500;">(${i.tipo})</span></div>`;
+            let tipoLabel = i.isPlanilha ? 'Planilha' : (i.tipo || '-');
+            return `<div style="margin-bottom:8px; font-size:0.85rem;"><b>${i.producaoDia}x</b> ${i.item} <span style="color:var(--text-muted); font-weight: 500;">(${tipoLabel})</span></div>`;
         }).join('');
         
         let uniqJ = [...new Set(inf.justs)].filter(j => j && j.trim() !== "");
@@ -580,6 +616,17 @@ function renderPageOficina() {
     let globalPerf = totalGlobalMeta > 0 ? Math.round((totalProd / totalGlobalMeta) * 100) : 0;
     if (totalGlobalMeta === 0 && totalProd > 0) globalPerf = 100;
     
+    // Atualização dinâmica do Período no Header
+    let rxHeaderPeriodo = document.getElementById('rxHeaderPeriodo');
+    if (dateKeys.length > 0) {
+        let dataInicio = dateKeys[0];
+        let dataFim = dateKeys[dateKeys.length - 1];
+        rxHeaderPeriodo.innerHTML = `<span class="material-icons" style="font-size: 16px; margin-right: 6px;">calendar_month</span> De ${dataInicio} até ${dataFim}`;
+        rxHeaderPeriodo.style.display = 'flex';
+    } else {
+        rxHeaderPeriodo.style.display = 'none';
+    }
+
     document.getElementById('rxTotalProd').innerText = totalProd;
     document.getElementById('rxPerfGeral').innerText = globalPerf + '%';
     document.getElementById('rxAvgProd').innerText = avgProd;
@@ -588,41 +635,168 @@ function renderPageOficina() {
     document.getElementById('rxTableBody').innerHTML = trs || '<tr><td colspan="5" style="text-align:center; padding: 40px; color:var(--text-muted); font-weight: 600;">Nenhuma produção registrada neste período.</td></tr>';
     document.getElementById('rxDateSearch').value = '';
 
+    // =================================================================
+    // NOVO GRÁFICO (LINHAS: Sistema Azul, Planilha Laranja, Meta Vermelha)
+    // =================================================================
     if (rxChartInst) rxChartInst.destroy();
+    
     let pageOficina = document.getElementById('pageOficina');
     if (pageOficina && !pageOficina.classList.contains('active')) return;
+
+    let prodPlanilhaData = dateKeys.map(d => {
+        let itemsDia = rxGlobalDaysMap[d].items;
+        let planRecs = itemsDia.filter(x => x.isPlanilha);
+        if(planRecs.length > 0) return planRecs.reduce((a,b) => a + (b.producaoDia || 0), 0);
+        return null;
+    });
+
+    let prodSistemaData = dateKeys.map(d => {
+        let itemsDia = rxGlobalDaysMap[d].items;
+        let sysRecs = itemsDia.filter(x => !x.isPlanilha);
+        if(sysRecs.length > 0) return sysRecs.reduce((a,b) => a + (b.producaoDia || 0), 0);
+        return null;
+    });
+
+    let metaData = dateKeys.map(d => {
+        let itemsDia = rxGlobalDaysMap[d].items;
+        let allInsumo = itemsDia.length > 0 && itemsDia.every(r => r.producaoDia === 0 && safeIsSemInsumo(r.justificativa));
+        if (allInsumo) return 0;
+        let valid = itemsDia.filter(r => !(r.producaoDia === 0 && safeIsSemInsumo(r.justificativa)));
+        if (valid.length > 0 && typeof calculateDynamicMeta === 'function') return calculateDynamicMeta(valid);
+        return refMeta;
+    });
 
     const isDark = document.body.classList.contains('dark-mode');
     const gridColor = isDark ? '#37474f' : '#e2e8f0';
     const textColor = isDark ? '#a0abb5' : '#64748b';
-    
     let ctx = document.getElementById('rxChart').getContext('2d');
 
     rxChartInst = new Chart(ctx, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: dateKeys,
-            datasets: [{
-                label: 'Produção Diária',
-                data: prodData,
-                backgroundColor: '#001E7A',
-                borderRadius: 6,
-                datalabels: { color: textColor, font: {weight:'bold', family: 'Poppins'}, anchor: 'end', align: 'top', offset: 2 }
-            }]
+            datasets: [
+                {
+                    label: 'Produção (Novo Sistema)', 
+                    data: prodSistemaData, 
+                    spanGaps: true, 
+                    borderColor: '#1E88E5', 
+                    backgroundColor: '#1E88E5',
+                    borderWidth: 3, 
+                    pointRadius: 5, 
+                    pointBackgroundColor: isDark ? '#1c2126' : '#ffffff', 
+                    tension: 0.2
+                },
+                {
+                    label: 'Produção (Histórico da Planilha)', 
+                    data: prodPlanilhaData, 
+                    spanGaps: true, 
+                    borderColor: '#F59E0B', 
+                    backgroundColor: '#F59E0B',
+                    borderWidth: 3, 
+                    pointRadius: 5, 
+                    pointBackgroundColor: isDark ? '#1c2126' : '#ffffff', 
+                    tension: 0.2
+                },
+                {
+                    label: 'Meta', 
+                    data: metaData, 
+                    spanGaps: true, 
+                    borderColor: '#EF5350', 
+                    borderWidth: 2, 
+                    borderDash: [6,6], 
+                    pointRadius: 0
+                }
+            ]
         },
         options: {
             responsive: true, maintainAspectRatio: false,
-            layout: { padding: { top: 25 } },
+            layout: { padding: { top: 15 } },
             scales: {
                 x: { grid: {display:false}, ticks: {color: textColor, font: {family: 'Poppins'}} },
                 y: { beginAtZero: true, grid:{color: gridColor}, ticks: {color: textColor, font: {family: 'Poppins'}} }
             },
             plugins: { 
                 legend: { display: false },
-                title: { display: true, text: 'VOL. DE PRODUÇÃO DIÁRIO (PERÍODO COMPLETO)', color: textColor, align: 'start', font: {size: 14, weight: '800', family: 'Poppins'} }
+                datalabels: { display: false }, // Oculta datalabels (números) nas linhas para manter visual limpo
+                tooltip: {
+                    titleFont: {family: 'Poppins'}, bodyFont: {family: 'Poppins'},
+                    callbacks: {
+                        label: function(context) {
+                            if(context.datasetIndex === 2) return `Meta: ${context.parsed.y}`;
+                            let datasetLabel = context.dataset.label || '';
+                            if (context.parsed.y !== null) return `${datasetLabel}: ${context.parsed.y}`;
+                            return null;
+                        },
+                        afterBody: function(tooltipItems) {
+                            if(tooltipItems[0].datasetIndex === 2) return []; 
+                            
+                            let idx = tooltipItems[0].dataIndex; 
+                            let dateVal = dateKeys[idx];
+                            let dayRecords = rxFilteredDataGlobal.filter(x => x.data === dateVal);
+                            let totalProd = dayRecords.reduce((a, b) => a + (b.producaoDia || 0), 0);
+                            let validRecords = dayRecords.filter(r => !(r.producaoDia === 0 && safeIsSemInsumo(r.justificativa)));
+                            let dayMeta = (validRecords.length && typeof calculateDynamicMeta === 'function') ? calculateDynamicMeta(validRecords) : refMeta;
+                            
+                            let finalLines = [];
+                            finalLines.push(`--- DETALHES DO DIA ---`);
+                            
+                            if (dayRecords.length > 0) {
+                                let internosUsados = dayRecords[0].qtd_internos || dayRecords[0].internos || '?';
+                                let maquinasUsadas = dayRecords[0].maquinas || '?';
+                                finalLines.push(`• Máquinas: ${maquinasUsadas} | Internos: ${internosUsados}`);
+                            }
+
+                            if (totalProd > 0 && typeof wrapText === 'function') {
+                                dayRecords.forEach(r => { 
+                                    if (r.item !== 'Nenhum') {
+                                        if (r.isPlanilha) {
+                                            finalLines.push(...wrapText(`• ${r.producaoDia}x ${r.item} (Histórico da Planilha)`, 55)); 
+                                        } else {
+                                            let extra = [];
+                                            if (r.tamanho) extra.push(`Tam: ${r.tamanho}`);
+                                            if (r.processoNome && r.processoNome !== '-') extra.push(`Órgão: ${r.processoNome}`);
+                                            let extraStr = extra.length > 0 ? ` [${extra.join(' | ')}]` : '';
+                                            finalLines.push(...wrapText(`• ${r.producaoDia}x ${r.item} (${r.tipo || '-'})${extraStr}`, 55)); 
+                                        }
+                                    }
+                                });
+                            }
+
+                            let justs = [...new Set(dayRecords.map(r => r.justificativa).filter(j => j && j.trim() !== ""))];
+                            let obss = [...new Set(dayRecords.map(r => r.observacao).filter(o => o && o.trim() !== ""))];
+
+                            if (totalProd < dayMeta) {
+                                if (justs.length > 0 && typeof wrapText === 'function') {
+                                    justs.forEach(j => { finalLines.push(...wrapText(`• Just.: ${j}`, 55)); }); 
+                                } else {
+                                    finalLines.push('• Just.: Não informada');
+                                }
+                            }
+
+                            if (obss.length > 0 && typeof wrapText === 'function') {
+                                obss.forEach(o => { finalLines.push(...wrapText(`• Obs: ${o}`, 55)); });
+                            }
+
+                            return finalLines;
+                        }
+                    }
+                }
             }
-        },
-        plugins: [ChartDataLabels]
+        }
     });
 }
+
+// Escutador adicional para garantir que renderize quando a página se tornar visível no menu
+const rxObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.attributeName === "class") {
+            if (document.getElementById('pageOficina').classList.contains('active')) {
+                renderPageOficina();
+            }
+        }
+    });
+});
+rxObserver.observe(document.getElementById('pageOficina'), { attributes: true });
+
 </script>
