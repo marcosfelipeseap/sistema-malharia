@@ -1,8 +1,13 @@
 const impressoesService = require('../services/impressoes.service');
 const maquinasService = require('../services/maquinas_impressao.service');
 
-// Lógica de Trava de Horário (Igual aos Registros Gerais)
+// Variável em memória para o Gestor liberar a trava temporariamente
+let travaGlobalLiberada = false;
+
+// Lógica de Trava de Horário
 function validarHorarioBrasilia(dataEnviada) {
+    if (travaGlobalLiberada) return true; // Se o gestor liberou, permite qualquer data
+
     const dataAtualBr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
     const dataHoraObj = new Date(dataAtualBr);
     
@@ -22,7 +27,7 @@ function validarHorarioBrasilia(dataEnviada) {
     const diaSemanaHoje = dataHoraObj.getDay(); 
 
     if (dataEnviada === hojeBr) return true;
-    if (dataEnviada === ontemBr && horaAtual < 12) return true; // Domingo é validado aqui se hoje for Segunda
+    if (dataEnviada === ontemBr && horaAtual < 12) return true; 
     
     if (diaSemanaHoje === 1 && horaAtual < 12) {
         const sextaBr = getBrDateString(hojeMs - (3 * 24 * 60 * 60 * 1000));
@@ -34,6 +39,14 @@ function validarHorarioBrasilia(dataEnviada) {
     }
     return false;
 }
+
+// Nova função para o Gestor alternar a trava
+exports.toggleTrava = (req, res) => {
+    if (Number(req.user.nivel) >= 3) {
+        travaGlobalLiberada = !travaGlobalLiberada;
+    }
+    res.redirect('/impressoes?data=' + (req.body.dataAtual || ''));
+};
 
 exports.index = async (req, res) => {
     try {
@@ -58,7 +71,8 @@ exports.index = async (req, res) => {
             impressoes, todasMaquinas, maquinasPendentes, dataBusca,
             resumoGeralJSON: JSON.stringify(resumoGeral),
             todasMaquinasJSON: JSON.stringify(todasMaquinas), 
-            primeiraData, user: req.user
+            primeiraData, user: req.user,
+            travaGlobalLiberada // Enviando o status para a view
         });
     } catch (error) {
         console.error("Erro no index de impressões:", error);
@@ -70,8 +84,7 @@ exports.create = async (req, res) => {
     try {
         const dataSelecionada = req.query.data || new Date().toISOString().split('T')[0];
         
-        // Proteção GET: Bloqueia acesso ao formulário se fora do prazo
-        if (req.user.nivel < 3 && !validarHorarioBrasilia(dataSelecionada)) {
+        if (Number(req.user.nivel) < 3 && !validarHorarioBrasilia(dataSelecionada)) {
             return res.redirect('/impressoes?data=' + dataSelecionada);
         }
 
@@ -91,13 +104,11 @@ exports.store = async (req, res) => {
     try {
         const { data_registro, maquina_id, observacao, categorias, demandas, produtos, tamanhos, tipos_arquivo, modalidades, numeros_impressoes } = req.body;
         
-        // NOVA REGRA: Trava de observação obrigatória quando não há produção
         if (!categorias && (!observacao || observacao.trim() === '')) {
             return res.redirect(`/impressoes/create?maquina=${maquina_id}&data=${data_registro}`);
         }
 
-        // Proteção POST: Bloqueia gravação no banco se burlar front-end
-        if (req.user.nivel < 3 && !validarHorarioBrasilia(data_registro)) {
+        if (Number(req.user.nivel) < 3 && !validarHorarioBrasilia(data_registro)) {
             return res.redirect('/impressoes?data=' + data_registro);
         }
 
@@ -134,8 +145,7 @@ exports.edit = async (req, res) => {
     try {
         const impressao = await impressoesService.getImpressaoById(req.params.id);
         
-        // Proteção GET: Bloqueia formulário de edição se fora do prazo
-        if (req.user.nivel < 3 && !validarHorarioBrasilia(impressao.data_registro)) {
+        if (Number(req.user.nivel) < 3 && !validarHorarioBrasilia(impressao.data_registro)) {
             return res.redirect('/impressoes?data=' + impressao.data_registro);
         }
 
@@ -154,13 +164,11 @@ exports.update = async (req, res) => {
     try {
         const { data_registro, maquina_id, observacao, categorias, demandas, produtos, tamanhos, tipos_arquivo, modalidades, numeros_impressoes } = req.body;
         
-        // NOVA REGRA: Trava de observação obrigatória quando não há produção
         if (!categorias && (!observacao || observacao.trim() === '')) {
             return res.redirect(`/impressoes/${req.params.id}/edit`);
         }
 
-        // Proteção POST: Bloqueia atualização no banco
-        if (req.user.nivel < 3 && !validarHorarioBrasilia(data_registro)) {
+        if (Number(req.user.nivel) < 3 && !validarHorarioBrasilia(data_registro)) {
             return res.redirect('/impressoes?data=' + data_registro);
         }
 
@@ -194,8 +202,7 @@ exports.update = async (req, res) => {
 
 exports.destroy = async (req, res) => {
     try {
-        // Deleção restrita sempre para Nível 3+
-        if (req.user.nivel < 3) return res.redirect('/impressoes');
+        if (Number(req.user.nivel) < 3) return res.redirect('/impressoes');
         
         await impressoesService.deleteImpressao(req.params.id);
         res.redirect('/impressoes');

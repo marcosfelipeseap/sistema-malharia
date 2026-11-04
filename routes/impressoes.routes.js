@@ -3,6 +3,7 @@ const router = express.Router();
 const impressoesController = require('../controllers/impressoes.controller');
 
 router.get('/', impressoesController.index);
+router.post('/toggle-trava', impressoesController.toggleTrava);
 router.get('/create', impressoesController.create);
 router.post('/', impressoesController.store);
 

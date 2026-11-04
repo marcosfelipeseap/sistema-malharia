@@ -18,9 +18,6 @@
 </style>
 
 <% 
-// ==========================================
-// DATA E LÓGICA DE PRAZOS
-// ==========================================
 const agStr = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
 const agoraObj = new Date(agStr);
 const padNum = (n) => String(n).padStart(2, '0');
@@ -49,21 +46,38 @@ if (diaSemanaHoje === 1 && horaAtual < 12) {
     }
 }
 
-const isEditavel = isHoje || isOntemEditavel || isRetroativoFimSemana;
-
+// Agora a variavel da trava do Gestor torna o dia editável na view
+const isEditavel = isHoje || isOntemEditavel || isRetroativoFimSemana || travaGlobalLiberada;
 const [anoB, mesB, diaB] = dataBusca.split('-');
 const dataBuscaObj = new Date(anoB, mesB - 1, diaB, 12, 0, 0);
 const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() === 6;
+
+const userNivel = Number(user.nivel);
 %>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2"><i class="bi bi-printer"></i> Controle Diário de Impressões</h1>
-    <div>
+    <div class="d-flex gap-2">
+        <% if (userNivel >= 3) { %>
+            <form action="/impressoes/toggle-trava" method="POST" class="d-inline m-0 p-0">
+                <input type="hidden" name="dataAtual" value="<%= dataBusca %>">
+                <% if (travaGlobalLiberada) { %>
+                    <button type="submit" class="btn btn-danger btn-sm shadow-sm"><i class="bi bi-lock-fill"></i> Fechar Trava</button>
+                <% } else { %>
+                    <button type="submit" class="btn btn-warning btn-sm shadow-sm text-dark fw-bold"><i class="bi bi-unlock-fill"></i> Liberar Trava</button>
+                <% } %>
+            </form>
+        <% } %>
         <a href="/impressoes" class="btn btn-outline-primary btn-sm"><i class="bi bi-calendar-check"></i> Ir para Hoje</a>
     </div>
 </div>
 
-<% if (user.nivel < 3) { %>
+<% if (travaGlobalLiberada) { %>
+    <div class="alert alert-warning shadow-sm border-warning mb-4">
+        <i class="bi bi-unlock-fill fs-5 me-2"></i>
+        <strong>Trava Liberada!</strong> O Gestor liberou temporariamente o registro retroativo. Atualize os dias pendentes.
+    </div>
+<% } else if (userNivel < 3) { %>
     <div class="mb-4">
         <% if (isEditavel) { %>
             <div class="timer-aviso w-100 shadow-sm">
@@ -172,14 +186,13 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
                                 <% } %>
                             </div>
                             
-                            <% if (user.nivel >= 3 || isEditavel) { %>
+                            <% if (userNivel >= 3 || isEditavel) { %>
                             <div class="card-footer bg-transparent d-flex justify-content-end gap-2 border-top-0 pt-0">
                                 <a href="/impressoes/<%= imp.id %>/edit" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-pencil-square"></i> Editar
                                 </a>
-                                <% if (user.nivel >= 3) { %>
+                                <% if (userNivel >= 3) { %>
                                 <form action="/impressoes/<%= imp.id %>/delete" method="POST">
-                                    <!-- AQUI TROCAMOS O CONFIRM PELO MODAL -->
                                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmarExclusao(this, 'impressao')"><i class="bi bi-trash"></i> Excluir</button>
                                 </form>
                                 <% } %>
@@ -211,7 +224,7 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
                 <% maquinasPendentes.forEach(function(maq) { %>
                     <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center bg-light">
                         <h6 class="mb-0 text-dark fw-bold"><%= maq.nome %></h6>
-                        <% if (user.nivel >= 3 || isEditavel) { %>
+                        <% if (userNivel >= 3 || isEditavel) { %>
                             <a href="/impressoes/create?maquina=<%= maq.id %>&data=<%= dataBusca %>" class="btn btn-sm btn-primary rounded-pill shadow-sm">
                                 <i class="bi bi-plus-lg"></i> Registrar
                             </a>
@@ -225,7 +238,6 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
     </div>
 </div>
 
-<!-- Modal Confirmação de Exclusão -->
 <div class="modal fade" id="modalConfirmDelete" tabindex="-1" style="z-index: 1060;">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content border-danger">
@@ -249,7 +261,9 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
     const resumoRegistros = <%- resumoGeralJSON || '[]' %>;
     const todasMaquinas = <%- todasMaquinasJSON || '[]' %>;
     const dataBusca = "<%= dataBusca %>";
-    const userNivel = <%= user.nivel %>;
+    
+    const userNivel = Number(<%= user.nivel %>);
+    const travaGlobalLiberada = <%= travaGlobalLiberada %>;
     
     let currentViewDate = new Date(dataBusca + "T12:00:00");
     const hojeObjJS = new Date(); 
@@ -267,7 +281,6 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
         }
     });
 
-    // Lógica do Modal de Exclusão
     let formToDelete = null;
     function confirmarExclusao(btn, tipo) {
         formToDelete = btn.closest('form');
@@ -367,7 +380,7 @@ const isFimDeSemanaBusca = dataBuscaObj.getDay() === 0 || dataBuscaObj.getDay() 
     }
     document.addEventListener('DOMContentLoaded', renderCalendar);
 
-    if (userNivel < 3) {
+    if (userNivel < 3 && !travaGlobalLiberada) {
         const contadorEl = document.getElementById('contadorTempoRestante');
         if (contadorEl) { 
             const partesData = "<%= dataBusca %>".split('-');
