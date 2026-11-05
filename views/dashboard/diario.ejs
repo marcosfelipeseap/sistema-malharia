@@ -23,7 +23,65 @@
   <div id="dailyCards" class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px;"></div>
 </div>
 
+<!-- =========================================================
+     MODAL DO RELATÓRIO WHATSAPP
+     ========================================================= -->
+<div id="whatsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+  <div style="background: var(--surface, #fff); width: 90%; max-width: 500px; border-radius: 16px; padding: 25px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 15px;">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="margin: 0; color: var(--text-main, #333); display: flex; align-items: center; gap: 10px; font-size: 1.3rem;">
+        <i class="bi bi-whatsapp" style="color: #25D366;"></i> Relatório Gerado
+      </h3>
+      <button onclick="closeWhatsModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--text-muted, #888); line-height: 1;">&times;</button>
+    </div>
+    
+    <textarea id="whatsTextarea" style="width: 100%; height: 300px; padding: 15px; border-radius: 12px; border: 1px solid var(--border, #ddd); background: var(--bg-body, #f9f9f9); color: var(--text-main, #333); resize: none; font-family: monospace; font-size: 0.9rem;" readonly></textarea>
+    
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+      <button onclick="closeWhatsModal()" style="padding: 10px 20px; border-radius: 10px; border: 1px solid var(--border, #ddd); background: transparent; color: var(--text-main, #333); cursor: pointer; font-weight: bold; transition: 0.2s;">
+        Fechar
+      </button>
+      <button onclick="copyWhatsText()" style="padding: 10px 20px; border-radius: 10px; border: none; background: #25D366; color: #fff; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+        <i class="bi bi-files"></i> Copiar Texto
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- =========================================================
+     SCRIPTS
+     ========================================================= -->
 <script>
+// --- FUNÇÕES DA TELINHA (MODAL) ---
+function openWhatsModal(text) {
+    document.getElementById('whatsTextarea').value = text;
+    document.getElementById('whatsModal').style.display = 'flex';
+}
+
+function closeWhatsModal() {
+    document.getElementById('whatsModal').style.display = 'none';
+}
+
+function copyWhatsText() {
+    let textarea = document.getElementById('whatsTextarea');
+    textarea.select();
+    textarea.setSelectionRange(0, 99999); // Para mobile
+
+    // Tenta usar a API moderna de clipboard
+    navigator.clipboard.writeText(textarea.value).then(() => {
+        alert('✅ Relatório copiado com sucesso! Agora é só colar no WhatsApp.');
+        closeWhatsModal();
+    }).catch(err => {
+        // Fallback caso o navegador bloqueie
+        document.execCommand('copy');
+        alert('✅ Relatório copiado com sucesso! Agora é só colar no WhatsApp.');
+        closeWhatsModal();
+    });
+}
+
+// --- FUNÇÃO PARA RENDERIZAR OS CARDS NA PÁGINA ---
 function renderPage1() {
     let val = document.getElementById('dailyDate').value;
     if (!val) return;
@@ -38,13 +96,13 @@ function renderPage1() {
         let antigosMarcados = dadosAntigos.map(d => ({ 
             ...d, 
             isPlanilha: true,
-            metaOficina: d.meta || 0 // Mapeia a meta da planilha para o padrão do sistema
+            metaOficina: d.meta || 0
         }));
         dadosCompletos = [...dadosCompletos, ...antigosMarcados];
     }
 
     let data = dadosCompletos.filter(r => r.data === sDate);
-    let feriadosHoje = feriadosData.filter(f => f.data === sDate);
+    let feriadosHoje = (typeof feriadosData !== 'undefined') ? feriadosData.filter(f => f.data === sDate) : [];
 
     let cont = document.getElementById('dailyCards');
     let summaryCont = document.getElementById('dailySummary');
@@ -52,7 +110,7 @@ function renderPage1() {
     cont.innerHTML = '';
     summaryCont.innerHTML = '';
 
-    // LÓGICA INTELIGENTE: Puxa oficinas antigas apenas se estiverem dentro do seu período de atividade
+    // LÓGICA INTELIGENTE: Puxa oficinas antigas
     let allOficinasSet = new Set(rawData.map(r => r.oficina));
     if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
         let maxDateAntigos = {};
@@ -80,9 +138,9 @@ function renderPage1() {
 
     Object.keys(groups).forEach(of => {
         let g = groups[of];
-        let validItems = g.items.filter(r => !(r.producaoDia === 0 && isSemInsumo(r.justificativa)));
-        g.meta = validItems.length > 0 ? calculateDynamicMeta(validItems) : 0;
-        let hasInsumoIssue = g.items.some(j => isSemInsumo(j.justificativa));
+        let validItems = g.items.filter(r => !(r.producaoDia === 0 && (typeof isSemInsumo === 'function' && isSemInsumo(r.justificativa))));
+        g.meta = (validItems.length > 0 && typeof calculateDynamicMeta === 'function') ? calculateDynamicMeta(validItems) : 0;
+        let hasInsumoIssue = g.items.some(j => (typeof isSemInsumo === 'function' && isSemInsumo(j.justificativa)));
 
         if (g.prod > 0 && g.prod >= g.meta) listOk.push(of);
         else if (g.prod === 0 && hasInsumoIssue) listInsumo.push(of);
@@ -303,128 +361,109 @@ function renderPage1() {
     });
 }
 
+// --- FUNÇÃO PARA GERAR O TEXTO DO RELATÓRIO E ABRIR A MODAL ---
 function generateDiarioRelatorio() {
     let val = document.getElementById('dailyDate').value;
     if (!val) return;
-
+    
     let sDate = val.split('-').reverse().join('/');
-    let selDateObj = new Date(val.split('-')[0], val.split('-')[1] - 1, val.split('-')[2]);
-    let isWeekendDay = selDateObj.getDay() === 0 || selDateObj.getDay() === 6;
+    let data = rawData.filter(r => r.data === sDate);
     
-    // Mescla os dados para o relatório, alinhando a nomenclatura da meta
-    let dadosCompletos = [...rawData];
-    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
-        let antigosMarcados = dadosAntigos.map(d => ({ 
-            ...d, 
-            isPlanilha: true,
-            metaOficina: d.meta || 0 // Mapeia a meta
-        }));
-        dadosCompletos = [...dadosCompletos, ...antigosMarcados];
-    }
-    
-    let data = dadosCompletos.filter(r => r.data === sDate);
-    let feriadosHoje = feriadosData.filter(f => f.data === sDate);
-    
-    let allOficinasSet = new Set(rawData.map(r => r.oficina));
-    if (typeof dadosAntigos !== 'undefined' && dadosAntigos.length > 0) {
-        let maxDateAntigos = {};
-        dadosAntigos.forEach(r => {
-            if (!maxDateAntigos[r.oficina] || r.dateObj > maxDateAntigos[r.oficina]) {
-                maxDateAntigos[r.oficina] = r.dateObj;
-            }
-        });
-        dadosAntigos.forEach(r => {
-            if (selDateObj <= maxDateAntigos[r.oficina]) {
-                allOficinasSet.add(r.oficina);
-            }
-        });
-    }
-    let allOficinas = [...allOficinasSet].sort();
+    let allOficinas = [...new Set(rawData.map(r => r.oficina))].sort();
     let groups = {};
-
+    
     data.forEach(r => {
-        if (!groups[r.oficina]) groups[r.oficina] = { prod: 0, items: [] };
+        if (!groups[r.oficina]) groups[r.oficina] = { prod: 0, justs: [], items: [] };
         groups[r.oficina].prod += r.producaoDia;
+        if (r.justificativa) groups[r.oficina].justs.push(r.justificativa);
         groups[r.oficina].items.push(r);
     });
 
-    let listOk = [], listFail = [], listInsumo = [], listMissing = [], listFeriado = [];
+    let listOk = []; 
+    let listFail = []; 
+    let listInsumo = []; 
+    let listMissing = [];
 
     Object.keys(groups).forEach(of => {
         let g = groups[of];
-        let validItems = g.items.filter(r => !(r.producaoDia === 0 && isSemInsumo(r.justificativa)));
-        g.meta = validItems.length > 0 ? calculateDynamicMeta(validItems) : 0;
-        let hasInsumoIssue = g.items.some(j => isSemInsumo(j.justificativa));
+        let validItems = g.items.filter(r => !(r.producaoDia === 0 && (typeof isSemInsumo === 'function' && isSemInsumo(r.justificativa))));
+        g.meta = (validItems.length > 0 && typeof calculateDynamicMeta === 'function') ? calculateDynamicMeta(validItems) : 0;
+        let hasInsumoIssue = g.justs.some(j => (typeof isSemInsumo === 'function' && isSemInsumo(j)));
 
         if (g.prod > 0 && g.prod >= g.meta) listOk.push(of);
-        else if (g.prod === 0 && hasInsumoIssue) listInsumo.push(of);
+        else if (g.prod === 0 && hasInsumoIssue) listInsumo.push(of); 
         else listFail.push(of);
     });
 
-    let maxDates = {};
-    rawData.forEach(r => { if (!maxDates[r.oficina] || r.dateObj > maxDates[r.oficina]) maxDates[r.oficina] = r.dateObj; });
+    let selDateObj = new Date(val.split('-')[0], val.split('-')[1] - 1, val.split('-')[2]);
+    let isWeekendDay = selDateObj.getDay() === 0 || selDateObj.getDay() === 6;
 
-    allOficinas.forEach(of => {
-        if (!presentOficinas.includes(of)) {
-            let fGlobal = feriadosHoje.find(f => f.oficina === 'Todas');
-            let fSpecific = feriadosHoje.find(f => f.oficina === of);
-            if (fGlobal || fSpecific) listFeriado.push({ oficina: of, descricao: fGlobal ? fGlobal.descricao : fSpecific.descricao });
-            else if (!isWeekendDay) { if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > (maxDates[of] || new Date(0))) {} else listMissing.push(of); }
-        }
+    let presentOficinas = Object.keys(groups);
+    let maxDates = {};
+    
+    rawData.forEach(r => {
+        if (!maxDates[r.oficina] || r.dateObj > maxDates[r.oficina]) maxDates[r.oficina] = r.dateObj;
     });
 
-    listOk.sort(); listInsumo.sort(); listFail.sort(); listMissing.sort(); listFeriado.sort((a, b) => a.oficina.localeCompare(b.oficina));
+    if (isWeekendDay) {
+        listMissing = []; 
+    } else {
+        listMissing = allOficinas.filter(of => {
+            if (presentOficinas.includes(of)) return false;
+            if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > maxDates[of]) return false;
+            return true;
+        });
+    }
+
+    listOk.sort(); listInsumo.sort(); listFail.sort(); listMissing.sort();
 
     let text = `*📊 DIÁRIO DE PRODUÇÃO - ${sDate}*\n`;
     if (isWeekendDay) text += `*(Fim de Semana)*\n`;
-
-    text += `\n*Resumo:*\n✅ Satisfatório: ${listOk.length}\n⚠️ Sem Insumo: ${listInsumo.length}\n❌ Insuficiente: ${listFail.length}\n🏖️ Feriado: ${listFeriado.length}\n⚪ Não Informado: ${listMissing.length}\n\n*--- DETALHAMENTO ---*\n\n`;
+    
+    text += `\n*Resumo:*\n`;
+    text += `✅ Satisfatório: ${listOk.length}\n`;
+    text += `⚠️ Sem Insumo: ${listInsumo.length}\n`;
+    text += `❌ Insuficiente: ${listFail.length}\n`;
+    text += `⚪ Não Informado: ${listMissing.length}\n\n`;
+    text += `*--- DETALHAMENTO ---*\n\n`;
 
     let presentSorted = [...listOk, ...listInsumo, ...listFail];
+    
     presentSorted.forEach(of => {
         let g = groups[of];
         let bateu = g.prod > 0 && g.prod >= g.meta;
         let isInsumo = listInsumo.includes(of);
-        let statusText = bateu ? '✅ SATISFATÓRIO' : (isInsumo ? '⚠️ SEM INSUMO' : '❌ INSUFICIENTE');
+
+        let statusText = '❌ INSUFICIENTE';
+        if (bateu) statusText = '✅ SATISFATÓRIO';
+        else if (isInsumo) statusText = '⚠️ SEM INSUMO';
+
         let perc = g.meta > 0 ? Math.round((g.prod / g.meta) * 100) : (isInsumo ? 0 : 100);
 
-        text += `🏢 *${of}*\nMáquinas: ${g.items[0].maquinas || '?'} | Internos: ${g.items[0].qtd_internos || g.items[0].internos || '?'}\nStatus: ${statusText}\nProdução: ${g.prod} / Meta: ${g.meta} (${perc}%)\n`;
-
+        text += `🏢 *${of}*\n`;
+        text += `Status: ${statusText}\n`;
+        text += `Produção: ${g.prod} / Meta: ${g.meta} (${perc}%)\n`;
+        
         g.items.forEach(i => {
-            if(i.item !== 'Nenhum') {
-                if (i.isPlanilha) {
-                    text += `- ${i.producaoDia}x ${i.item} *(Dados da Planilha - Sem detalhamento)*\n`;
-                } else {
-                    let infoExtra = [];
-                    if(i.processoNome && i.processoNome !== '-') infoExtra.push(`Órgão: ${i.processoNome}`);
-                    if(i.tamanho) infoExtra.push(`Tam: ${i.tamanho}`);
-                    text += `- ${i.producaoDia}x ${i.item} (${i.tipo || '-'})${infoExtra.length > 0 ? ` [${infoExtra.join(' | ')}]` : ''}\n`;
-                }
+            if (i.item !== 'Nenhum') {
+                text += `- ${i.producaoDia}x ${i.item} (${i.tipo || '-'})\n`;
             }
         });
 
-        let uniqJust = [...new Set(g.items.map(i => i.justificativa))].filter(j => j && j.trim() !== "");
-        let uniqObs = [...new Set(g.items.map(i => i.observacao))].filter(o => o && o.trim() !== "");
-
-        if (uniqJust.length > 0) text += `Justificativa: ${uniqJust.join(', ')}\n`;
-        else if (!bateu) text += `Justificativa: Não informado\n`;
-        
-        if (uniqObs.length > 0) text += `Obs: ${uniqObs.join(' | ')}\n`;
+        if (!bateu) {
+            let uniqJ = [...new Set(g.justs)].filter(j => j && j.trim() !== "");
+            if (uniqJ.length) text += `Motivo: ${uniqJ.join(', ')}\n`;
+            else text += `Motivo: Não informado\n`;
+        }
         text += `\n`;
     });
-
-    if (listFeriado.length > 0) {
-        text += `*🏖️ FERIADOS / RECESSOS:*\n`;
-        listFeriado.forEach(f => { text += `- ${f.oficina} (${f.descricao})\n`; });
-        text += `\n`;
-    }
 
     if (listMissing.length > 0) {
         text += `*⚪ NÃO INFORMADOS:*\n`;
         listMissing.forEach(of => { text += `- ${of}\n`; });
     }
-
-    if (typeof openWhatsModal === 'function') openWhatsModal(text.trim());
-    else window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text.trim())}`, '_blank');
+    
+    // Chama a nossa nova função que exibe a telinha modal
+    openWhatsModal(text.trim());
 }
 </script>
