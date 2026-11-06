@@ -215,8 +215,8 @@ async function construirPayloadDashboard() {
         let [registros, feriadosRaw, malhariasRaw, processosRaw, itensDisponiveis, rankingRaw, planilhas] = await Promise.all([
             fnRegistros, 
             registrosService.getFeriados(),                                    
-            malhariasService.getAllMalharias(),                                
-            processosService.getAllProcessos(),                                
+            malhariasService.getAllMalharias(),                               
+            processosService.getAllProcessos(),                               
             processosService.getAllItensDisponiveis(),                          
             rankingService.getRankingPerformance(mesAtual, anoAtual),
             fetchPlanilhasGoogle()
@@ -238,7 +238,8 @@ async function construirPayloadDashboard() {
                 infoOficinasEstatico.push({
                     id: m.id,
                     nome: m.nome,
-                    remunerados: m.remunerados || 0
+                    remunerados: m.remunerados || 0,
+                    ativo: m.ativo !== false // Adicionamos a checagem de inatividade aqui
                 });
             });
         }

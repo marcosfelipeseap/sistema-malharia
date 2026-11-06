@@ -165,8 +165,22 @@ function renderPage1() {
                     descricao: fGlobal ? fGlobal.descricao : fSpecific.descricao
                 });
             } else if (!isWeekendDay) {
-                if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > (maxDates[of] || new Date(0))) {} 
-                else listMissing.push(of);
+                
+                // NOVIDADE AQUI: Checa se a oficina está Inativa no banco
+                let isInactive = false;
+                if (typeof infoOficinasEstatico !== 'undefined') {
+                    let found = infoOficinasEstatico.find(io => io.nome === of);
+                    if (found && found.ativo === false) isInactive = true;
+                }
+
+                // Oficinas extintas (como 3.1, 3.2) ou Inativas SÓ serão dispensadas de cobrança
+                // SE a data que estamos olhando (selDateObj) for DEPOIS do último registro que elas tiveram (maxDates[of]).
+                if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2" || isInactive) && selDateObj > (maxDates[of] || new Date(0))) {
+                    // Ignora, não cobra "Não Informado"
+                } 
+                else {
+                    listMissing.push(of);
+                }
             }
         }
     });
@@ -410,7 +424,16 @@ function generateDiarioRelatorio() {
     } else {
         listMissing = allOficinas.filter(of => {
             if (presentOficinas.includes(of)) return false;
-            if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2") && selDateObj > maxDates[of]) return false;
+            
+            // NOVIDADE: Checa Inatividade também pro WhatsApp Report
+            let isInactive = false;
+            if (typeof infoOficinasEstatico !== 'undefined') {
+                let found = infoOficinasEstatico.find(io => io.nome === of);
+                if (found && found.ativo === false) isInactive = true;
+            }
+
+            if ((of === "GALPÃO 3.1" || of === "GALPÃO 3.2" || isInactive) && selDateObj > (maxDates[of] || new Date(0))) return false;
+            
             return true;
         });
     }

@@ -73,20 +73,25 @@ exports.index = async (req, res) => {
         const dataBusca = req.query.data || new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }).split(',')[0].split('/').reverse().join('-');
         
         let registros = await registrosService.getRegistrosByData(dataBusca);
+        // Trazemos todas as malharias para cruzar quem enviou ou faltou enviar
         let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
+        
+        // NOVIDADE: Apenas cobramos relatórios de malharias ATIVAS. 
+        // Filtramos "todasMalharias" para exibir em "Faltam Registrar" apenas as que estão com status ativo (true ou undefined).
+        let malhariasCobrar = todasMalharias.filter(m => m.ativo !== false);
 
         if (req.user.cargo === 'monitor') {
             const permitidas = req.user.malharias_permitidas || [];
-            todasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
+            malhariasCobrar = malhariasCobrar.filter(m => permitidas.includes(m.id));
             registros = registros.filter(r => permitidas.includes(r.malharia_id));
         }
 
         // Blindagem contra registros duplicados no mesmo dia
         registros = removerRegistrosDuplicadosDoMesmoDia(registros);
 
-        const totalMalharias = todasMalharias.length;
+        const totalMalharias = malhariasCobrar.length;
         const malhariasComRegistroIds = registros.map(r => r.malharia_id);
-        const malhariasPendentes = todasMalharias.filter(m => !malhariasComRegistroIds.includes(m.id));
+        const malhariasPendentes = malhariasCobrar.filter(m => !malhariasComRegistroIds.includes(m.id));
 
         const resumoGeral = await registrosService.getResumoRegistros();
         const primeiraData = resumoGeral.length > 0 ? resumoGeral[0].data_registro : new Date().toISOString().split('T')[0];
@@ -96,7 +101,7 @@ exports.index = async (req, res) => {
         res.render('registros/index', { 
             title: 'Controle Diário de Produção', 
             registros,
-            todasMalharias, 
+            todasMalharias: malhariasCobrar, // Exporta só as ativas para renderizar os "pendentes"
             feriados,       
             feriadosJSON: JSON.stringify(feriados), 
             malhariasPendentes,
@@ -116,6 +121,9 @@ exports.create = async (req, res) => {
         const processos = removerDuplicatas(await processosService.getAllProcessos());
         let malharias = removerDuplicatas(await malhariasService.getAllMalharias());
         
+        // Na hora de criar, também listamos apenas as malharias ativas no select
+        malharias = malharias.filter(m => m.ativo !== false);
+
         if (req.user.cargo === 'monitor') {
             const permitidas = req.user.malharias_permitidas || [];
             malharias = malharias.filter(m => permitidas.includes(m.id));
@@ -142,10 +150,13 @@ exports.painelDiario = async (req, res) => {
         let registrosHoje = await registrosService.getRegistrosByData(dataHoje);
         let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
 
+        // Somente cobramos relatórios de malharias ATIVAS.
+        let malhariasCobrar = todasMalharias.filter(m => m.ativo !== false);
+
         const permitidas = req.user.malharias_permitidas || [];
-        let minhasMalharias = todasMalharias;
+        let minhasMalharias = malhariasCobrar;
         if (req.user.cargo === 'monitor') {
-            minhasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
+            minhasMalharias = malhariasCobrar.filter(m => permitidas.includes(m.id));
         }
 
         let meusRegistros = registrosHoje.filter(r => minhasMalharias.map(m=>m.id).includes(r.malharia_id));
@@ -179,16 +190,19 @@ exports.historico = async (req, res) => {
         let registros = await registrosService.getRegistrosByData(dataBusca);
         let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
 
+        // Apenas malharias ativas são listadas como pendentes
+        let malhariasCobrar = todasMalharias.filter(m => m.ativo !== false);
+
         const permitidas = req.user.malharias_permitidas || [];
-        todasMalharias = todasMalharias.filter(m => permitidas.includes(m.id));
+        malhariasCobrar = malhariasCobrar.filter(m => permitidas.includes(m.id));
         registros = registros.filter(r => permitidas.includes(r.malharia_id));
 
         // Blindagem contra registros duplicados no mesmo dia
         registros = removerRegistrosDuplicadosDoMesmoDia(registros);
 
-        const totalMalharias = todasMalharias.length;
+        const totalMalharias = malhariasCobrar.length;
         const malhariasComRegistroIds = registros.map(r => r.malharia_id);
-        const malhariasPendentes = todasMalharias.filter(m => !malhariasComRegistroIds.includes(m.id));
+        const malhariasPendentes = malhariasCobrar.filter(m => !malhariasComRegistroIds.includes(m.id));
 
         const resumoGeral = await registrosService.getResumoRegistros();
         const primeiraData = resumoGeral.length > 0 ? resumoGeral[0].data_registro : new Date().toISOString().split('T')[0];
@@ -196,7 +210,7 @@ exports.historico = async (req, res) => {
 
         res.render('registros/index', { 
             title: 'Histórico de Produção', 
-            registros, todasMalharias, feriados, feriadosJSON: JSON.stringify(feriados), 
+            registros, todasMalharias: malhariasCobrar, feriados, feriadosJSON: JSON.stringify(feriados), 
             malhariasPendentes, dataBusca, resumoGeralJSON: JSON.stringify(resumoGeral),
             totalMalharias, primeiraData, isHistoricoPainel: true 
         });
@@ -227,6 +241,9 @@ exports.relatorios = async (req, res) => {
 
         let registros = await registrosService.getRegistrosFiltrados(di, df);
         let todasMalharias = removerDuplicatas(await malhariasService.getAllMalharias());
+
+        // Na tela de relatórios passados, mantemos todas as malharias (ativas ou inativas) para filtro,
+        // já que uma malharia pode ter produzido antes de ser inativada.
 
         // Trava para o Monitor só ver e listar as oficinas dele
         if (req.user.cargo === 'monitor') {
@@ -268,7 +285,7 @@ exports.relatorios = async (req, res) => {
         res.render('registros/relatorios', {
             title: 'Histórico de Relatórios',
             registros,
-            todasMalharias,
+            todasMalharias, // Aqui exportamos todas, inclusive inativas, para aparecer no Dropdown de Filtro.
             data_inicio: di,
             data_fim: df,
             busca: termo,
@@ -413,11 +430,9 @@ exports.update = async (req, res) => {
         const { id } = req.params;
         let { data_registro, malharia_id, qtd_internos, meta_calculada, explicacao_meta, justificativa_id, observacao, processos_ids, processo_item_ids, itens_ids, qtds_produzidas } = req.body;
 
-        // 1. Vai buscar o registo original para garantir que temos a data, caso o campo no frontend esteja disabled
         const registroExistente = await registrosService.getRegistroById(id);
         if (!registroExistente) return res.redirect('/registros');
 
-        // 2. Se a data não vier no formulário, mantemos a data original do registo
         if (!data_registro || data_registro === 'undefined') {
             data_registro = registroExistente.data_registro;
         }
@@ -461,7 +476,6 @@ exports.update = async (req, res) => {
         
         if (req.user.nivel < 3) return res.redirect('/registros/painel');
         
-        // Redireciona corretamente para a data que acabou de ser editada
         res.redirect(`/registros?data=${data_registro}`);
     } catch (error) {
         console.error("Erro no update:", error);

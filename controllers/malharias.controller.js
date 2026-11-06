@@ -60,13 +60,14 @@ exports.create = async (req, res) => {
 
 exports.store = async (req, res) => {
     try {
-        const { nome, unidade_id, responsavel, num_internos, num_internos_remunerados, horario_limite_planejamento, itensJSON } = req.body;
+        const { nome, unidade_id, responsavel, num_internos, num_internos_remunerados, horario_limite_planejamento, itensJSON, ativo } = req.body;
 
         if (parseInt(num_internos_remunerados) > parseInt(num_internos)) {
             throw new Error("O número de internos remunerados não pode ser maior que o total de internos.");
         }
 
         let listaItens = itensJSON ? JSON.parse(itensJSON) : [];
+        const isAtiva = ativo === 'on';
 
         await malhariasService.createMalharia({
             nome,
@@ -74,7 +75,8 @@ exports.store = async (req, res) => {
             responsavel,
             num_internos: parseInt(num_internos) || 0,
             num_internos_remunerados: parseInt(num_internos_remunerados) || 0,
-            horario_limite_planejamento: horario_limite_planejamento || '10:00:00'
+            horario_limite_planejamento: horario_limite_planejamento || '10:00:00',
+            ativo: isAtiva
         }, listaItens);
 
         res.redirect('/malharias');
@@ -104,7 +106,7 @@ exports.edit = async (req, res) => {
 exports.update = async (req, res) => {
     try {
         const { id } = req.params;
-        const { nome, unidade_id, responsavel, num_internos, num_internos_remunerados, horario_limite_planejamento, itensJSON } = req.body;
+        const { nome, unidade_id, responsavel, num_internos, num_internos_remunerados, horario_limite_planejamento, itensJSON, ativo } = req.body;
 
         if (req.user.cargo === 'monitor') {
             const permitidasStr = (req.user.malharias_permitidas || []).map(String);
@@ -112,6 +114,7 @@ exports.update = async (req, res) => {
         }
 
         let listaItens = itensJSON ? JSON.parse(itensJSON) : [];
+        const isAtiva = ativo === 'on';
 
         if (req.user.nivel < 3) {
             const malhariaAtual = await malhariasService.getMalhariaById(id);
@@ -119,14 +122,16 @@ exports.update = async (req, res) => {
                 nome: malhariaAtual.nome, unidade_id: malhariaAtual.unidade_id,
                 responsavel: malhariaAtual.responsavel, num_internos: malhariaAtual.num_internos,
                 num_internos_remunerados: malhariaAtual.num_internos_remunerados,
-                horario_limite_planejamento: malhariaAtual.horario_limite_planejamento
+                horario_limite_planejamento: malhariaAtual.horario_limite_planejamento,
+                ativo: malhariaAtual.ativo !== false
             }, listaItens);
         } else {
             await malhariasService.updateMalharia(id, {
                 nome, unidade_id, responsavel,
                 num_internos: parseInt(num_internos) || 0,
                 num_internos_remunerados: parseInt(num_internos_remunerados) || 0,
-                horario_limite_planejamento: horario_limite_planejamento || '10:00:00'
+                horario_limite_planejamento: horario_limite_planejamento || '10:00:00',
+                ativo: isAtiva
             }, listaItens);
         }
         res.redirect('/malharias');

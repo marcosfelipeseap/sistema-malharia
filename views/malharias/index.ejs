@@ -136,6 +136,11 @@
                                                 <div class="text-truncate w-100 pe-2">
                                                     <h6 class="card-title fw-bold text-dark mb-0 text-truncate" title="<%= m.nome %>">
                                                         <%= m.nome %>
+                                                        <% if (m.ativo !== false) { %>
+                                                            <span class="badge bg-success ms-1 align-middle" style="font-size: 0.6rem;">Ativa</span>
+                                                        <% } else { %>
+                                                            <span class="badge bg-danger ms-1 align-middle" style="font-size: 0.6rem;">Inativa</span>
+                                                        <% } %>
                                                     </h6>
                                                     <small class="text-muted d-block" style="font-size: 0.75rem;">
                                                         Resp: <%= m.responsavel || 'N/A' %>
@@ -241,7 +246,14 @@
                                 </a>
                             <% } %>
                         </td>
-                        <td><span class="fw-bold text-dark"><%= m.nome %></span></td>
+                        <td>
+                            <span class="fw-bold text-dark"><%= m.nome %></span>
+                            <% if (m.ativo !== false) { %>
+                                <span class="badge bg-success ms-2">Ativa</span>
+                            <% } else { %>
+                                <span class="badge bg-danger ms-2">Inativa</span>
+                            <% } %>
+                        </td>
                         <td><%= m.responsavel || 'N/A' %></td>
                         <td>
                             <div class="d-flex flex-wrap gap-1 align-items-center">
