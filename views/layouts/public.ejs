@@ -21,14 +21,14 @@
         /* 1. ESTRUTURA E FUNDO (Padrão Catálogo) */
         --bg-body: #f8fafc; 
         --surface: #ffffff; 
-        --sidebar-bg: #001E7A;
+        --sidebar-bg: #264e34;
         
         /* 2. TEXTOS PADRÃO */
         --text-main: #1e293b; 
         --text-muted: #64748b; 
         
         /* 3. CORES DA MARCA */
-        --primary: #001E7A; 
+        --primary: #264e34; 
         --primary-light: #e0e7ff;
         
         /* 4. BORDAS E SOMBRAS */
@@ -97,6 +97,7 @@
       .logo { 
         width: 100%; 
         display: flex; 
+        flex-direction: column;
         justify-content: center; 
         align-items: center; 
         padding-bottom: 20px; 
@@ -229,6 +230,9 @@
       <div class="logo">
           <!-- O ideal é usar a logo branca já que o fundo é escuro -->
           <img src="/img/logo.png" alt="Logo">
+          <div style="color: #ffffff; font-weight: 800; font-size: 1.1rem; margin-top: 12px; text-transform: uppercase; letter-spacing: 1px; text-align: center;">
+              PAINEL MALHARIA
+          </div>
       </div>
 
       <div class="menu">
