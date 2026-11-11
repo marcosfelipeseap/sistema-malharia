@@ -118,18 +118,21 @@
       .nav-btn { 
         width: calc(100% - 40px); 
         margin: 0 20px; 
-        height: 54px; 
+        height: auto; /* Alterado de 54px para auto para permitir expansão com quebra de linha */
+        min-height: 54px; /* Garante a altura mínima original */
         border-radius: 14px; 
         display: flex; 
         align-items: center; 
         justify-content: flex-start; 
-        padding-left: 15px; 
+        padding: 10px 15px; /* Ajuste no padding vertical para melhorar o visual na quebra */
         color: #ffffff; 
         cursor: pointer; 
         transition: 0.3s all ease; 
         border: none; 
         text-decoration: none; 
         background: transparent;
+        text-align: left; /* Garante que o texto fique alinhado à esquerda caso quebre a linha */
+        font-family: 'Poppins', sans-serif; /* Aplica a fonte Poppins diretamente no botão */
       }
       .nav-btn:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
       .nav-btn.active { 
@@ -139,12 +142,14 @@
       }
       .nav-btn .material-icons { font-size: 28px; min-width: 34px; }
       .nav-btn span:not(.material-icons) { 
-        margin-left: 15px; 
-        font-size: 1.05rem; 
-        font-weight: 600; 
-        text-transform: uppercase; 
-        letter-spacing: 0.3px; 
-      }
+      margin-left: 15px; 
+      font-size: 1.05rem; 
+      font-weight: 600; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3px; 
+      line-height: 1.2;
+      word-wrap: break-word;
+    }
       
       .mode-toggle { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); }
 
